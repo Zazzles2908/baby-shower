@@ -1,12 +1,9 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "name": "baby-shower-qr-app",
-  "framework": null,
   "buildCommand": null,
   "devCommand": null,
   "installCommand": null,
-  "regions": ["iad1"],
-  "functions": null,
   "outputDirectory": ".",
   "public": true,
   "headers": [
@@ -27,7 +24,5 @@
         }
       ]
     }
-  ],
-  "rewrites": null,
-  "redirects": null
+  ]
 }
