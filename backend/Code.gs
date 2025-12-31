@@ -33,6 +33,11 @@ function insertToSupabase(tableName, data) {
   }
   
   const url = `${SUPABASE_CONFIG.PROJECT_URL}/rest/v1/${tableName}`;
+  const jsonPayload = JSON.stringify(data);
+  
+  // Debug log
+  console.log('Supabase URL:', url);
+  console.log('Supabase payload:', jsonPayload);
 
   const options = {
     'method': 'post',
@@ -42,7 +47,7 @@ function insertToSupabase(tableName, data) {
       'Content-Type': 'application/json',
       'Prefer': 'return=minimal'
     },
-    'payload': JSON.stringify(data),
+    'payload': jsonPayload,
     'muteHttpExceptions': true
   };
 
@@ -72,11 +77,16 @@ function insertToSupabase(tableName, data) {
 function submitToSupabase(name, activityType, activityData) {
   const tableName = `${SUPABASE_CONFIG.SCHEMA}.${SUPABASE_CONFIG.TABLE_NAME}`;
   
-  return insertToSupabase(tableName, {
+  const data = {
     name: name,
     activity_type: activityType,
     activity_data: activityData
-  });
+  };
+  
+  // Debug log
+  console.log('Supabase data:', JSON.stringify(data));
+  
+  return insertToSupabase(tableName, data);
 }
 
 /**
