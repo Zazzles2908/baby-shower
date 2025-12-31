@@ -15,9 +15,7 @@ const GOOGLE_PHOTOS_LINK = 'https://photos.app.goo.gl/KWzmnmxvQpxdQmP47';
 // ============================================
 const SUPABASE_CONFIG = {
   PROJECT_URL: 'https://bkszmvfsfgvdwzacgmfz.supabase.co',
-  ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJrc3ptdmZzZmd2ZHd6YWNnbWZ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQzODI1NjMsImV4cCI6MjA3OTk1ODU2M30.BswusP1pfDUStzAU8k-VKPailISimApapNeJGlid8sI',
-  TABLE_NAME: 'submissions',
-  SCHEMA: 'baby_shower'
+  ANON_KEY: 'sb_publishable_4_-bf5hda3a5Bb9enUmA0Q_jrKJf1K_'
 };
 
 /**
@@ -54,8 +52,8 @@ function testSupabaseConnection() {
 }
 
 /**
- * Insert row into Supabase table
- * @param {string} tableName - Name of table
+ * Insert row into Supabase via RPC function
+ * @param {string} tableName - Name of table (unused, kept for compatibility)
  * @param {Object} data - Data to insert
  * @returns {Object} Response from Supabase
  */
@@ -65,11 +63,16 @@ function insertToSupabase(tableName, data) {
     return null;
   }
   
-  const url = `${SUPABASE_CONFIG.PROJECT_URL}/rest/v1/${tableName}`;
-  const jsonPayload = JSON.stringify(data);
+  // Use RPC function to insert into baby_shower schema
+  const url = `${SUPABASE_CONFIG.PROJECT_URL}/rest/v1/rpc/insert_submission`;
+  const jsonPayload = JSON.stringify({
+    p_name: data.name,
+    p_activity_type: data.activity_type,
+    p_activity_data: data.activity_data
+  });
   
   // Debug log
-  console.log('Supabase URL:', url);
+  console.log('Supabase RPC URL:', url);
   console.log('Supabase payload:', jsonPayload);
 
   const options = {
@@ -88,7 +91,7 @@ function insertToSupabase(tableName, data) {
     const response = UrlFetchApp.fetch(url, options);
     const responseCode = response.getResponseCode();
     
-    if (responseCode !== 201 && responseCode !== 200) {
+    if (responseCode !== 200 && responseCode !== 201 && responseCode !== 204) {
       console.error('Supabase insert error:', response.getContentText());
       return null;
     }
@@ -115,8 +118,6 @@ function submitToSupabase(name, activityType, activityData) {
     return null;
   }
   
-  const tableName = `${SUPABASE_CONFIG.SCHEMA}.${SUPABASE_CONFIG.TABLE_NAME}`;
-  
   const data = {
     name: name,
     activity_type: activityType,
@@ -126,11 +127,11 @@ function submitToSupabase(name, activityType, activityData) {
   // Debug log
   console.log('Supabase data:', JSON.stringify(data));
   
-  return insertToSupabase(tableName, data);
+  return insertToSupabase('submissions', data);
 }
 
 /**
- * Get statistics from Supabase
+ * Get statistics from Supabase via RPC function
  * @returns {Object} Statistics
  */
 function getSupabaseStats() {
@@ -139,11 +140,13 @@ function getSupabaseStats() {
   }
   
   try {
-    const url = `${SUPABASE_CONFIG.PROJECT_URL}/rest/v1/${SUPABASE_CONFIG.SCHEMA}.submissions_count`;
+    const url = `${SUPABASE_CONFIG.PROJECT_URL}/rest/v1/rpc/get_submissions_count`;
     const response = UrlFetchApp.fetch(url, {
+      'method': 'post',
       'headers': {
         'apikey': SUPABASE_CONFIG.ANON_KEY,
-        'Authorization': `Bearer ${SUPABASE_CONFIG.ANON_KEY}`
+        'Authorization': `Bearer ${SUPABASE_CONFIG.ANON_KEY}`,
+        'Content-Type': 'application/json'
       },
       'muteHttpExceptions': true
     });
@@ -164,7 +167,7 @@ function getSupabaseStats() {
 }
 
 /**
- * Get vote counts from Supabase
+ * Get vote counts from Supabase via RPC function
  * @returns {Object} Vote counts per name
  */
 function getSupabaseVoteCounts() {
@@ -173,11 +176,13 @@ function getSupabaseVoteCounts() {
   }
   
   try {
-    const url = `${SUPABASE_CONFIG.PROJECT_URL}/rest/v1/${SUPABASE_CONFIG.SCHEMA}.vote_counts`;
+    const url = `${SUPABASE_CONFIG.PROJECT_URL}/rest/v1/rpc/get_vote_counts`;
     const response = UrlFetchApp.fetch(url, {
+      'method': 'post',
       'headers': {
         'apikey': SUPABASE_CONFIG.ANON_KEY,
-        'Authorization': `Bearer ${SUPABASE_CONFIG.ANON_KEY}`
+        'Authorization': `Bearer ${SUPABASE_CONFIG.ANON_KEY}`,
+        'Content-Type': 'application/json'
       },
       'muteHttpExceptions': true
     });

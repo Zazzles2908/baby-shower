@@ -37,7 +37,16 @@ async function submitToBothBackends(table, data) {
 
     // Return success if at least one backend worked
     if (results.googleSheets || results.supabase) {
-        return { result: 'success', results };
+        // Extract message from Google Sheets response (contains the success message)
+        const message = results.googleSheets?.message 
+            || results.supabase?.message 
+            || 'Thank you for your submission!';
+        return { 
+            result: 'success', 
+            results,
+            data: { message },
+            milestones: results.googleSheets?.milestones || null
+        };
     }
 
     throw new Error('All backends failed');
