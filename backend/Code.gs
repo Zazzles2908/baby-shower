@@ -208,25 +208,47 @@ function getSupabaseVoteCounts() {
 
 /**
  * Write to both Google Sheets and Supabase
- * @param {Function} sheetFn - Function to write to sheets
- * @param {Object} params - Request parameters
+ * @param {Function} sheetFn - Function to write to sheets (e.g., appendToSheet)
+ * @param {Object} params - Request parameters with name field
  * @param {string} activityType - Activity type for Supabase
  * @param {Object} activityData - Activity data for Supabase
  * @returns {Object} Result
  */
 function dualWrite(sheetFn, params, activityType, activityData) {
+  // Validate required parameters
+  if (!params || typeof params !== 'object') {
+    console.error('dualWrite called with invalid params:', params);
+    return { error: 'Invalid parameters' };
+  }
+  
+  if (!params.name) {
+    console.error('dualWrite called without required name field in params');
+    return { error: 'Missing name parameter' };
+  }
+  
   // Write to Google Sheets
   const sheetResult = sheetFn(params);
   
   // Write to Supabase (fire and forget, don't block on this)
+  let supabaseSuccess = false;
+  let supabaseError = null;
   try {
-    submitToSupabase(params.name, activityType, activityData);
+    const result = submitToSupabase(params.name, activityType, activityData);
+    supabaseSuccess = result && result.success;
+    if (!supabaseSuccess) {
+      supabaseError = result ? (result.error || 'Unknown error') : 'Unknown error';
+    }
   } catch (e) {
     console.error('Supabase write failed:', e);
-    // Continue even if Supabase fails - Google Sheets is the primary
+    supabaseError = e.toString();
+    // Continue even if Supabase fails - Google Sheets is primary
   }
   
-  return sheetResult;
+  return {
+    ...sheetResult,
+    supabase: supabaseSuccess ? 'success' : 'failed',
+    supabaseError: supabaseError
+  };
 }
 
 /**
@@ -383,7 +405,7 @@ function handleGuestbook(params) {
   const result = appendToSheet('Guestbook', headers, params);
 
   // Write to Supabase (async, non-blocking)
-  const supabaseResult = submitToSupabase(params.name, 'guestbook', {
+  const supabaseResult = dualWrite(appendToSheet, params, 'guestbook', {
     relationship: params.relationship,
     message: params.message,
     photo_url: params.photoURL || null
@@ -405,7 +427,7 @@ function handleGuestbook(params) {
    const result = appendToSheet('BabyPool', headers, params);
  
    // Write to Supabase (async, non-blocking)
-   const supabaseResult = submitToSupabase(params.name, 'pool', {
+   const supabaseResult = dualWrite(appendToSheet, params, 'pool', {
      date_guess: params.dateGuess,
      time_guess: params.timeGuess,
      weight_guess: parseFloat(params.weightGuess),
