@@ -1,10 +1,10 @@
 // Baby Shower App - Configuration
 
 // Apps Script Web App URL
-// Using DEV deployment for testing
+// Using PRODUCTION deployment
 const CONFIG = {
-    // Google Apps Script Web App URL (DEV deployment for testing)
-    SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbw2cppUVlOx9FcpyGYPnES8R4WK4gCj1-Ay_agYLmc/dev',
+    // Google Apps Script Web App URL (PRODUCTION deployment)
+    SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbwTZD5nikQVCYpLxT8R_28gq29ttYZSuxwmjTEdVQJla94_wQAV5TNMYLxfuYtv2YNt/exec',
 
     // Supabase Configuration (for real-time features)
     // Project: baby-shower-2026 (bkszmvfsfgvdwzacgmfz)
