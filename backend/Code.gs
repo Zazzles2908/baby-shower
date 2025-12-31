@@ -21,6 +21,39 @@ const SUPABASE_CONFIG = {
 };
 
 /**
+ * TEST FUNCTION - Run this to test Supabase connection
+ * Select this function in dropdown and press Run
+ */
+function testSupabaseConnection() {
+  console.log('=== Testing Supabase Connection ===');
+  console.log('SUPABASE_CONFIG:', JSON.stringify(SUPABASE_CONFIG));
+  
+  const testData = {
+    name: 'Test Guest',
+    activity_type: 'guestbook',
+    activity_data: {
+      relationship: 'friend',
+      message: 'This is a test message from Apps Script',
+      photo_url: null
+    }
+  };
+  
+  console.log('Sending test data:', JSON.stringify(testData));
+  
+  const result = submitToSupabase(testData.name, testData.activity_type, testData.activity_data);
+  
+  console.log('Supabase insert result:', result);
+  
+  if (result && result.success) {
+    console.log('✅ SUCCESS! Data inserted to Supabase');
+  } else {
+    console.log('❌ FAILED! Check errors above');
+  }
+  
+  return result;
+}
+
+/**
  * Insert row into Supabase table
  * @param {string} tableName - Name of table
  * @param {Object} data - Data to insert
