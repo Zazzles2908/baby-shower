@@ -75,6 +75,13 @@ function insertToSupabase(tableName, data) {
  * @returns {Object} Result
  */
 function submitToSupabase(name, activityType, activityData) {
+  // Guard: Check if parameters are provided
+  if (name === undefined || activityType === undefined) {
+    console.log('submitToSupabase called without required parameters. This function requires: name, activityType, activityData');
+    console.log('To test, call doPost() with proper JSON data or use the Vercel frontend.');
+    return null;
+  }
+  
   const tableName = `${SUPABASE_CONFIG.SCHEMA}.${SUPABASE_CONFIG.TABLE_NAME}`;
   
   const data = {
