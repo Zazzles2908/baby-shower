@@ -9,7 +9,7 @@
 async function submitToBothBackends(table, data) {
     const results = { googleSheets: null, supabase: null, errors: [] };
     
-    // Transform data for Google Apps Script (capitalize keys for sheet headers)
+    // Transform data for Google Apps Script (capitalize keys for sheet header)
     const sheetData = transformDataForSheets(table, data);
 
     // 1. Submit to Google Sheets
@@ -359,6 +359,11 @@ async function getStats() {
  * @returns {Object} Processed response
  */
 function handleResponse(response) {
+    // Handle undefined or null response
+    if (!response) {
+        throw new Error('No response from server');
+    }
+
     // Check for errors
     if (response.result === 'error') {
         throw new Error(response.message || 'An error occurred');
