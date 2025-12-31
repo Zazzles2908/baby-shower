@@ -19,7 +19,7 @@ async function submitToBothBackends(table, data) {
             ...sheetData
         });
     } catch (error) {
-        results.errors.push({ backend: 'Google Sheets', error: error.message });
+        results.errors.push({ backend: 'Google Sheets', error: String(error?.message || error || 'Unknown error') });
         console.warn('Google Sheets submission failed:', error);
     }
 
@@ -30,7 +30,7 @@ async function submitToBothBackends(table, data) {
             const supabaseData = transformDataForSupabase(table, data);
             results.supabase = await window.SupabaseClient.submit(table, supabaseData);
         } catch (error) {
-            results.errors.push({ backend: 'Supabase', error: error.message });
+            results.errors.push({ backend: 'Supabase', error: String(error?.message || error || 'Unknown error') });
             console.warn('Supabase submission failed:', error);
         }
     }
@@ -366,7 +366,7 @@ function handleResponse(response) {
 
     // Check for errors
     if (response.result === 'error') {
-        throw new Error(response.message || 'An error occurred');
+        throw new Error(response.message || response.error || 'An error occurred');
     }
 
     // Check for newly unlocked milestones
