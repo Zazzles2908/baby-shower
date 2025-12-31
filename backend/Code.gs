@@ -383,7 +383,7 @@ function handleGuestbook(params) {
   const result = appendToSheet('Guestbook', headers, params);
 
   // Write to Supabase (async, non-blocking)
-  submitToSupabase(params.name, 'guestbook', {
+  const supabaseResult = submitToSupabase(params.name, 'guestbook', {
     relationship: params.relationship,
     message: params.message,
     photo_url: params.photoURL || null
@@ -391,7 +391,8 @@ function handleGuestbook(params) {
 
   return {
     message: "Wish saved successfully!",
-    rowIndex: result.rowIndex
+    rowIndex: result.rowIndex,
+    supabase: supabaseResult ? 'success' : 'failed'
   };
 }
 
@@ -399,23 +400,24 @@ function handleGuestbook(params) {
  * Handle baby pool submission
  * @param {Object} params - Request parameters
  * @returns {Object} Result with message
- */
-function handlePool(params) {
-  const headers = ['Timestamp', 'Name', 'DateGuess', 'TimeGuess', 'WeightGuess', 'LengthGuess'];
-  const result = appendToSheet('BabyPool', headers, params);
-
-  // Write to Supabase (async, non-blocking)
-  submitToSupabase(params.name, 'pool', {
-    date_guess: params.dateGuess,
-    time_guess: params.timeGuess,
-    weight_guess: parseFloat(params.weightGuess),
-    length_guess: parseInt(params.lengthGuess)
-  });
-
-  return {
-    message: "Prediction saved!",
-    rowIndex: result.rowIndex
-  };
+ function handlePool(params) {
+   const headers = ['Timestamp', 'Name', 'DateGuess', 'TimeGuess', 'WeightGuess', 'LengthGuess'];
+   const result = appendToSheet('BabyPool', headers, params);
+ 
+   // Write to Supabase (async, non-blocking)
+   const supabaseResult = submitToSupabase(params.name, 'pool', {
+     date_guess: params.dateGuess,
+     time_guess: params.timeGuess,
+     weight_guess: parseFloat(params.weightGuess),
+     length_guess: parseInt(params.lengthGuess)
+   });
+ 
+   return {
+     message: "Prediction saved!",
+     rowIndex: result.rowIndex,
+     supabase: supabaseResult ? 'success' : 'failed'
+   };
+ }
 }
 
 /**
@@ -450,7 +452,7 @@ function handleQuiz(params) {
   });
 
   // Write to Supabase (async, non-blocking)
-  submitToSupabase(params.name, 'quiz', {
+  const supabaseResult = submitToSupabase(params.name, 'quiz', {
     puzzle1: params.puzzle1,
     puzzle2: params.puzzle2,
     puzzle3: params.puzzle3,
@@ -462,7 +464,8 @@ function handleQuiz(params) {
   return {
     message: `You got ${score}/5 correct!`,
     score: score,
-    rowIndex: result.rowIndex
+    rowIndex: result.rowIndex,
+    supabase: supabaseResult ? 'success' : 'failed'
   };
 }
 
@@ -476,14 +479,15 @@ function handleAdvice(params) {
   const result = appendToSheet('Advice', headers, params);
 
   // Write to Supabase (async, non-blocking)
-  submitToSupabase(params.name, 'advice', {
+  const supabaseResult = submitToSupabase(params.name, 'advice', {
     advice_type: params.adviceType,
     message: params.message
   });
 
   return {
     message: "Advice saved!",
-    rowIndex: result.rowIndex
+    rowIndex: result.rowIndex,
+    supabase: supabaseResult ? 'success' : 'failed'
   };
 }
 
@@ -500,13 +504,14 @@ function handleVote(params) {
   const names = params.selectedNames ? params.selectedNames.split(',') : [];
   
   // Write to Supabase (async, non-blocking)
-  submitToSupabase(params.name, 'voting', {
+  const supabaseResult = submitToSupabase(params.name, 'voting', {
     names: names
   });
 
   return {
     message: "Votes recorded!",
-    rowIndex: result.rowIndex
+    rowIndex: result.rowIndex,
+    supabase: supabaseResult ? 'success' : 'failed'
   };
 }
 
