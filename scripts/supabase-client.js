@@ -69,8 +69,8 @@ const SupabaseClient = (function() {
     }
 
     /**
-     * Submit data to a table
-     * @param {string} table - Table name
+     * Submit data to submissions table via RPC function
+     * @param {string} table - Table name (not used, always goes to submissions)
      * @param {Object} data - Data to insert
      * @returns {Promise<Object>} Insert result
      */
@@ -79,11 +79,13 @@ const SupabaseClient = (function() {
             throw new Error('Supabase client not initialized');
         }
 
+        // Use RPC function to insert into baby_shower schema
         const { data: result, error } = await client
-            .from(table)
-            .insert(data)
-            .select()
-            .single();
+            .rpc('insert_submission', {
+                p_name: data.name,
+                p_activity_type: data.activity_type,
+                p_activity_data: data.activity_data
+            });
 
         if (error) {
             throw new Error(error.message);
@@ -93,7 +95,7 @@ const SupabaseClient = (function() {
     }
 
     /**
-     * Fetch statistics from Supabase views
+     * Fetch statistics from Supabase via RPC functions
      * @returns {Promise<Object>} Stats object
      */
     async function getStats() {
@@ -102,38 +104,43 @@ const SupabaseClient = (function() {
         }
 
         try {
-            // Fetch counts from submissions_count view
+            // Fetch counts via RPC
             const { data: counts, error: countsError } = await client
-                .from('submissions_count')
-                .select('*')
-                .single();
+                .rpc('get_submissions_count');
 
-            if (countsError && countsError.code !== 'PGRST116') {
+            if (countsError) {
                 throw countsError;
             }
 
-            // Fetch vote counts
+            // Fetch vote counts via RPC
             const { data: votes, error: votesError } = await client
-                .from('vote_counts')
-                .select('*');
+                .rpc('get_vote_counts');
 
-            if (votesError && votesError.code !== 'PGRST116') {
+            if (votesError) {
                 throw votesError;
             }
 
             // Build stats object
             const stats = {
-                guestbook_count: counts?.guestbook_count || 0,
-                pool_count: counts?.pool_count || 0,
-                quiz_count: counts?.quiz_count || 0,
-                advice_count: counts?.advice_count || 0,
-                votes: {}
+                guestbookCount: 0,
+                poolCount: 0,
+                quizTotalCorrect: 0,
+                adviceCount: 0,
+                voteCounts: {}
             };
 
-            // Add vote counts
+            // Process counts
+            if (counts) {
+                counts.forEach(row => {
+                    const countKey = row.activity_type + 'Count';
+                    stats[countKey] = row.total;
+                });
+            }
+
+            // Process vote counts
             if (votes) {
-                votes.forEach(v => {
-                    stats.votes[v.name] = v.vote_count;
+                votes.forEach(row => {
+                    stats.voteCounts[row.baby_name] = row.vote_count;
                 });
             }
 
@@ -161,6 +168,8 @@ const SupabaseClient = (function() {
         }
 
         try {
+            // Subscribe to the channel for INSERT events on baby_shower.submissions
+            // Note: This requires the schema to be exposed in PostgREST or use a workaround
             subscription = client
                 .channel(CONFIG.SUPABASE.CHANNEL, {
                     config: {
@@ -271,6 +280,8 @@ const SupabaseClient = (function() {
         }
 
         try {
+            // Use direct table access - this will only work if baby_shower schema is exposed
+            // If not, this will fail silently and return empty array
             const { data, error } = await client
                 .from('submissions')
                 .select('*')
@@ -278,7 +289,8 @@ const SupabaseClient = (function() {
                 .limit(limit);
 
             if (error) {
-                throw error;
+                console.warn('Could not fetch submissions (schema may not be exposed):', error.message);
+                return [];
             }
 
             return data || [];
