@@ -235,6 +235,9 @@ function testAllHandlers() {
  * @returns {ContentService.TextOutput} JSON response
  */
 function doPost(e) {
+    console.log('=== doPost called ===');
+    console.log('Event object:', JSON.stringify(e));
+    
     try {
         // Validate request has data
         if (!e || !e.postData || !e.postData.contents) {
@@ -244,12 +247,16 @@ function doPost(e) {
         // Parse the request body
         const params = JSON.parse(e.postData.contents);
         
+        console.log('Parsed params:', JSON.stringify(params));
+        
         // Validate action parameter exists
         if (!params || !params.action) {
             throw new Error("Invalid request: 'action' parameter is required");
         }
         
         const action = params.action;
+        
+        console.log('Action:', action);
 
         // Initialize response object
         let response = {
