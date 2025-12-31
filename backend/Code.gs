@@ -273,61 +273,61 @@ function doPost(e) {
         
         const action = params.action;
 
-    // Initialize response object
-    let response = {
-      result: "success",
-      data: {},
-      stats: {},
-      milestones: {}
-    };
+        // Initialize response object
+        let response = {
+          result: "success",
+          data: {},
+          stats: {},
+          milestones: {}
+        };
 
-    // Route to appropriate handler
-    switch(action) {
-      case 'guestbook':
-        response.data = handleGuestbook(params);
-        break;
-      case 'pool':
-        response.data = handlePool(params);
-        break;
-      case 'quiz':
-        response.data = handleQuiz(params);
-        break;
-      case 'advice':
-        response.data = handleAdvice(params);
-        break;
-      case 'vote':
-        response.data = handleVote(params);
-        break;
-      case 'upload_photo':
-        response.data = handlePhotoUpload(params);
-        break;
-      case 'get_stats':
+        // Route to appropriate handler
+        switch(action) {
+          case 'guestbook':
+            response.data = handleGuestbook(params);
+            break;
+          case 'pool':
+            response.data = handlePool(params);
+            break;
+          case 'quiz':
+            response.data = handleQuiz(params);
+            break;
+          case 'advice':
+            response.data = handleAdvice(params);
+            break;
+          case 'vote':
+            response.data = handleVote(params);
+            break;
+          case 'upload_photo':
+            response.data = handlePhotoUpload(params);
+            break;
+          case 'get_stats':
+            response.stats = getStats();
+            break;
+          default:
+            throw new Error("Invalid action: " + action);
+        }
+
+        // Always get current stats
         response.stats = getStats();
-        break;
-      default:
-        throw new Error("Invalid action: " + action);
+
+        // Check for new milestones
+        response.milestones = checkMilestones(response.stats);
+
+        // Return JSON response
+        return ContentService
+          .createTextOutput(JSON.stringify(response))
+          .setMimeType(ContentService.MimeType.JSON);
+
+    } catch (error) {
+        // Return error response
+        return ContentService
+          .createTextOutput(JSON.stringify({
+            result: "error",
+            message: error.toString()
+          }))
+          .setMimeType(ContentService.MimeType.JSON);
     }
-
-    // Always get current stats
-    response.stats = getStats();
-
-    // Check for new milestones
-    response.milestones = checkMilestones(response.stats);
-
-    // Return JSON response
-    return ContentService
-      .createTextOutput(JSON.stringify(response))
-      .setMimeType(ContentService.MimeType.JSON);
-
-  } catch (error) {
-    // Return error response
-    return ContentService
-      .createTextOutput(JSON.stringify({
-        result: "error",
-        message: error.toString()
-      }))
-      .setMimeType(ContentService.MimeType.JSON);
-  }
 }
 
 /**
