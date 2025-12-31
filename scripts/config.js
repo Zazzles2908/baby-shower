@@ -4,7 +4,7 @@
 // Using PRODUCTION deployment
 const CONFIG = {
     // Google Apps Script Web App URL (PRODUCTION deployment)
-    SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbxU3yHvTlKlu-9rjCgiSBBGkJqFGB6jq7dr9IdhLcDPo2fimmSuRNjSNwkgmEzoXKeQ/exec',
+    SCRIPT_URL: 'https://baby-shower-qr-app.vercel.app/api',
 
     // Supabase Configuration (for real-time features)
     // Project: baby-shower-2026 (bkszmvfsfgvdwzacgmfz)
