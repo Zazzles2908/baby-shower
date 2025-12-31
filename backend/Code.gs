@@ -405,16 +405,29 @@ function handleGuestbook(params) {
   const result = appendToSheet('Guestbook', headers, params);
 
   // Write to Supabase (async, non-blocking)
-  const supabaseResult = dualWrite(appendToSheet, params, 'guestbook', {
-    relationship: params.relationship,
-    message: params.message,
-    photo_url: params.photoURL || null
-  });
+  let supabaseSuccess = false;
+  let supabaseError = null;
+  try {
+    const activityData = {
+      relationship: params.relationship,
+      message: params.message,
+      photo_url: params.photoURL || null
+    };
+    const sbResult = submitToSupabase(params.name, 'guestbook', activityData);
+    supabaseSuccess = sbResult && sbResult.success;
+    if (!supabaseSuccess) {
+      supabaseError = sbResult ? (sbResult.error || 'Unknown error') : 'Unknown error';
+    }
+  } catch (e) {
+    console.error('Supabase write failed:', e);
+    supabaseError = e.toString();
+  }
 
   return {
     message: "Wish saved successfully!",
     rowIndex: result.rowIndex,
-    supabase: supabaseResult ? 'success' : 'failed'
+    supabase: supabaseSuccess ? 'success' : 'failed',
+    supabaseError: supabaseError
   };
 }
 
@@ -422,24 +435,37 @@ function handleGuestbook(params) {
  * Handle baby pool submission
  * @param {Object} params - Request parameters
  * @returns {Object} Result with message
- function handlePool(params) {
-   const headers = ['Timestamp', 'Name', 'DateGuess', 'TimeGuess', 'WeightGuess', 'LengthGuess'];
-   const result = appendToSheet('BabyPool', headers, params);
- 
-   // Write to Supabase (async, non-blocking)
-   const supabaseResult = dualWrite(appendToSheet, params, 'pool', {
-     date_guess: params.dateGuess,
-     time_guess: params.timeGuess,
-     weight_guess: parseFloat(params.weightGuess),
-     length_guess: parseInt(params.lengthGuess)
-   });
- 
-   return {
-     message: "Prediction saved!",
-     rowIndex: result.rowIndex,
-     supabase: supabaseResult ? 'success' : 'failed'
-   };
- }
+ */
+function handlePool(params) {
+  const headers = ['Timestamp', 'Name', 'DateGuess', 'TimeGuess', 'WeightGuess', 'LengthGuess'];
+  const result = appendToSheet('BabyPool', headers, params);
+
+  // Write to Supabase (async, non-blocking)
+  let supabaseSuccess = false;
+  let supabaseError = null;
+  try {
+    const activityData = {
+      date_guess: params.dateGuess,
+      time_guess: params.timeGuess,
+      weight_guess: parseFloat(params.weightGuess),
+      length_guess: parseInt(params.lengthGuess)
+    };
+    const sbResult = submitToSupabase(params.name, 'pool', activityData);
+    supabaseSuccess = sbResult && sbResult.success;
+    if (!supabaseSuccess) {
+      supabaseError = sbResult ? (sbResult.error || 'Unknown error') : 'Unknown error';
+    }
+  } catch (e) {
+    console.error('Supabase write failed:', e);
+    supabaseError = e.toString();
+  }
+
+  return {
+    message: "Prediction saved!",
+    rowIndex: result.rowIndex,
+    supabase: supabaseSuccess ? 'success' : 'failed',
+    supabaseError: supabaseError
+  };
 }
 
 /**
@@ -474,20 +500,33 @@ function handleQuiz(params) {
   });
 
   // Write to Supabase (async, non-blocking)
-  const supabaseResult = submitToSupabase(params.name, 'quiz', {
-    puzzle1: params.puzzle1,
-    puzzle2: params.puzzle2,
-    puzzle3: params.puzzle3,
-    puzzle4: params.puzzle4,
-    puzzle5: params.puzzle5,
-    score: score
-  });
+  let supabaseSuccess = false;
+  let supabaseError = null;
+  try {
+    const activityData = {
+      puzzle1: params.puzzle1,
+      puzzle2: params.puzzle2,
+      puzzle3: params.puzzle3,
+      puzzle4: params.puzzle4,
+      puzzle5: params.puzzle5,
+      score: score
+    };
+    const sbResult = submitToSupabase(params.name, 'quiz', activityData);
+    supabaseSuccess = sbResult && sbResult.success;
+    if (!supabaseSuccess) {
+      supabaseError = sbResult ? (sbResult.error || 'Unknown error') : 'Unknown error';
+    }
+  } catch (e) {
+    console.error('Supabase write failed:', e);
+    supabaseError = e.toString();
+  }
 
   return {
     message: `You got ${score}/5 correct!`,
     score: score,
     rowIndex: result.rowIndex,
-    supabase: supabaseResult ? 'success' : 'failed'
+    supabase: supabaseSuccess ? 'success' : 'failed',
+    supabaseError: supabaseError
   };
 }
 
@@ -501,15 +540,28 @@ function handleAdvice(params) {
   const result = appendToSheet('Advice', headers, params);
 
   // Write to Supabase (async, non-blocking)
-  const supabaseResult = submitToSupabase(params.name, 'advice', {
-    advice_type: params.adviceType,
-    message: params.message
-  });
+  let supabaseSuccess = false;
+  let supabaseError = null;
+  try {
+    const activityData = {
+      advice_type: params.adviceType,
+      message: params.message
+    };
+    const sbResult = submitToSupabase(params.name, 'advice', activityData);
+    supabaseSuccess = sbResult && sbResult.success;
+    if (!supabaseSuccess) {
+      supabaseError = sbResult ? (sbResult.error || 'Unknown error') : 'Unknown error';
+    }
+  } catch (e) {
+    console.error('Supabase write failed:', e);
+    supabaseError = e.toString();
+  }
 
   return {
     message: "Advice saved!",
     rowIndex: result.rowIndex,
-    supabase: supabaseResult ? 'success' : 'failed'
+    supabase: supabaseSuccess ? 'success' : 'failed',
+    supabaseError: supabaseError
   };
 }
 
@@ -526,14 +578,27 @@ function handleVote(params) {
   const names = params.selectedNames ? params.selectedNames.split(',') : [];
   
   // Write to Supabase (async, non-blocking)
-  const supabaseResult = submitToSupabase(params.name, 'voting', {
-    names: names
-  });
+  let supabaseSuccess = false;
+  let supabaseError = null;
+  try {
+    const activityData = {
+      names: names
+    };
+    const sbResult = submitToSupabase(params.name, 'voting', activityData);
+    supabaseSuccess = sbResult && sbResult.success;
+    if (!supabaseSuccess) {
+      supabaseError = sbResult ? (sbResult.error || 'Unknown error') : 'Unknown error';
+    }
+  } catch (e) {
+    console.error('Supabase write failed:', e);
+    supabaseError = e.toString();
+  }
 
   return {
     message: "Votes recorded!",
     rowIndex: result.rowIndex,
-    supabase: supabaseResult ? 'success' : 'failed'
+    supabase: supabaseSuccess ? 'success' : 'failed',
+    supabaseError: supabaseError
   };
 }
 
