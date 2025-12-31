@@ -213,8 +213,14 @@ function getSupabaseVoteCounts() {
  * @param {string} activityType - Activity type for Supabase
  * @param {Object} activityData - Activity data for Supabase
  * @returns {Object} Result
+ * @deprecated - Use submitToSupabase directly in handlers instead
  */
 function dualWrite(sheetFn, params, activityType, activityData) {
+  console.error('dualWrite called - this function is deprecated. Use submitToSupabase directly.');
+  console.error('Params:', JSON.stringify(params));
+  console.error('ActivityType:', activityType);
+  console.error('ActivityData:', JSON.stringify(activityData));
+  
   // Validate required parameters
   if (!params || typeof params !== 'object') {
     console.error('dualWrite called with invalid params:', params);
@@ -249,6 +255,29 @@ function dualWrite(sheetFn, params, activityType, activityData) {
     supabase: supabaseSuccess ? 'success' : 'failed',
     supabaseError: supabaseError
   };
+}
+
+/**
+ * Debug test function - Run this to test all handlers
+ */
+function testAllHandlers() {
+  console.log('=== Testing All Handlers ===');
+  
+  const testParams = {
+    name: 'Test User',
+    relationship: 'friend',
+    message: 'Test message',
+    action: 'guestbook'
+  };
+  
+  try {
+    const result = handleGuestbook(testParams);
+    console.log('Guestbook result:', JSON.stringify(result));
+  } catch (e) {
+    console.error('Guestbook failed:', e);
+  }
+  
+  return 'Test complete - check logs';
 }
 
 /**
