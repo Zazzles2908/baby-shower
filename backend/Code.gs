@@ -207,57 +207,6 @@ function getSupabaseVoteCounts() {
 // ============================================
 
 /**
- * Write to both Google Sheets and Supabase
- * @param {Function} sheetFn - Function to write to sheets (e.g., appendToSheet)
- * @param {Object} params - Request parameters with name field
- * @param {string} activityType - Activity type for Supabase
- * @param {Object} activityData - Activity data for Supabase
- * @returns {Object} Result
- * @deprecated - Use submitToSupabase directly in handlers instead
- */
-function dualWrite(sheetFn, params, activityType, activityData) {
-  console.error('dualWrite called - this function is deprecated. Use submitToSupabase directly.');
-  console.error('Params:', JSON.stringify(params));
-  console.error('ActivityType:', activityType);
-  console.error('ActivityData:', JSON.stringify(activityData));
-  
-  // Validate required parameters
-  if (!params || typeof params !== 'object') {
-    console.error('dualWrite called with invalid params:', params);
-    return { error: 'Invalid parameters' };
-  }
-  
-  if (!params.name) {
-    console.error('dualWrite called without required name field in params');
-    return { error: 'Missing name parameter' };
-  }
-  
-  // Write to Google Sheets
-  const sheetResult = sheetFn(params);
-  
-  // Write to Supabase (fire and forget, don't block on this)
-  let supabaseSuccess = false;
-  let supabaseError = null;
-  try {
-    const result = submitToSupabase(params.name, activityType, activityData);
-    supabaseSuccess = result && result.success;
-    if (!supabaseSuccess) {
-      supabaseError = result ? (result.error || 'Unknown error') : 'Unknown error';
-    }
-  } catch (e) {
-    console.error('Supabase write failed:', e);
-    supabaseError = e.toString();
-    // Continue even if Supabase fails - Google Sheets is primary
-  }
-  
-  return {
-    ...sheetResult,
-    supabase: supabaseSuccess ? 'success' : 'failed',
-    supabaseError: supabaseError
-  };
-}
-
-/**
  * Debug test function - Run this to test all handlers
  */
 function testAllHandlers() {
