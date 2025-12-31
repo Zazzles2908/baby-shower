@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Baby Shower 2026</title>
+    <link rel="stylesheet" href="styles/main.css">
+    <link rel="stylesheet" href="styles/animations.css">
+</head>
+<body>
+    <div id="app">
+        <!-- Welcome Section -->
+        <section id="welcome-section" class="active">
+            <div class="container">
+                <h1>👶 Welcome to Baby's Shower! 🍊</h1>
+                <p class="subtitle">Celebrating our little girl arriving March 2026</p>
+                <div class="event-info">
+                    <p>📅 Sunday January 4th @ 11AM - 2PM</p>
+                    <p>📍 Myuna Farm, Doveton</p>
+                </div>
+                <div class="activities">
+                    <h2>Choose an Activity</h2>
+                    <div class="activity-buttons">
+                        <button class="activity-btn" data-section="guestbook">
+                            <span class="icon">💬</span>
+                            <span>Leave a Wish & Photo</span>
+                        </button>
+                        <button class="activity-btn" data-section="pool">
+                            <span class="icon">🎯</span>
+                            <span>Guess Baby's Stats</span>
+                        </button>
+                        <button class="activity-btn" data-section="quiz">
+                            <span class="icon">🧩</span>
+                            <span>Baby Emoji Pictionary</span>
+                        </button>
+                        <button class="activity-btn" data-section="advice">
+                            <span class="icon">💡</span>
+                            <span>Give Advice</span>
+                        </button>
+                        <button class="activity-btn" data-section="voting">
+                            <span class="icon">❤️</span>
+                            <span>Vote for Names</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Guestbook Section -->
+        <section id="guestbook-section" class="hidden">
+            <div class="container">
+                <button class="back-btn">← Back to Activities</button>
+                <h1>💬 Leave a Wish & Photo</h1>
+                <p class="subtitle">Share your message for baby and optionally upload a photo</p>
+                <form id="guestbook-form">
+                    <div class="form-group">
+                        <label for="guestbook-name">Your Name *</label>
+                        <input type="text" id="guestbook-name" name="name" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="guestbook-relationship">Relationship *</label>
+                        <select id="guestbook-relationship" name="relationship" required>
+                            <option value="">Select...</option>
+                            <option value="Friend">Friend</option>
+                            <option value="Family">Family</option>
+                            <option value="Colleague">Colleague</option>
+                            <option value="Auntie">Auntie</option>
+                            <option value="Uncle">Uncle</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="guestbook-message">Your Message *</label>
+                        <textarea id="guestbook-message" name="message" rows="4" required placeholder="Write your wish for baby..."></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="guestbook-photo">Photo (Optional)</label>
+                        <input type="file" id="guestbook-photo" name="photo" accept="image/*">
+                        <div id="photo-preview" class="photo-preview"></div>
+                    </div>
+                    <button type="submit" class="submit-btn">Submit Wish ✨</button>
+                </form>
+            </div>
+        </section>
+
+        <!-- Baby Pool Section -->
+        <section id="pool-section" class="hidden">
+            <div class="container">
+                <button class="back-btn">← Back to Activities</button>
+                <h1>🎯 Guess Baby's Stats</h1>
+                <p class="subtitle">Predict when and how big baby will be!</p>
+                <form id="pool-form">
+                    <div class="form-group">
+                        <label for="pool-name">Your Name *</label>
+                        <input type="text" id="pool-name" name="name" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="pool-date">Predicted Birth Date *</label>
+                        <input type="date" id="pool-date" name="dateGuess" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="pool-time">Predicted Time *</label>
+                        <input type="time" id="pool-time" name="timeGuess" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="pool-weight">Predicted Weight (kg) *</label>
+                        <input type="number" id="pool-weight" name="weightGuess" step="0.1" min="1" max="6" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="pool-length">Predicted Length (cm) *</label>
+                        <input type="number" id="pool-length" name="lengthGuess" step="1" min="30" max="60" required>
+                    </div>
+                    <button type="submit" class="submit-btn">Submit Prediction 🎲</button>
+                </form>
+                <div id="pool-stats" class="stats-display"></div>
+            </div>
+        </section>
+
+        <!-- Quiz Section -->
+        <section id="quiz-section" class="hidden">
+            <div class="container">
+                <button class="back-btn">← Back to Activities</button>
+                <h1>🧩 Baby Emoji Pictionary</h1>
+                <p class="subtitle">Guess the baby-related phrases from emojis!</p>
+                <form id="quiz-form">
+                    <div class="puzzle">
+                        <div class="emoji-display">🍼🚿🐘</div>
+                        <input type="text" name="puzzle1" placeholder="Guess the phrase..." required>
+                    </div>
+                    <div class="puzzle">
+                        <div class="emoji-display">🐺🐷🐷</div>
+                        <input type="text" name="puzzle2" placeholder="Guess the phrase..." required>
+                    </div>
+                    <div class="puzzle">
+                        <div class="emoji-display">🌙⭐👶</div>
+                        <input type="text" name="puzzle3" placeholder="Guess the phrase..." required>
+                    </div>
+                    <div class="puzzle">
+                        <div class="emoji-display">🍼🧴</div>
+                        <input type="text" name="puzzle4" placeholder="Guess the phrase..." required>
+                    </div>
+                    <div class="puzzle">
+                        <div class="emoji-display">👶🩲</div>
+                        <input type="text" name="puzzle5" placeholder="Guess the phrase..." required>
+                    </div>
+                    <button type="submit" class="submit-btn">Submit Answers 📝</button>
+                </form>
+            </div>
+        </section>
+
+        <!-- Advice Section -->
+        <section id="advice-section" class="hidden">
+            <div class="container">
+                <button class="back-btn">← Back to Activities</button>
+                <h1>💡 Advice Time Capsule</h1>
+                <p class="subtitle">Leave wisdom for the parents or a wish for baby's 18th birthday</p>
+                <form id="advice-form">
+                    <div class="form-group">
+                        <label for="advice-name">Your Name *</label>
+                        <input type="text" id="advice-name" name="name" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="advice-type">Type of Advice *</label>
+                        <select id="advice-type" name="adviceType" required>
+                            <option value="">Select...</option>
+                            <option value="For Parents">For Parents</option>
+                            <option value="For Baby">For Baby's 18th Birthday</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="advice-message">Your Message *</label>
+                        <textarea id="advice-message" name="message" rows="4" required placeholder="Share your wisdom or wish..."></textarea>
+                    </div>
+                    <button type="submit" class="submit-btn">Submit Advice 💌</button>
+                </form>
+            </div>
+        </section>
+
+        <!-- Voting Section -->
+        <section id="voting-section" class="hidden">
+            <div class="container">
+                <button class="back-btn">← Back to Activities</button>
+                <h1>❤️ Vote for Baby Names</h1>
+                <p class="subtitle">Heart up to 3 names you like!</p>
+                <div id="name-list" class="name-list">
+                    <!-- Names will be populated by JavaScript -->
+                </div>
+                <button id="vote-submit" class="submit-btn" disabled>Submit Votes ❤️</button>
+                <div id="vote-stats" class="stats-display"></div>
+            </div>
+        </section>
+
+        <!-- Loading Overlay -->
+        <div id="loading-overlay" class="overlay hidden">
+            <div class="loading-spinner"></div>
+            <p>Submitting...</p>
+        </div>
+
+        <!-- Success Modal -->
+        <div id="success-modal" class="overlay hidden">
+            <div class="modal-content">
+                <div id="success-icon" class="success-icon">✨</div>
+                <h2 id="success-title">Success!</h2>
+                <p id="success-message">Your submission was saved.</p>
+                <button class="modal-btn" onclick="closeModal()">Continue</button>
+            </div>
+        </div>
+
+        <!-- Milestone Modal -->
+        <div id="milestone-modal" class="overlay hidden">
+            <div class="modal-content milestone-content">
+                <div id="milestone-icon" class="milestone-icon">🎉</div>
+                <h2 id="milestone-title">Milestone Unlocked!</h2>
+                <p id="milestone-message">Congratulations!</p>
+                <button class="modal-btn" onclick="closeMilestoneModal()">Continue</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="scripts/config.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="scripts/supabase-client.js"></script>
+    <script src="scripts/api.js"></script>
+    <script src="scripts/supabase.js"></script>
+    <script src="scripts/main.js"></script>
+    <script src="scripts/guestbook.js"></script>
+    <script src="scripts/pool.js"></script>
+    <script src="scripts/quiz.js"></script>
+    <script src="scripts/advice.js"></script>
+    <script src="scripts/voting.js"></script>
+    <script src="scripts/surprises.js"></script>
+</body>
+</html>

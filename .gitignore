@@ -1,0 +1,42 @@
+# Dependencies
+node_modules/
+
+# Environment (contains sensitive API keys)
+.env
+.env.local
+.env.*.local
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Baby content (personal media - not for version control)
+baby_content/
+
+# Build outputs
+dist/
+build/
+
+# Vercel deployment
+.vercel/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# MCP tool configs
+.kilocode/
+.mcp.json
+
+# Generated assets (can regenerate)
+QR_Code.png
+
+# Documentation (keep README.md only)
+DEPLOYMENT.md
+Details.md
+PROJECT-SUMMARY.md
+QUICKSTART.md
+docs/
+plans/

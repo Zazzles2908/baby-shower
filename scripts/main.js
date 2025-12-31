@@ -1,0 +1,703 @@
+// Baby Shower App - Main JavaScript
+
+// Global state
+let currentSection = 'welcome';
+let selectedVotes = [];
+let statsCache = {
+    guestbook_count: 0,
+    pool_count: 0,
+    quiz_count: 0,
+    advice_count: 0,
+    votes: {},
+    lastUpdated: null
+};
+
+// Initialize app when DOM is loaded
+document.addEventListener('DOMContentLoaded', () => {
+    initializeSupabase();
+    initializeNavigation();
+    initializeForms();
+    initializeBackButtons();
+    loadPersonalProgress();
+});
+
+/**
+ * Initialize Supabase client and realtime subscriptions
+ */
+async function initializeSupabase() {
+    try {
+        // Initialize Supabase client
+        const client = SupabaseClient.initialize();
+        
+        if (client && SupabaseClient.isInitialized()) {
+            console.log('Supabase client initialized, setting up realtime subscription...');
+            
+            // Subscribe to realtime updates
+            SupabaseClient.subscribe(handleRealtimeUpdate);
+            
+            // Load initial stats
+            await refreshStatsFromSupabase();
+            
+            console.log('Supabase realtime enabled successfully');
+        } else {
+            console.log('Supabase realtime disabled - client not initialized');
+        }
+    } catch (error) {
+        console.error('Failed to initialize Supabase:', error);
+    }
+}
+
+/**
+ * Handle realtime update from Supabase
+ * @param {Object} submission - New submission data
+ */
+function handleRealtimeUpdate(submission) {
+    console.log('Realtime update received:', submission);
+    
+    // Update local stats cache
+    updateStatsCache(submission);
+    
+    // Update UI with new stats
+    updateStatsDisplay();
+    
+    // Check for milestone achievements
+    checkMilestonesFromCache();
+    
+    // Show notification for new activity (subtle toast)
+    showActivityNotification(submission);
+}
+
+/**
+ * Update stats cache with new submission
+ * @param {Object} submission - New submission
+ */
+function updateStatsCache(submission) {
+    if (!submission || !submission.activity_type) return;
+    
+    const type = submission.activity_type;
+    
+    switch (type) {
+        case 'guestbook':
+            statsCache.guestbook_count++;
+            break;
+        case 'baby_pool':
+            statsCache.pool_count++;
+            break;
+        case 'quiz':
+            statsCache.quiz_count++;
+            break;
+        case 'advice':
+            statsCache.advice_count++;
+            break;
+        case 'voting':
+            if (submission.activity_data && submission.activity_data.names) {
+                submission.activity_data.names.forEach(name => {
+                    statsCache.votes[name] = (statsCache.votes[name] || 0) + 1;
+                });
+            }
+            break;
+    }
+    
+    statsCache.lastUpdated = new Date();
+}
+
+/**
+ * Refresh stats from Supabase (initial load or fallback)
+ */
+async function refreshStatsFromSupabase() {
+    try {
+        if (!SupabaseClient.isInitialized()) return;
+        
+        const stats = await SupabaseClient.getStats();
+        
+        if (stats) {
+            statsCache.guestbook_count = stats.guestbook_count || 0;
+            statsCache.pool_count = stats.pool_count || 0;
+            statsCache.quiz_count = stats.quiz_count || 0;
+            statsCache.advice_count = stats.advice_count || 0;
+            statsCache.votes = stats.votes || {};
+            statsCache.lastUpdated = new Date();
+            
+            updateStatsDisplay();
+            console.log('Stats refreshed from Supabase:', statsCache);
+        }
+    } catch (error) {
+        console.error('Failed to refresh stats from Supabase:', error);
+    }
+}
+
+/**
+ * Update stats display elements
+ */
+function updateStatsDisplay() {
+    // Update all stat counters on the page
+    const statElements = {
+        'guestbook-count': statsCache.guestbook_count,
+        'pool-count': statsCache.pool_count,
+        'quiz-count': statsCache.quiz_count,
+        'advice-count': statsCache.advice_count
+    };
+    
+    Object.entries(statElements).forEach(([id, value]) => {
+        const el = document.getElementById(id);
+        if (el) {
+            el.textContent = value;
+            // Add pulse animation
+            el.classList.add('stat-updated');
+            setTimeout(() => el.classList.remove('stat-updated'), 500);
+        }
+    });
+    
+    // Update vote counts
+    Object.entries(statsCache.votes).forEach(([name, count]) => {
+        const el = document.getElementById(`vote-count-${name}`);
+        if (el) {
+            el.textContent = count;
+        }
+    });
+    
+    // Update total votes
+    const totalVotes = Object.values(statsCache.votes).reduce((a, b) => a + b, 0);
+    const totalEl = document.getElementById('total-votes');
+    if (totalEl) {
+        totalEl.textContent = totalVotes;
+    }
+}
+
+/**
+ * Check milestones from current stats cache
+ */
+function checkMilestonesFromCache() {
+    const milestones = CONFIG.MILESTONES;
+    const newlyUnlocked = [];
+    
+    // Check each milestone threshold
+    if (statsCache.guestbook_count === milestones.GUESTBOOK_5) {
+        newlyUnlocked.push('GUESTBOOK_5');
+    }
+    if (statsCache.guestbook_count === milestones.GUESTBOOK_10) {
+        newlyUnlocked.push('GUESTBOOK_10');
+    }
+    if (statsCache.guestbook_count === milestones.GUESTBOOK_20) {
+        newlyUnlocked.push('GUESTBOOK_20');
+    }
+    if (statsCache.pool_count === milestones.POOL_10) {
+        newlyUnlocked.push('POOL_10');
+    }
+    if (statsCache.pool_count === milestones.POOL_20) {
+        newlyUnlocked.push('POOL_20');
+    }
+    if (statsCache.quiz_count === milestones.QUIZ_25) {
+        newlyUnlocked.push('QUIZ_25');
+    }
+    if (statsCache.quiz_count === milestones.QUIZ_50) {
+        newlyUnlocked.push('QUIZ_50');
+    }
+    if (statsCache.advice_count === milestones.ADVICE_10) {
+        newlyUnlocked.push('ADVICE_10');
+    }
+    if (statsCache.advice_count === milestones.ADVICE_20) {
+        newlyUnlocked.push('ADVICE_20');
+    }
+    
+    const totalVotes = Object.values(statsCache.votes).reduce((a, b) => a + b, 0);
+    if (totalVotes === milestones.VOTES_50) {
+        newlyUnlocked.push('VOTES_50');
+    }
+    
+    // Show milestone modals for newly unlocked milestones
+    newlyUnlocked.forEach(key => {
+        showMilestoneSurprise(key);
+    });
+}
+
+/**
+ * Show subtle notification for new activity
+ * @param {Object} submission - New submission
+ */
+function showActivityNotification(submission) {
+    // Create toast notification
+    const toast = document.createElement('div');
+    toast.className = 'activity-toast';
+    
+    const typeLabels = {
+        guestbook: 'New wish!',
+        baby_pool: 'New prediction!',
+        quiz: 'Quiz completed!',
+        advice: 'New advice!',
+        voting: 'New vote!'
+    };
+    
+    toast.innerHTML = `
+        <span class="toast-icon">${getActivityIcon(submission.activity_type)}</span>
+        <span class="toast-text">${typeLabels[submission.activity_type] || 'New activity!'}</span>
+    `;
+    
+    document.body.appendChild(toast);
+    
+    // Trigger animation
+    requestAnimationFrame(() => {
+        toast.classList.add('show');
+    });
+    
+    // Remove after delay
+    setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => toast.remove(), 300);
+    }, 3000);
+}
+
+/**
+ * Get icon for activity type
+ * @param {string} type - Activity type
+ * @returns {string} Emoji icon
+ */
+function getActivityIcon(type) {
+    const icons = {
+        guestbook: '💌',
+        baby_pool: '🎯',
+        quiz: '🧩',
+        advice: '💡',
+        voting: '🗳️'
+    };
+    return icons[type] || '✨';
+}
+
+/**
+ * Initialize navigation between sections
+ */
+function initializeNavigation() {
+    const activityButtons = document.querySelectorAll('.activity-btn');
+
+    activityButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            const sectionName = button.getAttribute('data-section');
+            navigateToSection(sectionName);
+        });
+    });
+}
+
+/**
+ * Navigate to a specific section
+ * @param {string} sectionName - Name of the section to navigate to
+ */
+function navigateToSection(sectionName) {
+    // Hide current section
+    const currentSectionEl = document.getElementById(`${currentSection}-section`);
+    if (currentSectionEl) {
+        currentSectionEl.classList.remove('active');
+        currentSectionEl.classList.add('hidden');
+    }
+
+    // Show new section
+    const newSectionEl = document.getElementById(`${sectionName}-section`);
+    if (newSectionEl) {
+        newSectionEl.classList.remove('hidden');
+        newSectionEl.classList.add('active');
+        newSectionEl.classList.add('fade-in');
+    }
+
+    // Update current section
+    currentSection = sectionName;
+
+    // Initialize section-specific functionality
+    initializeSection(sectionName);
+}
+
+/**
+ * Initialize section-specific functionality
+ * @param {string} sectionName - Name of the section
+ */
+function initializeSection(sectionName) {
+    switch(sectionName) {
+        case 'voting':
+            initializeVoting();
+            break;
+        case 'pool':
+            loadPoolStats();
+            break;
+        default:
+            break;
+    }
+}
+
+/**
+ * Initialize all forms
+ */
+function initializeForms() {
+    // Guestbook form
+    const guestbookForm = document.getElementById('guestbook-form');
+    if (guestbookForm) {
+        guestbookForm.addEventListener('submit', handleGuestbookSubmit);
+    }
+
+    // Pool form
+    const poolForm = document.getElementById('pool-form');
+    if (poolForm) {
+        poolForm.addEventListener('submit', handlePoolSubmit);
+    }
+
+    // Quiz form
+    const quizForm = document.getElementById('quiz-form');
+    if (quizForm) {
+        quizForm.addEventListener('submit', handleQuizSubmit);
+    }
+
+    // Advice form
+    const adviceForm = document.getElementById('advice-form');
+    if (adviceForm) {
+        adviceForm.addEventListener('submit', handleAdviceSubmit);
+    }
+
+    // Photo preview
+    const photoInput = document.getElementById('guestbook-photo');
+    if (photoInput) {
+        photoInput.addEventListener('change', handlePhotoPreview);
+    }
+}
+
+/**
+ * Initialize back buttons
+ */
+function initializeBackButtons() {
+    const backButtons = document.querySelectorAll('.back-btn');
+
+    backButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            navigateToSection('welcome');
+        });
+    });
+}
+
+/**
+ * Handle guestbook form submission
+ * @param {Event} event - Form submit event
+ */
+async function handleGuestbookSubmit(event) {
+    event.preventDefault();
+
+    const form = event.target;
+    const formData = new FormData(form);
+
+    const data = {
+        name: formData.get('name'),
+        relationship: formData.get('relationship'),
+        message: formData.get('message')
+    };
+
+    const photoFile = document.getElementById('guestbook-photo').files[0];
+
+    try {
+        showLoading();
+
+        const response = await submitGuestbook(data, photoFile);
+        const processedResponse = handleResponse(response);
+
+        hideLoading();
+        showSuccessModal(processedResponse.data.message);
+        triggerConfetti();
+
+        // Update personal progress
+        updatePersonalProgress('guestbook');
+
+        // Reset form
+        form.reset();
+        clearPhotoPreview();
+
+    } catch (error) {
+        hideLoading();
+        showError(error);
+    }
+}
+
+/**
+ * Handle pool form submission
+ * @param {Event} event - Form submit event
+ */
+async function handlePoolSubmit(event) {
+    event.preventDefault();
+
+    const form = event.target;
+    const formData = new FormData(form);
+
+    const data = {
+        name: formData.get('name'),
+        dateGuess: formData.get('dateGuess'),
+        timeGuess: formData.get('timeGuess'),
+        weightGuess: formData.get('weightGuess'),
+        lengthGuess: formData.get('lengthGuess')
+    };
+
+    try {
+        showLoading();
+
+        const response = await submitPool(data);
+        const processedResponse = handleResponse(response);
+
+        hideLoading();
+        showSuccessModal(processedResponse.data.message);
+        triggerConfetti();
+
+        // Update personal progress
+        updatePersonalProgress('pool');
+
+        // Refresh stats
+        loadPoolStats();
+
+        // Reset form
+        form.reset();
+
+    } catch (error) {
+        hideLoading();
+        showError(error);
+    }
+}
+
+/**
+ * Handle quiz form submission
+ * @param {Event} event - Form submit event
+ */
+async function handleQuizSubmit(event) {
+    event.preventDefault();
+
+    const form = event.target;
+    const formData = new FormData(form);
+
+    const data = {
+        name: formData.get('name'),
+        puzzle1: formData.get('puzzle1'),
+        puzzle2: formData.get('puzzle2'),
+        puzzle3: formData.get('puzzle3'),
+        puzzle4: formData.get('puzzle4'),
+        puzzle5: formData.get('puzzle5')
+    };
+
+    try {
+        showLoading();
+
+        const response = await submitQuiz(data);
+        const processedResponse = handleResponse(response);
+
+        hideLoading();
+        showSuccessModal(processedResponse.data.message);
+        triggerConfetti();
+
+        // Update personal progress
+        updatePersonalProgress('quiz');
+
+        // Reset form
+        form.reset();
+
+    } catch (error) {
+        hideLoading();
+        showError(error);
+    }
+}
+
+/**
+ * Handle advice form submission
+ * @param {Event} event - Form submit event
+ */
+async function handleAdviceSubmit(event) {
+    event.preventDefault();
+
+    const form = event.target;
+    const formData = new FormData(form);
+
+    const data = {
+        name: formData.get('name'),
+        adviceType: formData.get('adviceType'),
+        message: formData.get('message')
+    };
+
+    try {
+        showLoading();
+
+        const response = await submitAdvice(data);
+        const processedResponse = handleResponse(response);
+
+        hideLoading();
+        showSuccessModal(processedResponse.data.message);
+        triggerConfetti();
+
+        // Update personal progress
+        updatePersonalProgress('advice');
+
+        // Reset form
+        form.reset();
+
+    } catch (error) {
+        hideLoading();
+        showError(error);
+    }
+}
+
+/**
+ * Handle photo preview
+ * @param {Event} event - File input change event
+ */
+function handlePhotoPreview(event) {
+    const file = event.target.files[0];
+    const previewContainer = document.getElementById('photo-preview');
+
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            previewContainer.innerHTML = `<img src="${e.target.result}" alt="Photo preview">`;
+        };
+        reader.readAsDataURL(file);
+    } else {
+        clearPhotoPreview();
+    }
+}
+
+/**
+ * Clear photo preview
+ */
+function clearPhotoPreview() {
+    const previewContainer = document.getElementById('photo-preview');
+    if (previewContainer) {
+        previewContainer.innerHTML = '';
+    }
+}
+
+/**
+ * Show loading overlay
+ */
+function showLoading() {
+    const overlay = document.getElementById('loading-overlay');
+    if (overlay) {
+        overlay.classList.remove('hidden');
+    }
+}
+
+/**
+ * Hide loading overlay
+ */
+function hideLoading() {
+    const overlay = document.getElementById('loading-overlay');
+    if (overlay) {
+        overlay.classList.add('hidden');
+    }
+}
+
+/**
+ * Show success modal
+ * @param {string} message - Success message
+ */
+function showSuccessModal(message) {
+    const modal = document.getElementById('success-modal');
+    const messageEl = document.getElementById('success-message');
+
+    if (modal && messageEl) {
+        messageEl.textContent = message;
+        modal.classList.remove('hidden');
+    }
+}
+
+/**
+ * Close success modal
+ */
+function closeModal() {
+    const modal = document.getElementById('success-modal');
+    if (modal) {
+        modal.classList.add('hidden');
+    }
+}
+
+/**
+ * Show milestone modal
+ * @param {string} milestoneKey - Milestone key
+ */
+function showMilestoneSurprise(milestoneKey) {
+    const modal = document.getElementById('milestone-modal');
+    const titleEl = document.getElementById('milestone-title');
+    const messageEl = document.getElementById('milestone-message');
+    const iconEl = document.getElementById('milestone-icon');
+
+    const milestone = MILESTONE_CONTENT[milestoneKey];
+
+    if (modal && milestone) {
+        titleEl.textContent = milestone.title;
+        messageEl.textContent = milestone.message;
+        iconEl.textContent = milestone.icon;
+
+        modal.classList.remove('hidden');
+        triggerConfetti();
+    }
+}
+
+/**
+ * Close milestone modal
+ */
+function closeMilestoneModal() {
+    const modal = document.getElementById('milestone-modal');
+    if (modal) {
+        modal.classList.add('hidden');
+    }
+}
+
+/**
+ * Trigger confetti animation
+ */
+function triggerConfetti() {
+    const container = document.createElement('div');
+    container.className = 'confetti-container';
+
+    for (let i = 0; i < 50; i++) {
+        const confetti = document.createElement('div');
+        confetti.className = 'confetti';
+        confetti.style.left = Math.random() * 100 + '%';
+        confetti.style.animationDelay = Math.random() * 2 + 's';
+        confetti.style.animationDuration = (Math.random() * 2 + 2) + 's';
+        container.appendChild(confetti);
+    }
+
+    document.body.appendChild(container);
+
+    // Remove confetti after animation
+    setTimeout(() => {
+        document.body.removeChild(container);
+    }, 5000);
+}
+
+/**
+ * Load personal progress from localStorage
+ */
+function loadPersonalProgress() {
+    const progress = localStorage.getItem('babyShowerProgress');
+    if (progress) {
+        return JSON.parse(progress);
+    }
+    return {
+        guestbook: 0,
+        pool: 0,
+        quiz: 0,
+        advice: 0,
+        votes: 0
+    };
+}
+
+/**
+ * Update personal progress
+ * @param {string} feature - Feature name
+ */
+function updatePersonalProgress(feature) {
+    const progress = loadPersonalProgress();
+    progress[feature] = (progress[feature] || 0) + 1;
+    localStorage.setItem('babyShowerProgress', JSON.stringify(progress));
+}
+
+/**
+ * Get personal progress for a feature
+ * @param {string} feature - Feature name
+ * @returns {number} Progress count
+ */
+function getPersonalProgress(feature) {
+    const progress = loadPersonalProgress();
+    return progress[feature] || 0;
+}
+
+// Make functions globally available
+window.closeModal = closeModal;
+window.closeMilestoneModal = closeMilestoneModal;

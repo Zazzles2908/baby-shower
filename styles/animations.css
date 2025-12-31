@@ -1,0 +1,464 @@
+/* Baby Shower App - Animations */
+
+/* Spin Animation for Loading Spinner */
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Heart Beat Animation */
+@keyframes heartBeat {
+    0%, 100% { transform: scale(1); }
+    25% { transform: scale(1.2); }
+    50% { transform: scale(1); }
+    75% { transform: scale(1.2); }
+}
+
+/* Bounce Animation */
+@keyframes bounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-20px); }
+}
+
+/* Fade In Animation */
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+/* Fade Out Animation */
+@keyframes fadeOut {
+    from { opacity: 1; }
+    to { opacity: 0; }
+}
+
+/* Slide In Animation */
+@keyframes slideIn {
+    from {
+        transform: translateY(20px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+/* Confetti Animation */
+@keyframes confettiFall {
+    0% {
+        transform: translateY(-100vh) rotate(0deg);
+        opacity: 1;
+    }
+    100% {
+        transform: translateY(100vh) rotate(720deg);
+        opacity: 0;
+    }
+}
+
+/* Sparkle Animation */
+@keyframes sparkle {
+    0%, 100% { opacity: 0; transform: scale(0); }
+    50% { opacity: 1; transform: scale(1); }
+}
+
+/* Pulse Animation */
+@keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+}
+
+/* Shake Animation */
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-5px); }
+    75% { transform: translateX(5px); }
+}
+
+/* Pop Animation */
+@keyframes pop {
+    0% { transform: scale(0); opacity: 0; }
+    50% { transform: scale(1.2); }
+    100% { transform: scale(1); opacity: 1; }
+}
+
+/* Confetti Container */
+.confetti-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 9999;
+    overflow: hidden;
+}
+
+.confetti {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    animation: confettiFall 3s linear forwards;
+}
+
+/* Confetti Colors */
+.confetti:nth-child(1) { background: #FF6B6B; left: 10%; animation-delay: 0s; }
+.confetti:nth-child(2) { background: #4ECDC4; left: 20%; animation-delay: 0.2s; }
+.confetti:nth-child(3) { background: #FFE66D; left: 30%; animation-delay: 0.4s; }
+.confetti:nth-child(4) { background: #95E1D3; left: 40%; animation-delay: 0.6s; }
+.confetti:nth-child(5) { background: #F38181; left: 50%; animation-delay: 0.8s; }
+.confetti:nth-child(6) { background: #AA96DA; left: 60%; animation-delay: 1s; }
+.confetti:nth-child(7) { background: #FCBAD3; left: 70%; animation-delay: 1.2s; }
+.confetti:nth-child(8) { background: #A8D8EA; left: 80%; animation-delay: 1.4s; }
+.confetti:nth-child(9) { background: #FF9F43; left: 90%; animation-delay: 1.6s; }
+.confetti:nth-child(10) { background: #54A0FF; left: 15%; animation-delay: 1.8s; }
+
+/* Utility Classes */
+.fade-in {
+    animation: fadeIn 0.5s ease-in;
+}
+
+.fade-out {
+    animation: fadeOut 0.5s ease-out;
+}
+
+.slide-in {
+    animation: slideIn 0.5s ease-out;
+}
+
+.pulse {
+    animation: pulse 2s ease-in-out infinite;
+}
+
+.shake {
+    animation: shake 0.5s ease-in-out;
+}
+
+.pop {
+    animation: pop 0.3s ease-out;
+}
+
+/* Success Animation Classes */
+.success-animation {
+    animation: pop 0.5s ease-out;
+}
+
+/* Milestone Animation Classes */
+.milestone-animation {
+    animation: bounce 0.5s ease-out;
+}
+
+/* Heart Animation */
+.heart-animation {
+    animation: heartBeat 0.5s ease-in-out;
+}
+
+/* Sparkle Effect */
+.sparkle {
+    position: relative;
+}
+
+.sparkle::before,
+.sparkle::after {
+    content: '✨';
+    position: absolute;
+    font-size: 1.5rem;
+    animation: sparkle 1s ease-in-out infinite;
+}
+
+.sparkle::before {
+    top: -10px;
+    left: -10px;
+    animation-delay: 0s;
+}
+
+.sparkle::after {
+    top: -10px;
+    right: -10px;
+    animation-delay: 0.5s;
+}
+
+/* Loading States */
+.loading {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+/* Success States */
+.success {
+    border-color: var(--color-success) !important;
+    background: #E8F5E9 !important;
+}
+
+/* Error States */
+.error {
+    border-color: var(--color-error) !important;
+    background: #FFEBEE !important;
+    animation: shake 0.5s ease-in-out;
+}
+
+/* Progress Bar Animation */
+@keyframes progress {
+    from { width: 0%; }
+    to { width: 100%; }
+}
+
+.progress-bar {
+    height: 10px;
+    background: var(--color-cream);
+    border-radius: 5px;
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--color-accent), var(--color-secondary));
+    animation: progress 2s ease-out;
+}
+
+/* Floating Animation */
+@keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+}
+
+.float {
+    animation: float 3s ease-in-out infinite;
+}
+
+/* Glow Animation */
+@keyframes glow {
+    0%, 100% { box-shadow: 0 0 5px var(--color-accent); }
+    50% { box-shadow: 0 0 20px var(--color-accent), 0 0 30px var(--color-secondary); }
+}
+
+.glow {
+    animation: glow 2s ease-in-out infinite;
+}
+
+/* Typewriter Effect */
+@keyframes typewriter {
+    from { width: 0; }
+    to { width: 100%; }
+}
+
+.typewriter {
+    overflow: hidden;
+    white-space: nowrap;
+    animation: typewriter 2s steps(40, end);
+}
+
+/* Rotate Animation */
+@keyframes rotate {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+.rotate {
+    animation: rotate 2s linear infinite;
+}
+
+/* Scale Up Animation */
+@keyframes scaleUp {
+    from { transform: scale(0.8); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+}
+
+.scale-up {
+    animation: scaleUp 0.3s ease-out;
+}
+
+/* Scale Down Animation */
+@keyframes scaleDown {
+    from { transform: scale(1); opacity: 1; }
+    to { transform: scale(0.8); opacity: 0; }
+}
+
+.scale-down {
+    animation: scaleDown 0.3s ease-out;
+}
+
+/* Ripple Effect */
+@keyframes ripple {
+    0% {
+        transform: scale(0);
+        opacity: 1;
+    }
+    100% {
+        transform: scale(4);
+        opacity: 0;
+    }
+}
+
+.ripple {
+    position: relative;
+    overflow: hidden;
+}
+
+.ripple::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 100px;
+    height: 100px;
+    background: rgba(255, 255, 255, 0.5);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    animation: ripple 0.6s ease-out;
+}
+
+/* Wave Animation */
+@keyframes wave {
+    0%, 100% { transform: rotate(0deg); }
+    25% { transform: rotate(20deg); }
+    75% { transform: rotate(-20deg); }
+}
+
+.wave {
+    animation: wave 1s ease-in-out infinite;
+    display: inline-block;
+}
+
+/* Bounce In Animation */
+@keyframes bounceIn {
+    0% {
+        transform: scale(0.3);
+        opacity: 0;
+    }
+    50% {
+        transform: scale(1.05);
+        opacity: 1;
+    }
+    70% {
+        transform: scale(0.9);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+.bounce-in {
+    animation: bounceIn 0.6s ease-out;
+}
+
+/* Fade In Up Animation */
+@keyframes fadeInUp {
+    from {
+        transform: translateY(30px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.fade-in-up {
+    animation: fadeInUp 0.5s ease-out;
+}
+
+/* Fade In Down Animation */
+@keyframes fadeInDown {
+    from {
+        transform: translateY(-30px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.fade-in-down {
+    animation: fadeInDown 0.5s ease-out;
+}
+
+/* Flip Animation */
+@keyframes flip {
+    0% { transform: perspective(400px) rotateY(0); }
+    100% { transform: perspective(400px) rotateY(360deg); }
+}
+
+.flip {
+    animation: flip 1s ease-in-out;
+}
+
+/* Zoom In Animation */
+@keyframes zoomIn {
+    from {
+        transform: scale(0);
+        opacity: 0;
+    }
+    to {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+.zoom-in {
+    animation: zoomIn 0.5s ease-out;
+}
+
+/* Zoom Out Animation */
+@keyframes zoomOut {
+    from {
+        transform: scale(1);
+        opacity: 1;
+    }
+    to {
+        transform: scale(0);
+        opacity: 0;
+    }
+}
+
+.zoom-out {
+    animation: zoomOut 0.5s ease-out;
+}
+
+/* Activity Toast Notification */
+.activity-toast {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%) translateY(100px);
+    background: linear-gradient(135deg, var(--color-accent), var(--color-secondary));
+    color: white;
+    padding: 12px 24px;
+    border-radius: 50px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+    z-index: 10000;
+    opacity: 0;
+    transition: all 0.3s ease;
+    font-size: 0.95rem;
+    font-weight: 500;
+}
+
+.activity-toast.show {
+    transform: translateX(-50%) translateY(0);
+    opacity: 1;
+}
+
+.toast-icon {
+    font-size: 1.3rem;
+}
+
+.toast-text {
+    font-weight: 500;
+}
+
+/* Stat Updated Pulse Animation */
+@keyframes statPulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.3); color: var(--color-accent); }
+    100% { transform: scale(1); }
+}
+
+.stat-updated {
+    animation: statPulse 0.5s ease-out;
+    color: var(--color-accent) !important;
+    font-weight: 700;
+}

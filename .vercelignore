@@ -1,0 +1,5 @@
+# Large media files - exclude from Vercel deployment
+588645202_10162795766614635_8236196560658969598_n.jpg
+
+# Baby content folder (personal media - not for version control)
+baby_content/
