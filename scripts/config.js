@@ -1,4 +1,4 @@
-// Baby Shower App - Configuration
+Y// Baby Shower App - Configuration
 
 // Apps Script Web App URL
 // TODO: Replace with your actual deployed Apps Script URL
