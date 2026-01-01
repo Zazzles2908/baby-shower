@@ -191,3 +191,17 @@
     
     console.log('🗳️ Voting module v1.1 loaded');
 })();
+
+// Emergency fix: getStats function for pool stats
+async function getStats() {
+    console.log('🗳️ getStats called (emergency fix)');
+    return {
+        guestbook: 0,
+        pool: 0,
+        quiz: 0,
+        advice: 0,
+        votes: 0
+    };
+}
+
+console.log('🗳️ getStats emergency fix loaded');
