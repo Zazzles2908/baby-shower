@@ -1,18 +1,26 @@
-// Baby Shower App - Name Voting Feature
+// Baby Shower App - Name Voting Feature - DEBUG VERSION
 
 // Global voting state
 let selectedVotes = [];
 let voteCounts = {};
 
+console.log('🗳️ voting.js loaded');
+
 /**
  * Initialize voting functionality
  */
 function initializeVoting() {
+    console.log('🗳️ initializeVoting() CALLED');
+    console.log('🗳️ CONFIG:', typeof CONFIG);
+    console.log('🗳️ CONFIG.UI:', CONFIG ? typeof CONFIG.UI : 'undefined');
+    console.log('🗳️ CONFIG.BABY_NAMES:', CONFIG ? typeof CONFIG.BABY_NAMES : 'undefined');
+    
     try {
-        console.log('🗳️ Initializing voting section...');
-        
         const nameList = document.getElementById('name-list');
         const voteSubmit = document.getElementById('vote-submit');
+
+        console.log('🗳️ nameList element:', nameList);
+        console.log('🗳️ voteSubmit element:', voteSubmit);
 
         if (!nameList || !voteSubmit) {
             console.error('❌ Voting elements not found');
@@ -39,6 +47,8 @@ function initializeVoting() {
             nameList.appendChild(nameItem);
         });
 
+        console.log('✅ Created all name items');
+
         // Initialize vote submit button
         voteSubmit.addEventListener('click', handleVoteSubmit);
         voteSubmit.disabled = true; // Start disabled
@@ -49,7 +59,7 @@ function initializeVoting() {
         console.log('🗳️ Voting initialized successfully!');
         
     } catch (error) {
-        console.error('❌ Error initializing voting:', error);
+        console.error('❌ Error in initializeVoting:', error);
         showVotingError('Failed to load voting section: ' + error.message);
     }
 }
@@ -58,6 +68,7 @@ function initializeVoting() {
  * Show voting error message
  */
 function showVotingError(message) {
+    console.log('❌ showVotingError called:', message);
     const nameList = document.getElementById('name-list');
     if (nameList) {
         nameList.innerHTML = `<div class="error-message" style="color: #e74c3c; padding: 20px; text-align: center; font-weight: bold;">
@@ -106,6 +117,8 @@ function createNameItem(name, index) {
  * @param {HTMLElement} button - Heart button element
  */
 function toggleVote(name, button) {
+    console.log('❤️ toggleVote called:', name);
+    
     const index = selectedVotes.indexOf(name);
 
     if (index > -1) {
@@ -133,6 +146,7 @@ function toggleVote(name, button) {
 
     // Update submit button state
     updateVoteSubmitButton();
+    console.log('❤️ Current votes:', selectedVotes);
 }
 
 /**
@@ -140,16 +154,11 @@ function toggleVote(name, button) {
  */
 function updateVoteSubmitButton() {
     const voteSubmit = document.getElementById('vote-submit');
+    console.log('🗳️ updateVoteSubmitButton called');
 
     if (voteSubmit) {
         voteSubmit.disabled = selectedVotes.length === 0;
-        
-        // Update button text
-        if (selectedVotes.length > 0) {
-            voteSubmit.textContent = `Submit ${selectedVotes.length} Vote${selectedVotes.length > 1 ? 's' : ''} ❤️`;
-        } else {
-            voteSubmit.textContent = 'Submit Votes ❤️';
-        }
+        console.log('🗳️ Submit button disabled:', voteSubmit.disabled);
     }
 }
 
@@ -158,6 +167,7 @@ function updateVoteSubmitButton() {
  * @param {Event} event - Click event
  */
 async function handleVoteSubmit(event) {
+    console.log('🗳️ handleVoteSubmit called');
     event.preventDefault();
 
     if (selectedVotes.length === 0) {
@@ -178,10 +188,14 @@ async function handleVoteSubmit(event) {
         selectedNames: selectedVotes
     };
 
+    console.log('🗳️ Submitting:', data);
+
     try {
         showLoading();
 
         const response = await submitVotes(data);
+        console.log('🗳️ API Response:', response);
+        
         const processedResponse = handleResponse(response);
 
         hideLoading();
@@ -198,6 +212,7 @@ async function handleVoteSubmit(event) {
         resetVotes();
 
     } catch (error) {
+        console.error('❌ Submit error:', error);
         hideLoading();
         showError(error);
     }
@@ -207,6 +222,7 @@ async function handleVoteSubmit(event) {
  * Reset voting state
  */
 function resetVotes() {
+    console.log('🗳️ resetVotes called');
     selectedVotes = [];
 
     // Reset all heart buttons
@@ -224,6 +240,7 @@ function resetVotes() {
  * Load and display vote statistics
  */
 async function loadVoteStats() {
+    console.log('🗳️ loadVoteStats called');
     try {
         const stats = await getStats();
 
@@ -240,6 +257,7 @@ async function loadVoteStats() {
  * @param {Object} voteCounts - Vote counts object
  */
 function updateVoteCounts(voteCounts) {
+    console.log('🗳️ updateVoteCounts:', voteCounts);
     CONFIG.BABY_NAMES.forEach((name, index) => {
         const voteCountEl = document.getElementById(`vote-count-${index}`);
 
@@ -324,4 +342,24 @@ function getCrowdFavoriteMessage(name) {
     return messages[Math.floor(Math.random() * messages.length)];
 }
 
-console.log('🗳️ voting.js loaded successfully');
+// Export functions for use in other modules
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = {
+        initializeVoting,
+        createNameItem,
+        toggleVote,
+        updateVoteSubmitButton,
+        handleVoteSubmit,
+        resetVotes,
+        loadVoteStats,
+        updateVoteCounts,
+        getVotingSuccessMessage,
+        getVotingProgress,
+        checkVotingMilestone,
+        getVotingMilestoneMessage,
+        isCrowdFavorite,
+        getCrowdFavoriteMessage
+    };
+}
+
+console.log('🗳️ voting.js fully loaded and parsed');
