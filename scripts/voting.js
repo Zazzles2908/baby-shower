@@ -123,7 +123,17 @@
     
     // Export
     window.voting = { toggle: toggleVote, state: votingState };
-    window.initializeVoting = init;
+    window.initializeVoting = function() {
+        console.log('🗳️ initializeVoting() called from main.js');
+        // Check CONFIG is ready before calling init
+        if (window.CONFIG && window.CONFIG.BABY_NAMES) {
+            console.log('✅ CONFIG available, calling init()');
+            init();
+        } else {
+            console.error('❌ CONFIG not ready when initializeVoting() called');
+            showError();
+        }
+    };
     window.votingInitialized = true;
     
     console.log('🗳️ Voting module v2.0 loaded and ready');
