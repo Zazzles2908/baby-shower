@@ -1,5 +1,6 @@
 // Baby Shower App - Configuration
 
+console.log('CONFIG.js file is executing...');
 const CONFIG = {
     // API Base URL (Vercel deployment)
     // In development: use '/api' for relative paths
@@ -44,6 +45,7 @@ const CONFIG = {
     BABY_NAMES: [
         'Emma',
         'Olivia',
+console.log("CONFIG.BABY_NAMES:", CONFIG.BABY_NAMES); console.log("CONFIG object fully created");
         'Sophia',
         'Charlotte',
         'Amelia',
