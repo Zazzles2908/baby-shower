@@ -2,260 +2,247 @@
 
 A fun, interactive QR-code based web app for baby showers with multiple activities and milestone surprises.
 
+**Live Site**: https://baby-shower-qr-app.vercel.app
+
 ## Features
 
-- **Digital Guestbook** - Leave wishes and optionally upload photos
-- **Baby Pool** - Predict birth date, time, weight, and length
-- **Emoji Pictionary** - Solve baby-themed emoji puzzles
+- **Digital Guestbook** - Leave wishes and optionally upload photos to Supabase Storage
+- **Baby Pool** - Predict birth date, time, weight, and length with live stats
+- **Emoji Pictionary** - Solve 5 baby-themed emoji puzzles with scoring
 - **Advice Capsule** - Leave parenting advice or wishes for baby's 18th birthday
-- **Name Voting** - Heart up to 3 baby names you like
-- **Milestone Surprises** - Unlock fun surprises as collective goals are reached
+- **Name Voting** - Heart up to 3 baby names you like with real-time vote counts
+- **Milestone Surprises** - Unlock fun surprises at 5, 10, 20, 25, and 50 submissions
 
 ## Technology Stack
 
-- **Frontend**: Plain HTML/JavaScript/CSS (no build tools required)
-- **Backend**: Google Apps Script (serverless)
-- **Storage**: Google Sheets (data) + Google Drive (photos)
-- **Optional**: Supabase integration for learning (see [`backend/supabase-integration.md`](backend/supabase-integration.md:1))
-- **Hosting**: Netlify (drag-and-drop deployment)
+- **Frontend**: Plain HTML/CSS/JavaScript (responsive, mobile-first)
+- **Backend**: Vercel API Routes + Supabase
+  - Supabase PostgreSQL (primary database)
+  - Supabase Storage (photo uploads)
+  - Google Sheets (automated backup via webhook)
+- **Hosting**: Vercel (global edge network, including Sydney for Australian guests)
 
 ## Project Structure
 
 ```
-baby-shower-qr-app/
-├── index.html                 # Main HTML file
+Baby_Shower/
+├── index.html              # Main application entry point
 ├── styles/
-│   ├── main.css              # Main stylesheet with farm theme
-│   └── animations.css        # Animation styles
+│   ├── main.css           # Farm theme styles (warm, rustic, earthy tones)
+│   └── animations.css     # Confetti, milestone animations
 ├── scripts/
-│   ├── config.js             # Configuration constants
-│   ├── api.js                # API communication layer
-│   ├── main.js               # Core navigation and utilities
-│   ├── guestbook.js          # Guestbook feature
-│   ├── pool.js               # Baby pool feature
-│   ├── quiz.js               # Emoji pictionary feature
-│   ├── advice.js             # Advice capsule feature
-│   ├── voting.js             # Name voting feature
-│   └── surprises.js          # Milestone and surprise system
+│   ├── config.js          # App configuration (milestones, baby names)
+│   ├── api.js             # API client for Supabase
+│   ├── main.js            # Core navigation and utilities
+│   ├── guestbook.js       # Guestbook functionality
+│   ├── pool.js            # Baby pool predictions
+│   ├── quiz.js            # Emoji pictionary game
+│   ├── advice.js          # Advice capsule
+│   ├── voting.js          # Name voting system
+│   └── surprises.js       # Milestone and celebration logic
 ├── backend/
-│   └── Code.gs               # Google Apps Script backend
-├── assets/
-│   └── images/               # Illustrations and icons (to be generated)
-└── README.md                 # This file
+│   ├── supabase-webhook/  # Google Apps Script for backup sync
+│   │   └── Code.gs        # Webhook handler (deprecated GAS version archived)
+│   ├── supabase-check.sql # Database validation queries
+│   ├── supabase-schema.sql # Database schema for setup
+│   └── supabase-integration.md # Optional dual-write guide
+├── baby_content/          # Personal media (excluded from git)
+└── vercel.json            # Vercel deployment configuration
 ```
 
-## Setup Instructions
+## Quick Start Guide
 
-### 1. Set Up Google Backend
+### 1. Verify Supabase Configuration
 
-#### Create Google Sheet
+The app uses Supabase as the primary backend. Ensure your Supabase project is configured:
 
-1. Go to [sheets.google.com](https://sheets.google.com)
-2. Create a new spreadsheet named "BabyShower2025"
-3. Add the following tabs:
-   - Guestbook
-   - BabyPool
-   - QuizAnswers
-   - Advice
-   - NameVotes
-   - Milestones
+1. Project URL and anon key in `scripts/config.js`
+2. Tables created from `backend/supabase-schema.sql`
+3. Storage bucket "guestbook-photos" created
+4. Row Level Security (RLS) policies configured
 
-#### Create Google Drive Folder
-
-1. Go to [drive.google.com](https://drive.google.com)
-2. Create a new folder named "BabyShower2025"
-3. Note the folder ID from the URL (the long string after `/folders/`)
-4. Create a subfolder named "GuestbookPhotos"
-
-#### Create Google Apps Script
-
-1. In your Google Sheet, go to **Extensions → Apps Script**
-2. Delete any existing code
-3. Copy the contents of [`backend/Code.gs`](backend/Code.gs:1)
-4. Paste into the Apps Script editor
-5. **Important**: Replace `YOUR_DRIVE_FOLDER_ID_HERE` in the `handlePhotoUpload` function with your actual Drive folder ID
-6. Save the project (Ctrl+S or Cmd+S)
-
-#### Deploy as Web App
-
-1. Click **Deploy → New deployment**
-2. Select type: **Web app**
-3. Description: "Baby Shower API"
-4. Execute as: **Me**
-5. Who has access: **Anyone**
-6. Click **Deploy**
-7. Copy the **Web App URL** (starts with `https://script.google.com/macros/s/.../exec`)
-
-### 2. Configure Frontend
-
-1. Open [`scripts/config.js`](scripts/config.js:1)
-2. Replace `YOUR_APPS_SCRIPT_URL_HERE` with your actual Web App URL from step 1.4
-3. (Optional) Customize baby names in `CONFIG.BABY_NAMES`
-4. (Optional) Adjust milestone thresholds in `CONFIG.MILESTONES`
-
-### 3. Deploy to Netlify
-
-#### Option 1: Drag and Drop (Easiest)
-
-1. Go to [netlify.com](https://netlify.com) and sign up/login
-2. Click **"Add new site" → "Deploy manually"**
-3. Drag and drop the entire project folder (except the `backend/` folder) onto the upload area
-4. Wait for deployment to complete
-5. Copy the deployed site URL
-
-#### Option 2: Using Netlify CLI
+### 2. Deploy to Vercel
 
 ```bash
-npm install -g netlify-cli
-netlify login
-netlify deploy --prod
+# Install Vercel CLI (if not already installed)
+npm i -g vercel
+
+# Login to Vercel
+vercel login
+
+# Deploy (from project root)
+vercel --prod
 ```
 
-### 4. Generate QR Codes
+### 3. Set Environment Variables in Vercel
 
-1. Use a QR code generator (e.g., [QRCode Monkey](https://www.qrcode-monkey.com/))
-2. Enter your Netlify site URL
-3. Customize the QR code design to match your farm theme
-4. Download and print the QR codes for tables
+In your Vercel project dashboard, add these environment variables:
 
-## Usage
+```
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+```
 
-### For Guests
+### 4. Configure Google Sheets Backup (Optional)
 
-1. Scan the QR code with their phone camera
-2. Welcome screen appears with activity options
-3. Tap an activity button to participate
-4. Fill out the form and submit
-5. See success animation and any unlocked milestones
+If you want automated backup to Google Sheets:
 
-### For Parents
+1. Create a Google Sheet named "BabyShower2025"
+2. Add tabs: `Guestbook`, `BabyPool`, `QuizAnswers`, `Advice`, `NameVotes`, `Milestones`
+3. Copy `backend/supabase-webhook/Code.gs` to Google Apps Script
+4. Deploy as Web App with "Anyone" access
+5. Set up Supabase webhook to trigger the Google Apps Script URL
 
-1. View all submissions in your Google Sheet
-2. View uploaded photos in your Google Drive folder
-3. Track milestone progress in the Milestones tab
-4. Use the data to create a baby shower memory book
+### 5. Customize Configuration
 
-## Customization
+Edit `scripts/config.js`:
 
-### Theme and Colors
+```javascript
+// Baby names for voting
+CONFIG.BABY_NAMES = ['Emma', 'Olivia', 'Ava', 'Sophia', 'Isabella'];
 
-Edit [`styles/main.css`](styles/main.css:1) to customize:
-- Color palette (CSS variables at the top)
-- Typography
-- Layout and spacing
+// Milestone thresholds
+CONFIG.MILESTONES = {
+    GUESTBOOK_5: 5,
+    GUESTBOOK_10: 10,
+    // ... etc
+};
 
-### Baby Names
+// Quiz answers
+CONFIG.QUIZ_ANSWERS = {
+    puzzle1: 'Baby Shower',
+    // ... etc
+};
+```
 
-Edit `CONFIG.BABY_NAMES` in [`scripts/config.js`](scripts/config.js:1) to change the voting options.
+### 6. Generate QR Codes
 
-### Quiz Puzzles
-
-Edit `CONFIG.QUIZ_ANSWERS` in [`scripts/config.js`](scripts/config.js:1) to change the emoji puzzles and correct answers.
-
-### Milestone Messages
-
-Edit `MILESTONE_CONTENT` in [`scripts/config.js`](scripts/config.js:1) to customize milestone titles and messages.
+1. Go to a QR code generator (e.g., https://www.qrcode-monkey.com)
+2. Enter your Vercel deployment URL
+3. Customize colors to match the farm theme (earthy tones)
+4. Download and print for tables at the event
 
 ## Testing
 
 ### Local Testing
 
-1. Open `index.html` in a web browser
-2. Note: API calls will fail until you configure the backend URL
-3. Test navigation between sections
-4. Test form validation
-5. Test animations
+Open `index.html` directly in a browser. Note: API calls will only work if Supabase is configured.
 
-### Full Testing
+### Full Test
 
-1. Deploy backend and frontend
-2. Test each feature end-to-end
-3. Verify data appears in Google Sheets
-4. Verify photos appear in Google Drive
-5. Test milestone unlocking
+1. Submit a guestbook entry (with and without photo)
+2. Submit a baby pool prediction
+3. Complete the emoji quiz
+4. Submit advice
+5. Vote on names (test 3-vote limit)
+6. Check Supabase dashboard for data
+7. Check Google Sheets (if backup is configured)
 
 ## Troubleshooting
 
-### "API Error" or "Network Error"
-
-- Verify `CONFIG.SCRIPT_URL` is correct in [`scripts/config.js`](scripts/config.js:1)
-- Check that the Apps Script is deployed with "Anyone" access
-- Try opening the Web App URL in a browser - it should show a blank page (this is normal)
+### "Supabase URL is required"
+- Ensure Supabase URL and anon key are in `scripts/config.js`
+- Check that the Supabase project is active
 
 ### Photos Not Uploading
+- Verify Supabase Storage bucket "guestbook-photos" exists
+- Check bucket permissions (should be public for read access)
+- Max file size: 5MB per photo
 
-- Verify the Drive folder ID is correct in [`backend/Code.gs`](backend/Code.gs:1)
-- Check that the folder exists and is accessible
-- Ensure the folder has sharing permissions set correctly
+### Data Not Appearing in Google Sheets
+- Verify webhook URL is set in Supabase
+- Check Google Apps Script deployment has "Anyone" access
+- Review Apps Script execution logs for errors
 
 ### Milestones Not Unlocking
+- Check milestone thresholds in `scripts/config.js`
+- Verify data is being saved to Supabase
+- Check browser console for JavaScript errors
 
-- Check the Milestones tab in your Google Sheet
-- Verify that milestone keys match between frontend and backend
-- Check that thresholds are set correctly in `CONFIG.MILESTONES`
+## Architecture Notes
 
-### QR Code Not Scanning
+### Why This Architecture?
 
-- Ensure the QR code is printed clearly
-- Test with multiple devices (iOS and Android)
-- Verify the Netlify site URL is correct
+**Supabase Primary:**
+- Modern PostgreSQL database with real-time capabilities
+- Built-in authentication and row-level security
+- Excellent for learning modern backend development
+- Handles photo storage efficiently
 
-## Security Considerations
+**Google Sheets Backup:**
+- Provides familiar interface for non-technical users
+- Easy data export to CSV/Excel
+- Redundant backup ensures data is never lost
+- Low cost (free tier is sufficient)
 
-- The Web App is set to "Anyone" access, which means anyone with the URL can submit data
-- This is acceptable for a baby shower where you want guests to participate easily
-- The data is stored in your personal Google account, which only you can access
-- Photos are stored in your Google Drive with "anyone with link can view" permissions
-- Consider adding a simple passcode if you want to restrict access
+**Vercel Hosting:**
+- Global edge network for fast load times
+- Automatic HTTPS and SSL
+- Git-based deployments
+- Free tier adequate for event-scale traffic
 
-## About Supabase
+### Data Flow
 
-**Important**: Supabase does NOT provide static site hosting for your HTML/CSS/JS files. You still need Netlify (or GitHub Pages, Vercel, etc.) to host your frontend.
+```
+Guest submits form
+    ↓
+Frontend JavaScript (scripts/api.js)
+    ↓
+Vercel Edge Network (global CDN)
+    ↓
+Supabase PostgreSQL (primary storage)
+    ↓
+Supabase Storage (if photo uploaded)
+    ↓
+Supabase Webhook (async)
+    ↓
+Google Apps Script
+    ↓
+Google Sheets (backup)
+```
 
-Supabase is a **backend platform** that provides:
-- PostgreSQL database (can replace Google Sheets)
-- Storage for photos/files (can replace Google Drive)
-- Edge Functions for API requests (can replace Google Apps Script)
-- Authentication and user management
+## Performance
 
-But Supabase **cannot**:
-- Serve static HTML/CSS/JS files
-- Provide a URL for your web app
-- Replace the need for static hosting
+- **Load Time**: ~2-3 seconds on first visit
+- **Image Optimization**: Automatic via Supabase CDN
+- **Database**: Indexes on timestamp columns for fast queries
+- **Rate Limiting**: Supabase free tier handles 50+ concurrent guests easily
 
-**What this means**: You need BOTH services:
-1. **Static hosting** (Netlify/GitHub Pages/Vercel) - Hosts your [`index.html`](index.html:1), [`styles/`](styles/), [`scripts/`](scripts/)
-2. **Backend/database** (Supabase OR Google) - Stores your data and handles API requests
+## Browser Support
 
-See [`docs/supabase-capabilities.md`](docs/supabase-capabilities.md:1) for detailed explanation of what Supabase provides and why static hosting is still required.
+- Chrome 70+, Safari 12+, Firefox 65+, Edge 79+
+- iOS Safari 12+, Android Chrome 70+
+- No JavaScript frameworks required
 
-## Performance Notes
+## Cost
 
-- Google Apps Script has built-in rate limiting (~20,000 executions per day)
-- With 50 guests and ~5 submissions each, you'll be well within limits
-- Photos are limited to 5MB per upload to prevent abuse
-- Total storage depends on your Google Drive quota
+- **Supabase**: Free tier (sufficient for baby shower)
+- **Vercel**: Free tier (100GB bandwidth/month)
+- **Google Sheets/Drive**: Free
+- **Total**: $0/month for typical usage
 
-## Future Enhancements
+## Security
 
-- Add real-time leaderboard for quiz scores
-- Create a photo gallery view for parents
-- Add email notifications for new submissions
-- Create a printable summary report
-- Add video upload support
-- Implement a countdown timer to baby's due date
+- No sensitive data stored (no emails, phone numbers, addresses)
+- Photo uploads limited to 5MB to prevent abuse
+- Supabase RLS policies prevent unauthorized access
+- Public URL but not indexed by search engines
+
+## Maintenance
+
+Post-event, the app can be:
+1. Left as-is for viewing memories
+2. Exported to PDF (use browser print function)
+3. Archived (download Supabase data)
+4. Disabled (remove from Vercel)
 
 ## Support
 
-For issues or questions:
-1. Check the Troubleshooting section above
-2. Review the [implementation plan](plans/implementation-plan.md:1)
-3. Review the [backend architecture](plans/backend-api-architecture.md:1)
-
-## Credits
-
-Created with love for Baby Shower 2026
-Theme: Warm, rustic farm with earthy tones
+For issues:
+1. Check browser console for errors
+2. Verify Supabase project is active
+3. Review Vercel deployment logs
+4. Test on multiple devices/browsers
 
 ## License
 

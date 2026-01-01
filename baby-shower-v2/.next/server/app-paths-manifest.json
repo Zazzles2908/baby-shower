@@ -1,7 +1,0 @@
-{
-  "/api/advice/route": "app/api/advice/route.js",
-  "/api/guestbook/route": "app/api/guestbook/route.js",
-  "/api/quiz/route": "app/api/quiz/route.js",
-  "/api/pool/route": "app/api/pool/route.js",
-  "/api/vote/route": "app/api/vote/route.js"
-}
