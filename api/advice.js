@@ -28,7 +28,7 @@ export default async function handler(req, res) {
     // Write to Supabase
     const supabaseResult = await writeToSupabase({
       name,
-      advice_type: adviceType,
+      activity_data.advice_type: adviceType,
       message,
       activity_type: 'advice'
     });

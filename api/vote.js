@@ -33,7 +33,7 @@ export default async function handler(req, res) {
     // Write to Supabase
     const supabaseResult = await writeToSupabase({
       name,
-      selected_names: selectedNames.join(','),
+      activity_data.selected_names: selectedNames.join(','),
       activity_type: 'voting'
     });
 
