@@ -1,6 +1,7 @@
 // Baby Shower App - Configuration
 
 console.log('CONFIG.js file is executing...');
+console.log('CONFIG.js file is executing...');
 const CONFIG = {
     // API Base URL (Vercel deployment)
     // In development: use '/api' for relative paths
@@ -54,6 +55,7 @@ console.log("CONFIG.BABY_NAMES:", CONFIG.BABY_NAMES); console.log("CONFIG object
         'Isabella',
         'Lily',
         'Harper'
+console.log("CONFIG.BABY_NAMES loaded:", CONFIG.BABY_NAMES.length, "names"); console.log("CONFIG ready");
     ],
 
     // Quiz correct answers
