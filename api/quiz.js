@@ -46,14 +46,16 @@ export default async function handler(req, res) {
 
     // Prepare data for Supabase
     const submissionData = {
-      name,
-      activity_data.puzzle1: activity_data.puzzle1 || '',
-      activity_data.puzzle2: activity_data.puzzle2 || '',
-      activity_data.puzzle3: activity_data.puzzle3 || '',
-      activity_data.puzzle4: activity_data.puzzle4 || '',
-      activity_data.puzzle5: activity_data.puzzle5 || '',
-      activity_data.score,
-      activity_type: 'quiz'
+      name: name,
+      activity_type: 'quiz',
+      activity_data: {
+        puzzle1: puzzle1 || '',
+        puzzle2: puzzle2 || '',
+        puzzle3: puzzle3 || '',
+        puzzle4: puzzle4 || '',
+        puzzle5: puzzle5 || '',
+        score: score
+      }
     };
 
     // Write to Supabase
