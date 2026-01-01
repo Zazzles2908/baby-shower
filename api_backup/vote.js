@@ -1,5 +1,5 @@
-// API Route: POST /api/pool
-// Handles baby pool predictions, writes to Supabase
+// API Route: POST /api/vote
+// Handles baby name voting submissions
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -19,20 +19,22 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { name, dateGuess, timeGuess, weightGuess, lengthGuess } = req.body;
+    const { name, selectedNames } = req.body;
 
-    if (!name || !dateGuess || !timeGuess || !weightGuess || !lengthGuess) {
-      return res.status(400).json({ error: 'Missing required fields' });
+    if (!name || !selectedNames || !Array.isArray(selectedNames)) {
+      return res.status(400).json({ error: 'Missing required fields or invalid format' });
+    }
+
+    // Limit to 3 votes per person
+    if (selectedNames.length > 3) {
+      return res.status(400).json({ error: 'Maximum 3 votes allowed' });
     }
 
     // Write to Supabase
     const supabaseResult = await writeToSupabase({
       name,
-      date_guess: dateGuess,
-      time_guess: timeGuess,
-      weight_guess: parseFloat(weightGuess),
-      length_guess: parseInt(lengthGuess),
-      activity_type: 'pool'
+      selected_names: selectedNames.join(','),
+      activity_type: 'voting'
     });
 
     // Trigger Google Sheets webhook if configured
@@ -42,14 +44,11 @@ export default async function handler(req, res) {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            sheet: 'BabyPool',
+            sheet: 'NameVotes',
             data: {
               Timestamp: new Date().toISOString(),
               Name: name,
-              DateGuess: dateGuess,
-              TimeGuess: timeGuess,
-              WeightGuess: weightGuess,
-              LengthGuess: lengthGuess
+              SelectedNames: selectedNames.join(',')
             }
           })
         });
@@ -60,12 +59,12 @@ export default async function handler(req, res) {
 
     res.status(200).json({
       result: 'success',
-      message: 'Prediction saved!',
+      message: 'Votes recorded!',
       data: supabaseResult
     });
 
   } catch (error) {
-    console.error('Pool API Error:', error);
+    console.error('Vote API Error:', error);
     res.status(500).json({
       result: 'error',
       error: error.message
@@ -75,7 +74,7 @@ export default async function handler(req, res) {
 
 async function writeToSupabase(data) {
   try {
-    const response = await fetch(`${SUPABASE_URL}/rest/v1/public.submissions`, {
+    const response = await fetch(`${SUPABASE_URL}/rest/v1/baby_shower.submissions`, {
       method: 'POST',
       headers: {
         'apikey': SUPABASE_SERVICE_KEY,

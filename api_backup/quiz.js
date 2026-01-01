@@ -1,9 +1,18 @@
-// API Route: POST /api/pool
-// Handles baby pool predictions, writes to Supabase
+// API Route: POST /api/quiz
+// Handles emoji pictionary quiz submissions
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const GOOGLE_WEBHOOK_URL = process.env.GOOGLE_WEBHOOK_URL;
+
+// Quiz answer key
+const CORRECT_ANSWERS = {
+  puzzle1: 'Baby Shower',
+  puzzle2: 'Three Little Pigs',
+  puzzle3: 'Rock a Bye Baby',
+  puzzle4: 'Baby Bottle',
+  puzzle5: 'Diaper Change'
+};
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -19,21 +28,36 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { name, dateGuess, timeGuess, weightGuess, lengthGuess } = req.body;
+    const { name, puzzle1, puzzle2, puzzle3, puzzle4, puzzle5 } = req.body;
 
-    if (!name || !dateGuess || !timeGuess || !weightGuess || !lengthGuess) {
-      return res.status(400).json({ error: 'Missing required fields' });
+    if (!name) {
+      return res.status(400).json({ error: 'Name is required' });
     }
 
-    // Write to Supabase
-    const supabaseResult = await writeToSupabase({
-      name,
-      date_guess: dateGuess,
-      time_guess: timeGuess,
-      weight_guess: parseFloat(weightGuess),
-      length_guess: parseInt(lengthGuess),
-      activity_type: 'pool'
+    // Calculate score
+    let score = 0;
+    const answers = [puzzle1, puzzle2, puzzle3, puzzle4, puzzle5];
+    
+    Object.keys(CORRECT_ANSWERS).forEach((key, index) => {
+      if (answers[index] && answers[index].toLowerCase() === CORRECT_ANSWERS[key].toLowerCase()) {
+        score++;
+      }
     });
+
+    // Prepare data for Supabase
+    const submissionData = {
+      name,
+      puzzle1: puzzle1 || '',
+      puzzle2: puzzle2 || '',
+      puzzle3: puzzle3 || '',
+      puzzle4: puzzle4 || '',
+      puzzle5: puzzle5 || '',
+      score,
+      activity_type: 'quiz'
+    };
+
+    // Write to Supabase
+    const supabaseResult = await writeToSupabase(submissionData);
 
     // Trigger Google Sheets webhook if configured
     if (GOOGLE_WEBHOOK_URL) {
@@ -42,14 +66,16 @@ export default async function handler(req, res) {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            sheet: 'BabyPool',
+            sheet: 'QuizAnswers',
             data: {
               Timestamp: new Date().toISOString(),
               Name: name,
-              DateGuess: dateGuess,
-              TimeGuess: timeGuess,
-              WeightGuess: weightGuess,
-              LengthGuess: lengthGuess
+              Puzzle1: puzzle1 || '',
+              Puzzle2: puzzle2 || '',
+              Puzzle3: puzzle3 || '',
+              Puzzle4: puzzle4 || '',
+              Puzzle5: puzzle5 || '',
+              Score: score
             }
           })
         });
@@ -60,12 +86,13 @@ export default async function handler(req, res) {
 
     res.status(200).json({
       result: 'success',
-      message: 'Prediction saved!',
+      message: `You got ${score}/5 correct!`,
+      score,
       data: supabaseResult
     });
 
   } catch (error) {
-    console.error('Pool API Error:', error);
+    console.error('Quiz API Error:', error);
     res.status(500).json({
       result: 'error',
       error: error.message
@@ -75,7 +102,7 @@ export default async function handler(req, res) {
 
 async function writeToSupabase(data) {
   try {
-    const response = await fetch(`${SUPABASE_URL}/rest/v1/public.submissions`, {
+    const response = await fetch(`${SUPABASE_URL}/rest/v1/baby_shower.submissions`, {
       method: 'POST',
       headers: {
         'apikey': SUPABASE_SERVICE_KEY,

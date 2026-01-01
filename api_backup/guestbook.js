@@ -1,71 +1,76 @@
-// API Route: POST /api/pool
-// Handles baby pool predictions, writes to Supabase
+// API Route: POST /api/guestbook
+// Handles guestbook submissions, writes to Supabase and triggers Google Sheets webhook
 
+// Load environment variables
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
-const GOOGLE_WEBHOOK_URL = process.env.GOOGLE_WEBHOOK_URL;
+const GOOGLE_WEBHOOK_URL = process.env.GOOGLE_WEBHOOK_URL; // Optional: for Sheets backup
 
 export default async function handler(req, res) {
+  // Set CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
+  // Handle preflight requests
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
   }
 
+  // Only accept POST requests
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
   try {
-    const { name, dateGuess, timeGuess, weightGuess, lengthGuess } = req.body;
+    const { name, relationship, message, photoURL } = req.body;
 
-    if (!name || !dateGuess || !timeGuess || !weightGuess || !lengthGuess) {
+    // Validate required fields
+    if (!name || !relationship || !message) {
       return res.status(400).json({ error: 'Missing required fields' });
     }
 
-    // Write to Supabase
+    // 1. Write to Supabase (Primary)
     const supabaseResult = await writeToSupabase({
       name,
-      date_guess: dateGuess,
-      time_guess: timeGuess,
-      weight_guess: parseFloat(weightGuess),
-      length_guess: parseInt(lengthGuess),
-      activity_type: 'pool'
+      relationship,
+      message,
+      photo_url: photoURL || null,
+      activity_type: 'guestbook'
     });
 
-    // Trigger Google Sheets webhook if configured
+    // 2. Trigger Google Sheets webhook if configured (Backup)
     if (GOOGLE_WEBHOOK_URL) {
       try {
         await fetch(GOOGLE_WEBHOOK_URL, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            sheet: 'BabyPool',
+            sheet: 'Guestbook',
             data: {
               Timestamp: new Date().toISOString(),
               Name: name,
-              DateGuess: dateGuess,
-              TimeGuess: timeGuess,
-              WeightGuess: weightGuess,
-              LengthGuess: lengthGuess
+              Relationship: relationship,
+              Message: message,
+              PhotoURL: photoURL || ''
             }
           })
         });
       } catch (webhookError) {
         console.warn('Google Sheets webhook failed:', webhookError);
+        // Don't fail the request if webhook fails
       }
     }
 
+    // 3. Return success response
     res.status(200).json({
       result: 'success',
-      message: 'Prediction saved!',
+      message: 'Wish saved successfully!',
       data: supabaseResult
     });
 
   } catch (error) {
-    console.error('Pool API Error:', error);
+    console.error('Guestbook API Error:', error);
     res.status(500).json({
       result: 'error',
       error: error.message
@@ -73,9 +78,12 @@ export default async function handler(req, res) {
   }
 }
 
+/**
+ * Write submission to Supabase
+ */
 async function writeToSupabase(data) {
   try {
-    const response = await fetch(`${SUPABASE_URL}/rest/v1/public.submissions`, {
+    const response = await fetch(`${SUPABASE_URL}/rest/v1/baby_shower.submissions`, {
       method: 'POST',
       headers: {
         'apikey': SUPABASE_SERVICE_KEY,

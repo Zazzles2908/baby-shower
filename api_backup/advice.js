@@ -1,5 +1,5 @@
-// API Route: POST /api/pool
-// Handles baby pool predictions, writes to Supabase
+// API Route: POST /api/advice
+// Handles parenting advice submissions
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -19,20 +19,18 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { name, dateGuess, timeGuess, weightGuess, lengthGuess } = req.body;
+    const { name, adviceType, message } = req.body;
 
-    if (!name || !dateGuess || !timeGuess || !weightGuess || !lengthGuess) {
+    if (!name || !adviceType || !message) {
       return res.status(400).json({ error: 'Missing required fields' });
     }
 
     // Write to Supabase
     const supabaseResult = await writeToSupabase({
       name,
-      date_guess: dateGuess,
-      time_guess: timeGuess,
-      weight_guess: parseFloat(weightGuess),
-      length_guess: parseInt(lengthGuess),
-      activity_type: 'pool'
+      advice_type: adviceType,
+      message,
+      activity_type: 'advice'
     });
 
     // Trigger Google Sheets webhook if configured
@@ -42,14 +40,12 @@ export default async function handler(req, res) {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            sheet: 'BabyPool',
+            sheet: 'Advice',
             data: {
               Timestamp: new Date().toISOString(),
               Name: name,
-              DateGuess: dateGuess,
-              TimeGuess: timeGuess,
-              WeightGuess: weightGuess,
-              LengthGuess: lengthGuess
+              AdviceType: adviceType,
+              Message: message
             }
           })
         });
@@ -60,12 +56,12 @@ export default async function handler(req, res) {
 
     res.status(200).json({
       result: 'success',
-      message: 'Prediction saved!',
+      message: 'Advice saved!',
       data: supabaseResult
     });
 
   } catch (error) {
-    console.error('Pool API Error:', error);
+    console.error('Advice API Error:', error);
     res.status(500).json({
       result: 'error',
       error: error.message
@@ -75,7 +71,7 @@ export default async function handler(req, res) {
 
 async function writeToSupabase(data) {
   try {
-    const response = await fetch(`${SUPABASE_URL}/rest/v1/public.submissions`, {
+    const response = await fetch(`${SUPABASE_URL}/rest/v1/baby_shower.submissions`, {
       method: 'POST',
       headers: {
         'apikey': SUPABASE_SERVICE_KEY,
