@@ -1,5 +1,6 @@
 // Baby Shower App - Configuration
 
+console.log('CONFIG.js loading...');
 console.log('CONFIG.js file is executing...');
 console.log('CONFIG.js file is executing...');
 const CONFIG = {
@@ -77,3 +78,4 @@ console.log("CONFIG.BABY_NAMES loaded:", CONFIG.BABY_NAMES.length, "names"); con
     // Debug mode
     DEBUG: false
 };
+console.log("CONFIG ready", CONFIG.BABY_NAMES ? CONFIG.BABY_NAMES.length + " names" : "no BABY_NAMES");
