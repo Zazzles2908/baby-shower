@@ -17,6 +17,15 @@ const CONFIG = {
         CHANNEL: 'baby-shower-updates'
     },
 
+    // UI Configuration
+    UI: {
+        MAX_VOTES_PER_GUEST: 3,
+        MAX_FILE_SIZE: 5 * 1024 * 1024, // 5MB
+        ALLOWED_FILE_TYPES: ['image/jpeg', 'image/png', 'image/gif'],
+        SHOW_MILESTONES: true,
+        ENABLE_CONFETTI: true
+    },
+
     // Milestone thresholds
     MILESTONES: {
         GUESTBOOK_5: 5,
@@ -58,6 +67,9 @@ const CONFIG = {
     STORAGE: {
         BUCKET: 'guestbook-photos',
         MAX_FILE_SIZE: 5 * 1024 * 1024, // 5MB
-        ALLOWED_TYPES: ['image/jpeg', 'image/png', 'image/webp']
-    }
+        ALLOWED_TYPES: ['image/jpeg', 'image/png', 'image/gif']
+    },
+
+    // Debug mode
+    DEBUG: false
 };
