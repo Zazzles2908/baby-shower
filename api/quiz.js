@@ -7,11 +7,11 @@ const GOOGLE_WEBHOOK_URL = process.env.GOOGLE_WEBHOOK_URL;
 
 // Quiz answer key
 const CORRECT_ANSWERS = {
-  puzzle1: 'Baby Shower',
-  puzzle2: 'Three Little Pigs',
-  puzzle3: 'Rock a Bye Baby',
-  puzzle4: 'Baby Bottle',
-  puzzle5: 'Diaper Change'
+  activity_data.puzzle1: 'Baby Shower',
+  activity_data.puzzle2: 'Three Little Pigs',
+  activity_data.puzzle3: 'Rock a Bye Baby',
+  activity_data.puzzle4: 'Baby Bottle',
+  activity_data.puzzle5: 'Diaper Change'
 };
 
 export default async function handler(req, res) {
@@ -28,31 +28,31 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { name, puzzle1, puzzle2, puzzle3, puzzle4, puzzle5 } = req.body;
+    const { name, activity_data.puzzle1, activity_data.puzzle2, activity_data.puzzle3, activity_data.puzzle4, activity_data.puzzle5 } = req.body;
 
     if (!name) {
       return res.status(400).json({ error: 'Name is required' });
     }
 
-    // Calculate score
-    let score = 0;
-    const answers = [puzzle1, puzzle2, puzzle3, puzzle4, puzzle5];
+    // Calculate activity_data.score
+    let activity_data.score = 0;
+    const answers = [activity_data.puzzle1, activity_data.puzzle2, activity_data.puzzle3, activity_data.puzzle4, activity_data.puzzle5];
     
     Object.keys(CORRECT_ANSWERS).forEach((key, index) => {
       if (answers[index] && answers[index].toLowerCase() === CORRECT_ANSWERS[key].toLowerCase()) {
-        score++;
+        activity_data.score++;
       }
     });
 
     // Prepare data for Supabase
     const submissionData = {
       name,
-      puzzle1: puzzle1 || '',
-      puzzle2: puzzle2 || '',
-      puzzle3: puzzle3 || '',
-      puzzle4: puzzle4 || '',
-      puzzle5: puzzle5 || '',
-      score,
+      activity_data.puzzle1: activity_data.puzzle1 || '',
+      activity_data.puzzle2: activity_data.puzzle2 || '',
+      activity_data.puzzle3: activity_data.puzzle3 || '',
+      activity_data.puzzle4: activity_data.puzzle4 || '',
+      activity_data.puzzle5: activity_data.puzzle5 || '',
+      activity_data.score,
       activity_type: 'quiz'
     };
 
@@ -70,12 +70,12 @@ export default async function handler(req, res) {
             data: {
               Timestamp: new Date().toISOString(),
               Name: name,
-              Puzzle1: puzzle1 || '',
-              Puzzle2: puzzle2 || '',
-              Puzzle3: puzzle3 || '',
-              Puzzle4: puzzle4 || '',
-              Puzzle5: puzzle5 || '',
-              Score: score
+              Puzzle1: activity_data.puzzle1 || '',
+              Puzzle2: activity_data.puzzle2 || '',
+              Puzzle3: activity_data.puzzle3 || '',
+              Puzzle4: activity_data.puzzle4 || '',
+              Puzzle5: activity_data.puzzle5 || '',
+              Score: activity_data.score
             }
           })
         });
@@ -86,8 +86,8 @@ export default async function handler(req, res) {
 
     res.status(200).json({
       result: 'success',
-      message: `You got ${score}/5 correct!`,
-      score,
+      message: `You got ${activity_data.score}/5 correct!`,
+      activity_data.score,
       data: supabaseResult
     });
 

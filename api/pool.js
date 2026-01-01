@@ -28,10 +28,10 @@ export default async function handler(req, res) {
     // Write to Supabase
     const supabaseResult = await writeToSupabase({
       name,
-      date_guess: dateGuess,
-      time_guess: timeGuess,
-      weight_guess: parseFloat(weightGuess),
-      length_guess: parseInt(lengthGuess),
+      activity_data.date_guess: dateGuess,
+      activity_data.time_guess: timeGuess,
+      activity_data.weight_guess: parseFloat(weightGuess),
+      activity_data.length_guess: parseInt(lengthGuess),
       activity_type: 'pool'
     });
 
