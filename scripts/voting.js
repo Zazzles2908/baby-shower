@@ -53,11 +53,12 @@
         }
         
         createNameItems(window.CONFIG.BABY_NAMES);
+        console.log('✅ Voting module created name items for:', window.CONFIG.BABY_NAMES.join(', '));
         submitBtn.addEventListener('click', handleSubmit);
         submitBtn.disabled = true;
         
         votingState.initialized = true;
-        console.log('✅ Voting initialized with', CONFIG.BABY_NAMES.length, 'names');
+        console.log('✅ Voting initialized with', window.CONFIG.BABY_NAMES.length, 'names');
     }
     
     function createNameItems(names) {

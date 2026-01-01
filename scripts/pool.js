@@ -12,7 +12,7 @@ function initializePool() {
  */
 async function loadPoolStats() {
     try {
-        const stats = await getStats();
+        const stats = await SupabaseClient.getStats();
 
         if (stats && stats.poolCount > 0) {
             displayPoolStats(stats);
