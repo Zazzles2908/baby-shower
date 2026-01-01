@@ -131,3 +131,36 @@
 
     console.log('🗳️ Voting module fully loaded with proper scoping');
 })();
+
+// Wait for config to be available before initializing
+function waitForConfig(callback, maxAttempts = 50) {
+    let attempts = 0;
+    
+    function check() {
+        if (window.CONFIG && window.CONFIG.BABY_NAMES) {
+            console.log('✅ CONFIG.BABY_NAMES is now available');
+            callback();
+        } else if (attempts < maxAttempts) {
+            attempts++;
+            console.log(`⏳ Waiting for CONFIG... attempt ${attempts}/${maxAttempts}`);
+            setTimeout(check, 100);
+        } else {
+            console.error('❌ CONFIG.BABY_NAMES never became available');
+            const nameList = document.getElementById('name-list');
+            if (nameList) {
+                nameList.innerHTML = '<p style="color:red">Error: Baby names failed to load within 5 seconds</p>';
+            }
+        }
+    }
+    
+    check();
+}
+
+// Replace the immediate window.initializeVoting assignment with a version that waits
+const originalInitialize = window.initializeVoting;
+window.initializeVoting = function() {
+    console.log('🗳️ initializeVoting called - will wait for config');
+    waitForConfig(originalInitialize);
+};
+
+console.log('🗳️ Voting module configured to wait for CONFIG');
