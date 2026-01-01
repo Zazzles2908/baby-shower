@@ -77,7 +77,7 @@ export default async function handler(req, res) {
 
 async function writeToSupabase(data) {
   try {
-    const response = await fetch(`${SUPABASE_URL}/rest/v1/submissions`, {
+    const response = await fetch(`${SUPABASE_URL}/rest/v1/baby_shower.submissions`, {
       method: 'POST',
       headers: {
         'apikey': SUPABASE_SERVICE_KEY,
