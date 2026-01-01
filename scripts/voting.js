@@ -8,28 +8,63 @@ let voteCounts = {};
  * Initialize voting functionality
  */
 function initializeVoting() {
-    const nameList = document.getElementById('name-list');
-    const voteSubmit = document.getElementById('vote-submit');
+    try {
+        console.log('🗳️ Initializing voting section...');
+        
+        const nameList = document.getElementById('name-list');
+        const voteSubmit = document.getElementById('vote-submit');
 
-    if (!nameList || !voteSubmit) {
-        return;
+        if (!nameList || !voteSubmit) {
+            console.error('❌ Voting elements not found');
+            showVotingError('Unable to load voting section. Please refresh the page.');
+            return;
+        }
+
+        // Clear existing content
+        nameList.innerHTML = '';
+        selectedVotes = [];
+
+        // Check if baby names are configured
+        if (!CONFIG || !CONFIG.BABY_NAMES || CONFIG.BABY_NAMES.length === 0) {
+            console.error('❌ No baby names configured');
+            showVotingError('No names available for voting yet.');
+            return;
+        }
+
+        console.log(`✅ Found ${CONFIG.BABY_NAMES.length} baby names`);
+
+        // Create name items
+        CONFIG.BABY_NAMES.forEach((name, index) => {
+            const nameItem = createNameItem(name, index);
+            nameList.appendChild(nameItem);
+        });
+
+        // Initialize vote submit button
+        voteSubmit.addEventListener('click', handleVoteSubmit);
+        voteSubmit.disabled = true; // Start disabled
+
+        // Load current vote counts
+        loadVoteStats();
+        
+        console.log('🗳️ Voting initialized successfully!');
+        
+    } catch (error) {
+        console.error('❌ Error initializing voting:', error);
+        showVotingError('Failed to load voting section: ' + error.message);
     }
+}
 
-    // Clear existing content
-    nameList.innerHTML = '';
-    selectedVotes = [];
-
-    // Create name items
-    CONFIG.BABY_NAMES.forEach((name, index) => {
-        const nameItem = createNameItem(name, index);
-        nameList.appendChild(nameItem);
-    });
-
-    // Initialize vote submit button
-    voteSubmit.addEventListener('click', handleVoteSubmit);
-
-    // Load current vote counts
-    loadVoteStats();
+/**
+ * Show voting error message
+ */
+function showVotingError(message) {
+    const nameList = document.getElementById('name-list');
+    if (nameList) {
+        nameList.innerHTML = `<div class="error-message" style="color: #e74c3c; padding: 20px; text-align: center; font-weight: bold;">
+            <p>⚠️ ${message}</p>
+            <button onclick="initializeVoting()" style="margin-top: 10px; padding: 10px 20px; background: #3498db; color: white; border: none; border-radius: 5px; cursor: pointer;">Try Again</button>
+        </div>`;
+    }
 }
 
 /**
@@ -108,6 +143,13 @@ function updateVoteSubmitButton() {
 
     if (voteSubmit) {
         voteSubmit.disabled = selectedVotes.length === 0;
+        
+        // Update button text
+        if (selectedVotes.length > 0) {
+            voteSubmit.textContent = `Submit ${selectedVotes.length} Vote${selectedVotes.length > 1 ? 's' : ''} ❤️`;
+        } else {
+            voteSubmit.textContent = 'Submit Votes ❤️';
+        }
     }
 }
 
@@ -123,7 +165,7 @@ async function handleVoteSubmit(event) {
         return;
     }
 
-    // Get guest name (could add a form field for this)
+    // Get guest name
     const guestName = prompt('Please enter your name:');
 
     if (!guestName || !guestName.trim()) {
@@ -133,7 +175,7 @@ async function handleVoteSubmit(event) {
 
     const data = {
         name: guestName.trim(),
-        selectedNames: selectedVotes.join(',')
+        selectedNames: selectedVotes
     };
 
     try {
@@ -202,7 +244,7 @@ function updateVoteCounts(voteCounts) {
         const voteCountEl = document.getElementById(`vote-count-${index}`);
 
         if (voteCountEl && voteCounts[name]) {
-            voteCountEl.textContent = `${voteCounts[name]} votes`;
+            voteCountEl.textContent = `${voteCounts[name]} vote${voteCounts[name] !== 1 ? 's' : ''}`;
         }
     });
 }
@@ -282,22 +324,4 @@ function getCrowdFavoriteMessage(name) {
     return messages[Math.floor(Math.random() * messages.length)];
 }
 
-// Export functions for use in other modules
-if (typeof module !== 'undefined' && module.exports) {
-    module.exports = {
-        initializeVoting,
-        createNameItem,
-        toggleVote,
-        updateVoteSubmitButton,
-        handleVoteSubmit,
-        resetVotes,
-        loadVoteStats,
-        updateVoteCounts,
-        getVotingSuccessMessage,
-        getVotingProgress,
-        checkVotingMilestone,
-        getVotingMilestoneMessage,
-        isCrowdFavorite,
-        getCrowdFavoriteMessage
-    };
-}
+console.log('🗳️ voting.js loaded successfully');
