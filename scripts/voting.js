@@ -1,207 +1,129 @@
-// Baby Shower App - Name Voting (FIXED v1.1)
-
+// This is the actual fix - single instance, no race conditions
 (function() {
     'use strict';
     
-    console.log('🗳️ Voting module v1.1 loading...');
+    // Prevent multiple instances
+    if (window.votingInitialized) {
+        console.log('Voting already initialized, skipping');
+        return;
+    }
     
-    // State management
+    console.log('🗳️ Voting module v2.0 loading...');
+    
     const votingState = {
         selected: [],
         maxVotes: 3,
         initialized: false
     };
     
-    // Initialize immediately when called
-    function init() {
-        console.log('🗳️ init() called');
+    // Only initialize once DOM is ready AND CONFIG is available
+    document.addEventListener('DOMContentLoaded', () => {
+        console.log('🗳️ DOM ready, checking CONFIG...');
         
-        if (votingState.initialized) {
-            console.log('Already initialized');
-            return;
+        // If CONFIG already available, init now
+        if (window.CONFIG && window.CONFIG.BABY_NAMES) {
+            console.log('✅ CONFIG already available');
+            init();
+        } else {
+            // Wait up to 5 seconds
+            let attempts = 0;
+            const check = () => {
+                if (window.CONFIG && window.CONFIG.BABY_NAMES) {
+                    console.log('✅ CONFIG available (attempt ' + attempts + ')');
+                    init();
+                } else if (attempts++ > 100) {
+                    showError();
+                } else {
+                    setTimeout(check, 50);
+                }
+            };
+            check();
         }
+    });
+    
+    function init() {
+        if (votingState.initialized) return;
         
         const nameList = document.getElementById('name-list');
         const submitBtn = document.getElementById('vote-submit');
         
         if (!nameList || !submitBtn) {
-            console.error('❌ Required elements not found');
+            console.error('Required elements not found');
             return;
         }
         
-        // Check if CONFIG is already available
-        if (window.CONFIG && window.CONFIG.BABY_NAMES) {
-            console.log('✅ CONFIG already available');
-            createNameItems(CONFIG.BABY_NAMES);
-            bindEvents();
-        } else {
-            console.log('⏳ Waiting for CONFIG...');
-            waitForConfig(100); // 100 attempts = 5 seconds
-        }
+        createNameItems(window.CONFIG.BABY_NAMES);
+        submitBtn.addEventListener('click', handleSubmit);
+        submitBtn.disabled = true;
+        
+        votingState.initialized = true;
+        console.log('✅ Voting initialized with', CONFIG.BABY_NAMES.length, 'names');
     }
     
-    // Wait for CONFIG with timeout
-    function waitForConfig(maxAttempts = 100) {
-        let attempts = 0;
-        
-        function check() {
-            attempts++;
-            
-            if (window.CONFIG && window.CONFIG.BABY_NAMES) {
-                console.log('✅ CONFIG now available (attempt ' + attempts + ')');
-                createNameItems(CONFIG.BABY_NAMES);
-                bindEvents();
-                return;
-            }
-            
-            if (attempts >= maxAttempts) {
-                console.error('❌ CONFIG failed to load after ' + maxAttempts + ' attempts');
-                const nameList = document.getElementById('name-list');
-                if (nameList) {
-                    nameList.innerHTML = '<p style="color:red;">Error: Baby names failed to load</p>';
-                }
-                return;
-            }
-            
-            setTimeout(check, 50);
-        }
-        
-        check();
-    }
-    
-    // Create name items
     function createNameItems(names) {
-        const nameList = document.getElementById('name-list');
-        nameList.innerHTML = '';
-        
-        names.forEach((name, index) => {
+        const list = document.getElementById('name-list');
+        list.innerHTML = '';
+        names.forEach((name, i) => {
             const item = document.createElement('div');
             item.className = 'name-item';
             item.innerHTML = `
                 <div class="name">${name}</div>
                 <button class="heart-btn" onclick="window.voting.toggle('${name}', this)">🤍</button>
-                <div class="vote-count" id="count-${index}">0 votes</div>
+                <div class="vote-count" id="count-${i}">0 votes</div>
             `;
-            nameList.appendChild(item);
+            list.appendChild(item);
         });
-        
-        console.log('✅ Created', names.length, 'name items');
     }
     
-    // Bind events
-    function bindEvents() {
-        const submitBtn = document.getElementById('vote-submit');
-        if (submitBtn) {
-            submitBtn.addEventListener('click', handleSubmit);
-            submitBtn.disabled = true;
-        }
-        votingState.initialized = true;
-        console.log('✅ Events bound, voting ready');
-    }
-    
-    // Toggle vote
     function toggleVote(name, button) {
-        console.log('❤️ toggleVote:', name);
-        
         const idx = votingState.selected.indexOf(name);
-        
         if (idx > -1) {
             votingState.selected.splice(idx, 1);
             button.textContent = '🤍';
             button.classList.remove('liked');
         } else {
             if (votingState.selected.length >= votingState.maxVotes) {
-                alert(`You can only vote for ${votingState.maxVotes} names`);
+                alert('Max 3 votes');
                 return;
             }
             votingState.selected.push(name);
             button.textContent = '❤️';
             button.classList.add('liked');
         }
-        
-        const submitBtn = document.getElementById('vote-submit');
-        if (submitBtn) {
-            submitBtn.disabled = votingState.selected.length === 0;
-        }
+        document.getElementById('vote-submit').disabled = votingState.selected.length === 0;
     }
     
-    // Handle submit
     async function handleSubmit(event) {
-        console.log('🗳️ handleSubmit called');
         event.preventDefault();
+        if (votingState.selected.length === 0) return alert('Select at least one');
         
-        if (votingState.selected.length === 0) {
-            alert('Please select at least one name');
-            return;
-        }
+        const name = prompt('Your name:');
+        if (!name) return alert('Name required');
         
-        const name = prompt('Please enter your name:');
-        if (!name || !name.trim()) {
-            alert('Name is required');
-            return;
-        }
+        await fetch('/api/vote', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({name: name.trim(), selectedNames: votingState.selected})
+        });
         
-        const data = {
-            name: name.trim(),
-            selectedNames: votingState.selected
-        };
-        
-        console.log('🗳️ Submitting:', data);
-        
-        try {
-            const response = await fetch('/api/vote', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(data)
-            });
-            
-            const result = await response.json();
-            console.log('✅ Submit result:', result);
-            
-            if (result.result === 'success') {
-                alert(`Thanks ${name}! Your votes were saved!`);
-                reset();
-            } else {
-                alert('Error: ' + (result.error || 'Unknown error'));
-            }
-        } catch (error) {
-            console.error('❌ Submit failed:', error);
-            alert('Network error. Please try again.');
-        }
-    }
-    
-    // Reset form
-    function reset() {
+        alert('Thanks ' + name + '!');
         votingState.selected = [];
         document.querySelectorAll('.heart-btn').forEach(btn => {
             btn.textContent = '🤍';
             btn.classList.remove('liked');
         });
-        const submitBtn = document.getElementById('vote-submit');
-        if (submitBtn) submitBtn.disabled = true;
+        document.getElementById('vote-submit').disabled = true;
     }
     
-    // Expose globally
-    window.initializeVoting = init;
-    window.voting = {
-        toggle: toggleVote,
-        reset: reset,
-        state: votingState
-    };
+    function showError() {
+        document.getElementById('name-list').innerHTML = 
+            '<p style="color:red; padding:20px;">Error: Failed to load names. Please refresh.</p>';
+    }
     
-    console.log('🗳️ Voting module v1.1 loaded');
+    // Export
+    window.voting = { toggle: toggleVote, state: votingState };
+    window.initializeVoting = init;
+    window.votingInitialized = true;
+    
+    console.log('🗳️ Voting module v2.0 loaded and ready');
 })();
-
-// Emergency fix: getStats function for pool stats
-async function getStats() {
-    console.log('🗳️ getStats called (emergency fix)');
-    return {
-        guestbook: 0,
-        pool: 0,
-        quiz: 0,
-        advice: 0,
-        votes: 0
-    };
-}
-
-console.log('🗳️ getStats emergency fix loaded');
