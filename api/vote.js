@@ -32,9 +32,11 @@ export default async function handler(req, res) {
 
     // Write to Supabase
     const supabaseResult = await writeToSupabase({
-      name,
-      activity_data.selected_names: selectedNames.join(','),
-      activity_type: 'voting'
+      name: name,
+      activity_type: 'voting',
+      activity_data: {
+        selected_names: selectedNames.join(',')
+      }
     });
 
     // Trigger Google Sheets webhook if configured

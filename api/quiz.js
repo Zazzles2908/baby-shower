@@ -7,48 +7,7 @@ const GOOGLE_WEBHOOK_URL = process.env.GOOGLE_WEBHOOK_URL;
 
 // Quiz answer key
 const CORRECT_ANSWERS = {
-  activity_data.puzzle1: 'Baby Shower',
-  activity_data.puzzle2: 'Three Little Pigs',
-  activity_data.puzzle3: 'Rock a Bye Baby',
-  activity_data.puzzle4: 'Baby Bottle',
-  activity_data.puzzle5: 'Diaper Change'
-};
-
-export default async function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-
-  if (req.method === 'OPTIONS') {
-    return res.status(200).end();
-  }
-
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
-  }
-
-  try {
-    const { name, activity_data.puzzle1, activity_data.puzzle2, activity_data.puzzle3, activity_data.puzzle4, activity_data.puzzle5 } = req.body;
-
-    if (!name) {
-      return res.status(400).json({ error: 'Name is required' });
-    }
-
-    // Calculate activity_data.score
-    let activity_data.score = 0;
-    const answers = [activity_data.puzzle1, activity_data.puzzle2, activity_data.puzzle3, activity_data.puzzle4, activity_data.puzzle5];
-    
-    Object.keys(CORRECT_ANSWERS).forEach((key, index) => {
-      if (answers[index] && answers[index].toLowerCase() === CORRECT_ANSWERS[key].toLowerCase()) {
-        activity_data.score++;
-      }
-    });
-
-    // Prepare data for Supabase
-    const submissionData = {
-      name: name,
-      activity_type: 'quiz',
-      activity_data: {
+  activity_data: {
         puzzle1: puzzle1 || '',
         puzzle2: puzzle2 || '',
         puzzle3: puzzle3 || '',
@@ -56,40 +15,6 @@ export default async function handler(req, res) {
         puzzle5: puzzle5 || '',
         score: score
       }
-    };
-
-    // Write to Supabase
-    const supabaseResult = await writeToSupabase(submissionData);
-
-    // Trigger Google Sheets webhook if configured
-    if (GOOGLE_WEBHOOK_URL) {
-      try {
-        await fetch(GOOGLE_WEBHOOK_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            sheet: 'QuizAnswers',
-            data: {
-              Timestamp: new Date().toISOString(),
-              Name: name,
-              Puzzle1: activity_data.puzzle1 || '',
-              Puzzle2: activity_data.puzzle2 || '',
-              Puzzle3: activity_data.puzzle3 || '',
-              Puzzle4: activity_data.puzzle4 || '',
-              Puzzle5: activity_data.puzzle5 || '',
-              Score: activity_data.score
-            }
-          })
-        });
-      } catch (webhookError) {
-        console.warn('Google Sheets webhook failed:', webhookError);
-      }
-    }
-
-    res.status(200).json({
-      result: 'success',
-      message: `You got ${activity_data.score}/5 correct!`,
-      activity_data.score,
       data: supabaseResult
     });
 

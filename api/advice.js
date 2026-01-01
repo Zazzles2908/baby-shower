@@ -27,10 +27,12 @@ export default async function handler(req, res) {
 
     // Write to Supabase
     const supabaseResult = await writeToSupabase({
-      name,
-      activity_data.advice_type: adviceType,
-      message,
-      activity_type: 'advice'
+      name: name,
+      activity_type: 'advice',
+      activity_data: {
+        advice_type: adviceType,
+        message: message
+      }
     });
 
     // Trigger Google Sheets webhook if configured
