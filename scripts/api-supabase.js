@@ -109,15 +109,18 @@
      */
     async function submitPool(data) {
         const url = getSupabaseFunctionUrl('pool');
-
+        
+        // Combine date and time into prediction string (YYYY-MM-DD)
+        const dateGuess = data.dateGuess || '';
+        const prediction = dateGuess; // YYYY-MM-DD format
+        const dueDate = dateGuess; // Same as prediction
+        
         return apiFetch(url, {
             method: 'POST',
             body: JSON.stringify({
                 name: data.name?.trim() || '',
-                dateGuess: data.dateGuess || '',
-                timeGuess: data.timeGuess || '',
-                weightGuess: data.weightGuess || '',
-                lengthGuess: data.lengthGuess || '',
+                prediction: prediction,
+                dueDate: dueDate,
             }),
         });
     }
@@ -127,18 +130,28 @@
      */
     async function submitQuiz(data) {
         const url = getSupabaseFunctionUrl('quiz');
+        
+        // Build answers array [puzzle1, puzzle2, puzzle3, puzzle4, puzzle5]
+        const answers = [
+            data.puzzle1?.trim() || '',
+            data.puzzle2?.trim() || '',
+            data.puzzle3?.trim() || '',
+            data.puzzle4?.trim() || '',
+            data.puzzle5?.trim() || '',
+        ];
+        
+        const score = Number(data.score) || 0;
+        const totalQuestions = Number(data.totalQuestions) || 5;
+        const percentage = Math.round((score / totalQuestions) * 100);
 
         return apiFetch(url, {
             method: 'POST',
             body: JSON.stringify({
-                name: data.name?.trim() || '',
-                puzzle1: data.puzzle1?.trim() || '',
-                puzzle2: data.puzzle2?.trim() || '',
-                puzzle3: data.puzzle3?.trim() || '',
-                puzzle4: data.puzzle4?.trim() || '',
-                puzzle5: data.puzzle5?.trim() || '',
-                score: Number(data.score) || 0,
-                totalQuestions: Number(data.totalQuestions) || 0,
+                name: data.name?.trim() || 'Anonymous Quiz Taker',
+                answers: answers,
+                score: score,
+                totalQuestions: totalQuestions,
+                percentage: percentage,
             }),
         });
     }
@@ -148,13 +161,21 @@
      */
     async function submitAdvice(data) {
         const url = getSupabaseFunctionUrl('advice');
+        
+        // Map adviceType to category: "For Parents" -> "general", "For Baby" -> "fun"
+        const adviceType = data.adviceType?.trim() || '';
+        const categoryMap = {
+            'For Parents': 'general',
+            'For Baby': 'fun',
+        };
+        const category = categoryMap[adviceType] || adviceType.toLowerCase();
 
         return apiFetch(url, {
             method: 'POST',
             body: JSON.stringify({
-                name: data.name?.trim() || '',
-                adviceType: data.adviceType?.trim() || '',
+                name: data.name?.trim() || 'Anonymous Advisor',
                 advice: data.advice?.trim() || data.message?.trim() || '',
+                category: category,
             }),
         });
     }
