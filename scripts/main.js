@@ -119,8 +119,9 @@ function prefillAllNameFields(name) {
         const input = document.getElementById(field.id);
         if (input) {
             input.value = name;
-            // Make the field visually indicate it's auto-filled
-            input.classList.add('name-field-hidden');
+            // Make the field readonly so it can't be edited (but still submitted)
+            input.classList.add('name-field-readonly');
+            input.setAttribute('readonly', 'readonly');
             // Update label to show it's pre-filled
             const label = input.previousElementSibling;
             if (label && label.tagName === 'LABEL') {
