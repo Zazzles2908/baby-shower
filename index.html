@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Baby Shower 2026 - v2026010201</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@400;700&family=Nunito:wght@400;600;700&family=Quicksand:wght@400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles/main.css">
     <link rel="stylesheet" href="styles/animations.css">
 </head>
@@ -11,14 +14,21 @@
     <div id="app">
         <!-- Welcome Section -->
         <section id="welcome-section" class="active">
-            <div class="container">
-                <h1>👶 Welcome to Baby's Shower! 🍊</h1>
-                <p class="subtitle">Celebrating our little girl arriving March 2026</p>
-                <div class="event-info">
-                    <p>📅 Sunday January 4th @ 11AM - 2PM</p>
-                    <p>📍 Myuna Farm, Doveton</p>
+            <div class="hero-section">
+                <div class="hero-image">
+                    <span class="hero-placeholder">👨‍👩‍👧 🍊</span>
                 </div>
-                
+                <div class="hero-content">
+                    <h1 class="script-heading">Welcome to Our Baby Shower</h1>
+                    <p class="subtitle">Celebrating our little girl arriving March 2026</p>
+                    <div class="event-info">
+                        <p>📅 Sunday January 4th @ 11AM - 2PM</p>
+                        <p>📍 Myuna Farm, Doveton</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="container">
                 <!-- Guest Name Collection - Show only if not already collected -->
                 <div id="welcome-name-container" class="welcome-name-container">
                     <div class="form-group">
@@ -29,68 +39,32 @@
                 </div>
                 
                 <div class="activities" id="activities-container">
-                    <h2>Choose an Activity</h2>
+                    <h2 class="activities-heading">Choose an Activity</h2>
                     <div class="activity-buttons">
-                        <button class="activity-btn" data-section="guestbook">
-                            <span class="icon">
-                                <svg viewBox="0 0 100 100" class="sketch-icon" xmlns="http://www.w3.org/2000/svg">
-                                    <path d="M30,60 C25,40 20,20 35,20 C45,20 50,40 50,55 C50,40 55,20 65,20 C80,20 75,40 70,60 C75,65 80,75 75,85 C70,95 30,95 25,85 C20,75 25,65 30,60 Z" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
-                                    <circle cx="40" cy="65" r="2" fill="currentColor"/>
-                                    <circle cx="60" cy="65" r="2" fill="currentColor"/>
-                                    <path d="M48,72 L52,72 M50,72 L50,75" stroke="currentColor" stroke-width="2"/>
-                                </svg>
-                            </span>
-                            <span>Leave a Wish</span>
+                        <button class="activity-card" data-section="guestbook" aria-label="Guestbook - Leave your wishes for baby">
+                            <span class="card-icon">💌</span>
+                            <span class="card-title">Guestbook</span>
+                            <span class="card-subtitle">Leave your wishes for baby</span>
                         </button>
-                        <button class="activity-btn" data-section="pool">
-                            <span class="icon">
-                                <svg viewBox="0 0 100 100" class="sketch-icon" xmlns="http://www.w3.org/2000/svg">
-                                    <path d="M50,30 C65,30 75,40 75,55 C75,70 65,80 50,80 C35,80 25,70 25,55 C25,40 35,30 50,30 Z" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
-                                    <path d="M75,55 L85,50 M25,55 L15,50" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
-                                    <circle cx="45" cy="50" r="2" fill="currentColor"/>
-                                    <circle cx="55" cy="50" r="2" fill="currentColor"/>
-                                    <path d="M48,60 L50,62 L52,60" stroke="currentColor" stroke-width="2"/>
-                                    <path d="M50,30 L50,20 M50,20 L40,15 M50,20 L60,15" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
-                                </svg>
-                            </span>
-                            <span>Guess Baby's Stats</span>
+                        <button class="activity-card" data-section="pool" aria-label="Baby Pool - Predict the big arrival">
+                            <span class="card-icon">🎯</span>
+                            <span class="card-title">Baby Pool</span>
+                            <span class="card-subtitle">Predict the big arrival</span>
                         </button>
-                        <button class="activity-btn" data-section="quiz">
-                            <span class="icon">
-                                <svg viewBox="0 0 100 100" class="sketch-icon" xmlns="http://www.w3.org/2000/svg">
-                                    <circle cx="50" cy="50" r="30" fill="none" stroke="currentColor" stroke-width="3"/>
-                                    <circle cx="35" cy="35" r="10" fill="none" stroke="currentColor" stroke-width="3"/>
-                                    <circle cx="65" cy="35" r="10" fill="none" stroke="currentColor" stroke-width="3"/>
-                                    <circle cx="42" cy="55" r="2" fill="currentColor"/>
-                                    <circle cx="58" cy="55" r="2" fill="currentColor"/>
-                                    <path d="M45,65 Q50,70 55,65" fill="none" stroke="currentColor" stroke-width="2"/>
-                                </svg>
-                            </span>
-                            <span>Baby Emoji Pictionary</span>
+                        <button class="activity-card" data-section="quiz" aria-label="Baby Quiz - Decode baby emoji puzzles">
+                            <span class="card-icon">🧩</span>
+                            <span class="card-title">Baby Quiz</span>
+                            <span class="card-subtitle">Decode baby emoji puzzles</span>
                         </button>
-                        <button class="activity-btn" data-section="advice">
-                            <span class="icon">
-                                <svg viewBox="0 0 100 100" class="sketch-icon" xmlns="http://www.w3.org/2000/svg">
-                                    <path d="M30,40 C30,30 40,20 50,20 C60,20 70,30 70,40 L70,50 C70,60 80,60 80,70 C80,85 65,90 50,90 C35,90 20,85 20,70 C20,60 30,60 30,50 Z" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/>
-                                    <path d="M20,70 L30,80 M80,70 L70,80" stroke="currentColor" stroke-width="3"/>
-                                    <circle cx="40" cy="50" r="2" fill="currentColor"/>
-                                    <circle cx="60" cy="50" r="2" fill="currentColor"/>
-                                    <path d="M48,60 L52,60" stroke="currentColor" stroke-width="2"/>
-                                </svg>
-                            </span>
-                            <span>Give Advice</span>
+                        <button class="activity-card" data-section="advice" aria-label="Advice - Share your wisdom">
+                            <span class="card-icon">💡</span>
+                            <span class="card-title">Advice</span>
+                            <span class="card-subtitle">Share your wisdom</span>
                         </button>
-                        <button class="activity-btn" data-section="voting">
-                            <span class="icon">
-                                <svg viewBox="0 0 100 100" class="sketch-icon" xmlns="http://www.w3.org/2000/svg">
-                                    <path d="M70,40 C80,30 90,40 90,60 C90,80 50,90 25,70 C20,65 15,55 20,40 C25,25 40,20 50,40" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
-                                    <path d="M25,70 L25,80 M35,85 L35,95" stroke="currentColor" stroke-width="3"/>
-                                    <circle cx="35" cy="50" r="2" fill="currentColor"/>
-                                    <path d="M15,55 C5,55 5,40 15,45" fill="none" stroke="currentColor" stroke-width="3"/>
-                                    <path d="M45,60 Q50,40 60,35" fill="none" stroke="currentColor" stroke-width="3"/>
-                                </svg>
-                            </span>
-                            <span>Vote for Names</span>
+                        <button class="activity-card" data-section="voting" aria-label="Voting - Help choose the perfect name">
+                            <span class="card-icon">❤️</span>
+                            <span class="card-title">Voting</span>
+                            <span class="card-subtitle">Help choose the perfect name</span>
                         </button>
                     </div>
                 </div>
@@ -200,28 +174,62 @@
 
         <!-- Advice Section -->
         <section id="advice-section" class="hidden">
-            <div class="container">
+            <div class="container advice-container">
                 <button class="back-btn">← Back to Activities</button>
-                <h1>💡 Advice Time Capsule</h1>
-                <p class="subtitle">Leave wisdom for the parents or a wish for baby's 18th birthday</p>
+                
+                <div class="advice-hero">
+                    <div class="advice-hero-icon">📜</div>
+                    <h1>Leave Words of Wisdom</h1>
+                    <p class="subtitle">Share your wisdom for the parents or seal a wish for baby's 18th birthday</p>
+                </div>
+
                 <form id="advice-form">
-                    <div class="form-group">
-                        <label for="advice-name">Your Name *</label>
-                        <input type="text" id="advice-name" name="name" required>
+                    <!-- Name Line styled as "From:" on a letter -->
+                    <div class="advice-name-line">
+                        <label for="advice-name">From:</label>
+                        <input type="text" id="advice-name" name="name" required placeholder="Your name">
                     </div>
-                    <div class="form-group">
-                        <label for="advice-type">Type of Advice *</label>
-                        <select id="advice-type" name="adviceType" required>
-                            <option value="">Select...</option>
-                            <option value="For Parents">For Parents</option>
-                            <option value="For Baby">For Baby's 18th Birthday</option>
-                        </select>
+
+                    <!-- Advice Delivery Toggle: Envelope vs Time Capsule -->
+                    <div class="advice-delivery-toggle">
+                        <div class="toggle-label">Choose delivery method:</div>
+                        <div class="toggle-options">
+                            <button type="button" class="toggle-option envelope-option selected" data-value="For Parents" role="radio" aria-checked="true">
+                                <div class="toggle-icon">📬</div>
+                                <div class="toggle-content">
+                                    <div class="toggle-title">Open Now</div>
+                                    <div class="toggle-subtitle">For Parents</div>
+                                </div>
+                            </button>
+                            <button type="button" class="toggle-option capsule-option" data-value="For Baby" role="radio" aria-checked="false">
+                                <div class="toggle-icon">🏺</div>
+                                <div class="toggle-content">
+                                    <div class="toggle-title">Open on 18th Birthday</div>
+                                    <div class="toggle-subtitle">Time Capsule</div>
+                                </div>
+                            </button>
+                        </div>
+                        <!-- Hidden input to store the selected value -->
+                        <input type="hidden" id="advice-type" name="adviceType" value="For Parents" required>
                     </div>
-                    <div class="form-group">
-                        <label for="advice-message">Your Message *</label>
-                        <textarea id="advice-message" name="message" rows="4" required placeholder="Share your wisdom or wish..."></textarea>
+
+                    <!-- Stationery-styled advice paper -->
+                    <div class="advice-paper-wrapper">
+                        <div class="paper-corner-decoration top-left"></div>
+                        <div class="paper-corner-decoration top-right"></div>
+                        <div class="advice-paper">
+                            <textarea id="advice-message" name="message" rows="8" required placeholder="Write your wisdom here..."></textarea>
+                            <div class="paper-seal-decoration"></div>
+                        </div>
+                        <div class="paper-corner-decoration bottom-left"></div>
+                        <div class="paper-corner-decoration bottom-right"></div>
                     </div>
-                    <button type="submit" class="submit-btn">Submit Advice 💌</button>
+
+                    <!-- Seal & Send Button -->
+                    <button type="submit" class="submit-btn advice-seal-btn">
+                        <span class="btn-icon">💫</span>
+                        <span class="btn-text">Seal & Send</span>
+                    </button>
                 </form>
             </div>
         </section>
@@ -278,3 +286,5 @@
     <script src="scripts/advice.js"></script>
     <script src="scripts/voting.js"></script>
     <script src="scripts/surprises.js"></script>
+</body>
+</html>

@@ -4,8 +4,131 @@
  * Initialize advice-specific functionality
  */
 function initializeAdvice() {
-    // Any advice-specific initialization can go here
-    // Currently handled in main.js
+    setupAdviceToggle();
+    setupAdviceSuccessEffects();
+}
+
+/**
+ * Setup advice delivery toggle interaction
+ */
+function setupAdviceToggle() {
+    const toggleOptions = document.querySelectorAll('.toggle-option');
+    const hiddenInput = document.getElementById('advice-type');
+
+    if (!toggleOptions.length || !hiddenInput) {
+        console.warn('Advice toggle elements not found');
+        return;
+    }
+
+    toggleOptions.forEach(option => {
+        option.addEventListener('click', function() {
+            // Remove selected class from all options
+            toggleOptions.forEach(opt => {
+                opt.classList.remove('selected');
+                opt.setAttribute('aria-checked', 'false');
+            });
+
+            // Add selected class to clicked option
+            this.classList.add('selected');
+            this.setAttribute('aria-checked', 'true');
+
+            // Update hidden input with selected value
+            const selectedValue = this.getAttribute('data-value');
+            hiddenInput.value = selectedValue;
+
+            // Play selection animation
+            this.classList.remove('toggle-select');
+            void this.offsetWidth; // Trigger reflow
+            this.classList.add('toggle-select');
+
+            // Log for debugging
+            console.log('Advice delivery selected:', selectedValue);
+        });
+
+        // Add keyboard support
+        option.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                this.click();
+            }
+        });
+    });
+}
+
+/**
+ * Setup advice success effects
+ */
+function setupAdviceSuccessEffects() {
+    // Listen for successful advice submission
+    document.addEventListener('submit', function(e) {
+        if (e.target.id === 'advice-form') {
+            const adviceType = document.getElementById('advice-type').value;
+            const successOverlay = document.getElementById('success-modal');
+            
+            // Add success effects when modal shows
+            setTimeout(() => {
+                if (adviceType === 'For Parents') {
+                    // Envelope seal effect for immediate sharing
+                    triggerEnvelopeSuccess();
+                } else {
+                    // Time capsule bury effect for 18th birthday
+                    triggerCapsuleSuccess();
+                }
+            }, 300);
+        }
+    });
+}
+
+/**
+ * Trigger envelope success animation
+ */
+function triggerEnvelopeSuccess() {
+    const successIcon = document.getElementById('success-icon');
+    if (successIcon) {
+        successIcon.innerHTML = '📬';
+        successIcon.classList.add('envelope-seal');
+    }
+}
+
+/**
+ * Trigger time capsule success animation
+ */
+function triggerCapsuleSuccess() {
+    const successIcon = document.getElementById('success-icon');
+    if (successIcon) {
+        successIcon.innerHTML = '🏺';
+        successIcon.classList.add('capsule-bury');
+    }
+
+    // Add confetti for time capsule
+    createAdviceConfetti();
+}
+
+/**
+ * Create advice-specific confetti
+ */
+function createAdviceConfetti() {
+    const colors = ['#D4AF37', '#87A96B', '#C9A66B', '#FF6B6B', '#4ECDC4'];
+    const symbols = ['✨', '💫', '⭐', '🌟'];
+    
+    for (let i = 0; i < 20; i++) {
+        setTimeout(() => {
+            const particle = document.createElement('div');
+            particle.className = 'advice-confetti-particle';
+            particle.textContent = symbols[Math.floor(Math.random() * symbols.length)];
+            particle.style.left = Math.random() * 100 + 'vw';
+            particle.style.top = '-50px';
+            particle.style.color = colors[Math.floor(Math.random() * colors.length)];
+            particle.style.fontSize = (Math.random() * 1.5 + 1) + 'rem';
+            
+            document.body.appendChild(particle);
+            
+            // Remove particle after animation
+            setTimeout(() => {
+                particle.remove();
+            }, 2000);
+        }, i * 100);
+    }
 }
 
 /**
