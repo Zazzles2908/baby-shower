@@ -26,7 +26,19 @@ document.addEventListener('DOMContentLoaded', () => {
  */
 async function initializeAPI() {
     try {
-        // Initialize API client (already auto-initialized in api.js)
+        // Wait for API to be available (handles script loading race conditions)
+        let retries = 10;
+        while (!window.API && retries > 0) {
+            await new Promise(resolve => setTimeout(resolve, 50));
+            retries--;
+        }
+        
+        if (!window.API) {
+            console.warn('API client not loaded, pool stats will not be available');
+            return;
+        }
+        
+        // Initialize API client (already auto-initialized in api-supabase.js)
         const result = window.API.initializeAPI();
         
         if (result && result.success) {
