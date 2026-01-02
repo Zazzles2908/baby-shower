@@ -57,11 +57,11 @@ serve(async (req: Request) => {
     const normalizedCategory = category.toLowerCase().trim()
     const validCategories = ['general', 'naming', 'feeding', 'sleeping', 'safety', 'fun']
     
-    // Map "For Parents" -> "general", "For Baby" -> "fun"
+    // Map "For Parents" or "for parents" -> "general", "For Baby" or "for baby" -> "fun"
     let finalCategory = normalizedCategory
-    if (normalizedCategory === 'for parents') {
+    if (normalizedCategory === 'for parents' || normalizedCategory === 'parents' || normalizedCategory === 'for parents\' 18th birthday') {
       finalCategory = 'general'
-    } else if (normalizedCategory === 'for baby') {
+    } else if (normalizedCategory === 'for baby' || normalizedCategory === 'baby' || normalizedCategory === 'for baby\'s 18th birthday') {
       finalCategory = 'fun'
     }
     

@@ -155,7 +155,7 @@
                 name: data.name?.trim() || 'Anonymous Quiz Taker',
                 answers: answers,
                 score: score,
-                total_questions: totalQuestions,
+                totalQuestions: totalQuestions,
                 percentage: percentage,
             }),
         });
