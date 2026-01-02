@@ -9,6 +9,11 @@ interface AdviceRequest {
   category?: string
 }
 
+interface AIResponse {
+  generated_advice: string
+  roast_level: string
+}
+
 serve(async (req: Request) => {
   const headers = new Headers({
     'Access-Control-Allow-Origin': '*',
@@ -55,7 +60,7 @@ serve(async (req: Request) => {
     
     // Map frontend adviceType to valid categories if needed
     const normalizedCategory = category.toLowerCase().trim()
-    const validCategories = ['general', 'naming', 'feeding', 'sleeping', 'safety', 'fun']
+    const validCategories = ['general', 'naming', 'feeding', 'sleeping', 'safety', 'fun', 'ai_roast']
     
     // Map "For Parents" or "for parents" -> "general", "For Baby" or "for baby" -> "fun"
     let finalCategory = normalizedCategory
@@ -74,6 +79,11 @@ serve(async (req: Request) => {
     }
 
     const sanitizedAdvice = adviceText.trim().slice(0, 2000)
+
+    // Handle AI Roast feature
+    if (finalCategory === 'ai_roast') {
+      return await handleAIRoast(supabase, name, sanitizedAdvice, headers)
+    }
 
     // Count total submissions BEFORE insert to check milestone
     const { count: totalCount } = await supabase
@@ -122,3 +132,90 @@ serve(async (req: Request) => {
     return new Response(JSON.stringify({ error: err instanceof Error ? err.message : 'Internal error' }), { status: 500, headers })
   }
 })
+
+async function handleAIRoast(supabase: any, name: string, topic: string, headers: Headers) {
+  const minimaxApiKey = Deno.env.get('MINIMAX_API_KEY') ?? ''
+  
+  if (!minimaxApiKey) {
+    return new Response(
+      JSON.stringify({ 
+        error: 'AI Roast feature not configured. MINIMAX_API_KEY is missing.',
+        configured: false 
+      }), 
+      { status: 503, headers }
+    )
+  }
+
+  try {
+    // Call MiniMax API for AI-generated roast
+    const response = await fetch('https://api.minimax.chat/v1/text/chatcompletion_v2', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${minimaxApiKey}`,
+      },
+      body: JSON.stringify({
+        model: 'abab6.5s-chat',
+        messages: [
+          {
+            role: 'system',
+            content: 'You are a witty, playful roast master for a baby shower. Keep it light-hearted, funny, and appropriate. Roast the parents or baby in a loving way. Max 280 characters.'
+          },
+          {
+            role: 'user',
+            content: `Roast this baby shower topic with humor: ${topic} (from ${name})`
+          }
+        ],
+        temperature: 0.7,
+        max_tokens: 200,
+      }),
+    })
+
+    if (!response.ok) {
+      throw new Error(`MiniMax API error: ${response.status}`)
+    }
+
+    const aiData = await response.json()
+    const generatedAdvice = aiData.choices?.[0]?.message?.content || 'Sorry, the roast generator is on break!'
+
+    // Save to database
+    const { data, error } = await supabase
+      .from('submissions')
+      .insert({
+        name: name,
+        activity_type: 'ai_roast',
+        activity_data: {
+          advice: generatedAdvice,
+          topic: topic,
+          category: 'ai_roast',
+          is_approved: true,
+          submitted_at: new Date().toISOString(),
+        },
+      })
+      .select()
+      .single()
+
+    if (error) throw new Error(`Database error: ${error.message}`)
+
+    return new Response(
+      JSON.stringify({
+        success: true,
+        data: {
+          id: data.id,
+          advice: generatedAdvice,
+          category: 'ai_roast',
+          created_at: data.created_at,
+          ai_generated: true,
+        },
+      }),
+      { status: 201, headers }
+    )
+
+  } catch (err) {
+    console.error('AI Roast error:', err)
+    return new Response(
+      JSON.stringify({ error: 'Failed to generate AI roast' }), 
+      { status: 500, headers }
+    )
+  }
+}

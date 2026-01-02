@@ -1,8 +1,15 @@
 # Edge Functions Reference - Baby Shower App
 
 **Last Updated**: 2026-01-02  
-**Version**: 1.0  
+**Version**: 1.1  
 **Purpose**: Supabase Edge Function specifications and API reference
+
+---
+
+## Quick Links
+
+- [Environment Variable Configuration](../EDGE_FUNCTIONS_ENV_CONFIG.md) - How to configure `MINIMAX_API_KEY` and other variables
+- [Deploy Edge Functions](../DEPLOYMENT.md) - Deployment instructions
 
 ---
 
@@ -295,7 +302,7 @@ VALUES (
 
 ---
 
-## Advice Function
+## Advice Function (with AI Roasts)
 
 ### Endpoint
 
@@ -303,7 +310,46 @@ VALUES (
 POST /functions/v1/advice
 ```
 
-### Request Body
+### AI Roasts Feature
+
+The advice function now supports **AI-generated roasts** using MiniMax API. This feature generates witty, playful roasts for baby shower topics.
+
+#### AI Roast Request
+
+```json
+{
+  "name": "Advisor Name",
+  "advice": "Any topic to roast about",
+  "category": "ai_roast"
+}
+```
+
+#### AI Roast Response
+
+```json
+{
+  "success": true,
+  "data": {
+    "id": 46,
+    "advice": "Oh look, another parent who thinks their baby will sleep through the night! 💤😅",
+    "category": "ai_roast",
+    "created_at": "2026-01-02T00:15:04Z",
+    "ai_generated": true
+  }
+}
+```
+
+#### Environment Variables Required
+
+| Variable | Description |
+|----------|-------------|
+| `MINIMAX_API_KEY` | API key for MiniMax AI service |
+| `SUPABASE_URL` | Supabase project URL |
+| `SUPABASE_SERVICE_ROLE_KEY` | Admin key for database operations |
+
+**Configuration**: See [Edge Functions Environment Configuration](../EDGE_FUNCTIONS_ENV_CONFIG.md)
+
+### Standard Advice Request
 
 ```json
 {
@@ -319,7 +365,19 @@ POST /functions/v1/advice
 |-------|----------|-------|--------------|
 | `name` | Yes | Max 100 chars | Trim whitespace |
 | `advice` | Yes | Max 2000 chars | Trim whitespace |
-| `category` | Yes | "For Parents" or "For Baby's 18th Birthday" | - |
+| `category` | Yes | Valid category (see below) | - |
+
+### Valid Categories
+
+| Category | Description |
+|----------|-------------|
+| `For Parents` or `general` | Parenting advice |
+| `For Baby` or `fun` | Fun activities for baby |
+| `ai_roast` | AI-generated roast |
+| `naming` | Baby name advice |
+| `feeding` | Feeding tips |
+| `sleeping` | Sleep training advice |
+| `safety` | Safety recommendations |
 
 ### Example Response
 
@@ -461,16 +519,23 @@ curl -X POST https://bkszmvfsfgvdwzacgmfz.supabase.co/functions/v1/quiz \
   -H "apikey: YOUR_ANON_KEY" \
   -d '{"name":"Test Quizzer","answers":["a","b","c","d","e"],"score":5,"totalQuestions":5}'
 
-# Test advice function
+# Test advice function (standard)
 curl -X POST https://bkszmvfsfgvdwzacgmfz.supabase.co/functions/v1/advice \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer YOUR_ANON_KEY" \
   -H "apikey: YOUR_ANON_KEY" \
   -d '{"name":"Test Advisor","advice":"Test advice","category":"For Parents"}'
+
+# Test AI Roast function
+curl -X POST https://bkszmvfsfgvdwzacgmfz.supabase.co/functions/v1/advice \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_ANON_KEY" \
+  -H "apikey: YOUR_ANON_KEY" \
+  -d '{"name":"Test Roaster","advice":"Sleep training","category":"ai_roast"}'
 ```
 
 ---
 
-**Document Version**: 1.0  
+**Document Version**: 1.1  
 **Last Updated**: 2026-01-02  
 **Maintained By**: Development Team
