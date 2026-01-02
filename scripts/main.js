@@ -907,11 +907,13 @@ async function submitGuestbook(data, photoFile) {
  * Submit pool prediction using Supabase Edge Functions
  */
 async function submitPool(data) {
-    // Send only the fields expected by the Edge Function
+    // Build complete prediction string with all fields
+    const prediction = `Date: ${data.dateGuess || ''}, Time: ${data.timeGuess || ''}, Weight: ${data.weightGuess || ''}kg, Length: ${data.lengthGuess || ''}cm`;
+    
     return await window.API.submitPool({
-        name: data.name,
-        prediction: data.dateGuess, // YYYY-MM-DD format
-        dueDate: data.dateGuess
+        name: data.name?.trim() || '',
+        prediction: prediction,
+        dueDate: data.dateGuess || ''
     });
 }
 
