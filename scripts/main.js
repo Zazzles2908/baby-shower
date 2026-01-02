@@ -12,6 +12,9 @@ let statsCache = {
     lastUpdated: null
 };
 
+// Guest name storage key
+const GUEST_NAME_KEY = 'babyShowerGuestName';
+
 // Initialize app when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
     initializeAPI();
@@ -19,7 +22,99 @@ document.addEventListener('DOMContentLoaded', () => {
     initializeForms();
     initializeBackButtons();
     loadPersonalProgress();
+    initializeWelcomeName();
 });
+
+/**
+ * Get guest name from localStorage
+ * @returns {string|null} Guest name or null if not set
+ */
+function getGuestName() {
+    return localStorage.getItem(GUEST_NAME_KEY);
+}
+
+/**
+ * Set guest name in localStorage
+ * @param {string} name - Guest name to store
+ */
+function setGuestName(name) {
+    if (name && name.trim()) {
+        localStorage.setItem(GUEST_NAME_KEY, name.trim());
+    }
+}
+
+/**
+ * Initialize welcome screen name collection
+ */
+function initializeWelcomeName() {
+    const nameContainer = document.getElementById('welcome-name-container');
+    const activitiesContainer = document.getElementById('activities-container');
+    const nameInput = document.getElementById('welcome-guest-name');
+    const nameBtn = document.getElementById('welcome-name-btn');
+    
+    if (!nameContainer || !activitiesContainer) return;
+    
+    // Check if name is already collected
+    const existingName = getGuestName();
+    if (existingName) {
+        // Name already collected, hide input and show greeting
+        nameContainer.innerHTML = `<p class="welcome-greeting">Welcome back, ${existingName}! 👋</p>`;
+        nameContainer.classList.add('hidden');
+        // Pre-fill all activity name fields
+        prefillAllNameFields(existingName);
+        return;
+    }
+    
+    // Handle continue button click
+    if (nameBtn && nameInput) {
+        nameBtn.addEventListener('click', () => {
+            const name = nameInput.value.trim();
+            if (name) {
+                setGuestName(name);
+                nameContainer.innerHTML = `<p class="welcome-greeting">Welcome, ${name}! 👋</p>`;
+                nameContainer.classList.add('hidden');
+                prefillAllNameFields(name);
+            } else {
+                alert('Please enter your name');
+                nameInput.focus();
+            }
+        });
+        
+        // Allow Enter key to submit
+        nameInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                nameBtn.click();
+            }
+        });
+    }
+}
+
+/**
+ * Pre-fill all activity name fields with the guest's name
+ * @param {string} name - Guest name
+ */
+function prefillAllNameFields(name) {
+    const nameFields = [
+        { id: 'guestbook-name', section: 'guestbook-section' },
+        { id: 'pool-name', section: 'pool-section' },
+        { id: 'quiz-name', section: 'quiz-section' },
+        { id: 'advice-name', section: 'advice-section' }
+    ];
+    
+    nameFields.forEach(field => {
+        const input = document.getElementById(field.id);
+        if (input) {
+            input.value = name;
+            // Make the field visually indicate it's auto-filled
+            input.classList.add('name-field-hidden');
+            // Update label to show it's pre-filled
+            const label = input.previousElementSibling;
+            if (label && label.tagName === 'LABEL') {
+                label.innerHTML = `${label.textContent} <small>(auto-filled)</small>`;
+            }
+        }
+    });
+}
 
 /**
  * Initialize API client and load stats
@@ -488,13 +583,22 @@ async function handleQuizSubmit(event) {
     const form = event.target;
     const formData = new FormData(form);
 
+    // Calculate score BEFORE API call to show immediately
+    const answers = {
+        puzzle1: formData.get('puzzle1')?.trim() || '',
+        puzzle2: formData.get('puzzle2')?.trim() || '',
+        puzzle3: formData.get('puzzle3')?.trim() || '',
+        puzzle4: formData.get('puzzle4')?.trim() || '',
+        puzzle5: formData.get('puzzle5')?.trim() || ''
+    };
+    const score = calculateQuizScore(answers);
+    
     const data = {
         name: formData.get('name'),
-        puzzle1: formData.get('puzzle1'),
-        puzzle2: formData.get('puzzle2'),
-        puzzle3: formData.get('puzzle3'),
-        puzzle4: formData.get('puzzle4'),
-        puzzle5: formData.get('puzzle5')
+        ...answers,
+        score: score,
+        totalQuestions: 5,
+        percentage: Math.round((score / 5) * 100)
     };
 
     try {
@@ -505,22 +609,14 @@ async function handleQuizSubmit(event) {
 
         hideLoading();
         
-        // Calculate and show score in success message
-        const answers = {
-            puzzle1: data.puzzle1,
-            puzzle2: data.puzzle2,
-            puzzle3: data.puzzle3,
-            puzzle4: data.puzzle4,
-            puzzle5: data.puzzle5
-        };
-        const score = calculateQuizScore(answers);
-        showFormSuccessMessage(`Quiz submitted! Your score: ${score}/5`, form);
+        // Show success message with pre-calculated score
+        showFormSuccessMessage(getQuizSuccessMessage(data.name, score), form);
         triggerConfetti();
 
         // Update personal progress
         updatePersonalProgress('quiz');
 
-        // Reset form
+        // Reset form (but show score first in the message above)
         form.reset();
 
     } catch (error) {
@@ -738,6 +834,8 @@ function getPersonalProgress(feature) {
 // Make functions globally available
 window.closeModal = closeModal;
 window.closeMilestoneModal = closeMilestoneModal;
+window.getGuestName = getGuestName;
+window.setGuestName = setGuestName;
 
 /**
  * Show error message
@@ -809,12 +907,11 @@ async function submitGuestbook(data, photoFile) {
  * Submit pool prediction using Supabase Edge Functions
  */
 async function submitPool(data) {
+    // Send only the fields expected by the Edge Function
     return await window.API.submitPool({
         name: data.name,
-        prediction: `${data.dateGuess} ${data.timeGuess}`,
-        dueDate: data.dateGuess,
-        weight: parseFloat(data.weightGuess),
-        length: parseInt(data.lengthGuess)
+        prediction: data.dateGuess, // YYYY-MM-DD format
+        dueDate: data.dateGuess
     });
 }
 
@@ -838,9 +935,17 @@ async function submitQuiz(data) {
  * Submit advice using Supabase Edge Functions
  */
 async function submitAdvice(data) {
+    // Map adviceType to category before sending
+    const adviceType = data.adviceType?.trim() || '';
+    const categoryMap = {
+        'For Parents': 'general',
+        'For Baby': 'fun',
+    };
+    const category = categoryMap[adviceType] || adviceType.toLowerCase();
+    
     return await window.API.submitAdvice({
         name: data.name,
-        category: data.adviceType,
+        category: category,
         advice: data.message
     });
 }

@@ -18,7 +18,17 @@
                     <p>📅 Sunday January 4th @ 11AM - 2PM</p>
                     <p>📍 Myuna Farm, Doveton</p>
                 </div>
-                <div class="activities">
+                
+                <!-- Guest Name Collection - Show only if not already collected -->
+                <div id="welcome-name-container" class="welcome-name-container">
+                    <div class="form-group">
+                        <label for="welcome-guest-name">Your Name</label>
+                        <input type="text" id="welcome-guest-name" placeholder="Enter your name..." />
+                    </div>
+                    <button id="welcome-name-btn" class="submit-btn">Continue ✨</button>
+                </div>
+                
+                <div class="activities" id="activities-container">
                     <h2>Choose an Activity</h2>
                     <div class="activity-buttons">
                         <button class="activity-btn" data-section="guestbook">

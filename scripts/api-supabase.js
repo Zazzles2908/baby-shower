@@ -140,6 +140,7 @@
             data.puzzle5?.trim() || '',
         ];
         
+        // Use pre-calculated score if provided, otherwise calculate
         const score = Number(data.score) || 0;
         const totalQuestions = Number(data.totalQuestions) || 5;
         const percentage = Math.round((score / totalQuestions) * 100);
@@ -150,7 +151,7 @@
                 name: data.name?.trim() || 'Anonymous Quiz Taker',
                 answers: answers,
                 score: score,
-                totalQuestions: totalQuestions,
+                total_questions: totalQuestions,
                 percentage: percentage,
             }),
         });
