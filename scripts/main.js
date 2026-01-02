@@ -981,3 +981,254 @@ async function loadPoolStats() {
         console.error('Failed to load pool stats:', error);
     }
 }
+
+// ========================================
+// ACTIVITY TICKER - SUPABASE REALTIME
+// ========================================
+
+// Ticker state
+const tickerState = {
+    activities: [],
+    maxActivities: 15,
+    currentIndex: 0,
+    intervalId: null,
+    channel: null
+};
+
+// Format activity message based on type
+function formatActivityMessage(submission) {
+    const type = submission.activity_type;
+    const data = submission.activity_data;
+    const guestName = data?.name || 'Someone';
+    
+    const messages = {
+        voting: () => {
+            const names = data?.names;
+            if (Array.isArray(names) && names.length > 0) {
+                const namesStr = names.length === 1 
+                    ? names[0] 
+                    : names.length === 2 
+                        ? names.join(' and ')
+                        : names.slice(0, -1).join(', ') + ' and ' + names[names.length - 1];
+                return `${guestName} voted for ${namesStr}!`;
+            }
+            return `${guestName} cast a vote!`;
+        },
+        guestbook: () => {
+            const message = data?.message;
+            if (message && message.length > 30) {
+                return `"${guestName}" left a wish!`;
+            }
+            return `${guestName} left a beautiful message!`;
+        },
+        pool: () => {
+            const prediction = data?.prediction;
+            if (prediction) {
+                // Extract key info from prediction
+                const weightMatch = prediction.match(/Weight:\s*([\d.]+)kg/);
+                const weight = weightMatch ? ` (${weightMatch[1]}kg)` : '';
+                return `${guestName} predicted baby${weight}!`;
+            }
+            return `${guestName} made a prediction!`;
+        },
+        quiz: () => {
+            const score = data?.score;
+            const total = data?.totalQuestions || 5;
+            if (typeof score === 'number') {
+                return `${guestName} scored ${score}/${total} on the quiz!`;
+            }
+            return `${guestName} completed the quiz!`;
+        },
+        advice: () => {
+            const category = data?.category;
+            if (category === 'fun' || data?.adviceType?.includes('Baby')) {
+                return `${guestName} sealed a time capsule!`;
+            }
+            return `${guestName} shared wisdom!`;
+        }
+    };
+    
+    if (messages[type]) {
+        return messages[type]();
+    }
+    
+    return `${guestName} participated!`;
+}
+
+// Get icon for activity type
+function getTickerIcon(type) {
+    const icons = {
+        voting: '❤️',
+        guestbook: '💌',
+        pool: '🎯',
+        quiz: '🧩',
+        advice: '💡'
+    };
+    return icons[type] || '✨';
+}
+
+// Add activity to ticker
+function addTickerActivity(submission) {
+    const message = formatActivityMessage(submission);
+    const icon = getTickerIcon(submission.activity_type);
+    
+    tickerState.activities.unshift({
+        message,
+        icon,
+        timestamp: Date.now()
+    });
+    
+    // Limit to max activities
+    if (tickerState.activities.length > tickerState.maxActivities) {
+        tickerState.activities = tickerState.activities.slice(0, tickerState.maxActivities);
+    }
+    
+    // Show ticker if hidden
+    showActivityTicker();
+    
+    // Update display
+    updateTickerDisplay();
+    
+    console.log('📰 Activity added to ticker:', message);
+}
+
+// Update ticker display
+function updateTickerDisplay() {
+    const messageEl = document.getElementById('ticker-message');
+    if (!messageEl) return;
+    
+    if (tickerState.activities.length === 0) {
+        messageEl.textContent = 'Waiting for activity...';
+        return;
+    }
+    
+    const current = tickerState.activities[tickerState.currentIndex];
+    messageEl.innerHTML = `<span class="ticker-icon">${current.icon}</span> ${current.message}`;
+}
+
+// Show ticker
+function showActivityTicker() {
+    const ticker = document.getElementById('activity-ticker');
+    if (ticker) {
+        ticker.classList.remove('hidden');
+    }
+}
+
+// Close ticker
+window.closeActivityTicker = function() {
+    const ticker = document.getElementById('activity-ticker');
+    if (ticker) {
+        ticker.classList.add('hidden');
+    }
+};
+
+// Cycle through activities
+function cycleTickerActivities() {
+    if (tickerState.activities.length <= 1) return;
+    
+    tickerState.currentIndex = (tickerState.currentIndex + 1) % tickerState.activities.length;
+    updateTickerDisplay();
+}
+
+// Start ticker cycling
+function startTickerCycling() {
+    if (tickerState.intervalId) {
+        clearInterval(tickerState.intervalId);
+    }
+    
+    // Cycle every 5 seconds if there are multiple activities
+    tickerState.intervalId = setInterval(() => {
+        if (tickerState.activities.length > 1) {
+            cycleTickerActivities();
+        }
+    }, 5000);
+}
+
+// Get Supabase client for realtime
+function getSupabaseClientForTicker() {
+    if (window.supabaseClient) {
+        return window.supabaseClient;
+    }
+    
+    const supabaseUrl = window.CONFIG?.SUPABASE?.URL;
+    const supabaseKey = window.CONFIG?.SUPABASE?.ANON_KEY;
+    
+    if (!supabaseUrl || !supabaseKey) {
+        return null;
+    }
+    
+    if (typeof supabase !== 'undefined') {
+        window.supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
+        return window.supabaseClient;
+    }
+    
+    return null;
+}
+
+// Initialize activity ticker realtime subscription
+function initializeActivityTicker() {
+    const client = getSupabaseClientForTicker();
+    if (!client) {
+        console.warn('Activity ticker not available - no Supabase client');
+        return null;
+    }
+    
+    try {
+        const channel = client
+            .channel('activity-ticker-' + Date.now())
+            .on('postgres_changes', {
+                event: 'INSERT',
+                schema: 'public',
+                table: 'submissions'
+            }, (payload) => {
+                if (payload.new) {
+                    addTickerActivity(payload.new);
+                }
+            })
+            .subscribe((status) => {
+                console.log('📰 Activity ticker subscription status:', status);
+            });
+        
+        console.log('✅ Subscribed to activity ticker updates');
+        tickerState.channel = channel;
+        return channel;
+    } catch (error) {
+        console.error('Failed to subscribe to activity ticker:', error);
+        return null;
+    }
+}
+
+// Cleanup ticker on page unload
+function cleanupTicker() {
+    if (tickerState.intervalId) {
+        clearInterval(tickerState.intervalId);
+    }
+    
+    if (tickerState.channel) {
+        const client = getSupabaseClientForTicker();
+        if (client) {
+            client.removeChannel(tickerState.channel);
+        }
+    }
+}
+
+// Initialize ticker after API is ready
+function initializeTickerAfterAPI() {
+    // Wait for API to initialize, then setup ticker
+    setTimeout(() => {
+        initializeActivityTicker();
+        startTickerCycling();
+        console.log('✅ Activity ticker initialized');
+    }, 1500);
+}
+
+// Hook into existing initialization
+const originalInitializeAPI = initializeAPI;
+initializeAPI = async function() {
+    const result = await originalInitializeAPI();
+    initializeTickerAfterAPI();
+    return result;
+};
+
+// Cleanup on page unload
+window.addEventListener('beforeunload', cleanupTicker);

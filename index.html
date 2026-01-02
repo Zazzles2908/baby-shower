@@ -286,5 +286,16 @@
     <script src="scripts/advice.js"></script>
     <script src="scripts/voting.js"></script>
     <script src="scripts/surprises.js"></script>
+    
+    <!-- Activity Ticker -->
+    <div id="activity-ticker" class="activity-ticker hidden">
+        <div class="ticker-content">
+            <span class="ticker-label">📍 Live:</span>
+            <div class="ticker-items-container">
+                <span class="ticker-message" id="ticker-message">Loading...</span>
+            </div>
+            <button class="ticker-close" onclick="closeActivityTicker()" aria-label="Close ticker">×</button>
+        </div>
+    </div>
 </body>
 </html>

@@ -93,12 +93,26 @@
         names.forEach((name, i) => {
             const item = document.createElement('div');
             item.className = 'name-item';
+            // Use event delegation by attaching click handler to parent, or use safe inline handler
             item.innerHTML = `
                 <div class="name">${name}</div>
-                <button class="heart-btn" onclick="window.voting.toggle('${name}', this)">🤍</button>
+                <button class="heart-btn" data-name="${name}">🤍</button>
                 <div class="vote-count" id="count-${i}">0 votes</div>
             `;
             list.appendChild(item);
+        });
+        
+        // Attach click handlers after elements are created
+        const heartButtons = list.querySelectorAll('.heart-btn');
+        heartButtons.forEach(btn => {
+            btn.addEventListener('click', function() {
+                const name = this.getAttribute('data-name');
+                if (window.voting && window.voting.toggle) {
+                    window.voting.toggle(name, this);
+                } else {
+                    console.error('Voting module not ready');
+                }
+            });
         });
     }
     
@@ -305,6 +319,146 @@
             check();
         }
     };
+    
+    // ========================================
+    // SUPABASE REALTIME VOTING INTEGRATION
+    // ========================================
+    
+    // Vote counts state for realtime updates
+    const voteCounts = {};
+    
+    // Create Supabase client for realtime (if not already created)
+    function getSupabaseClient() {
+        if (window.supabaseClient) {
+            return window.supabaseClient;
+        }
+        
+        const supabaseUrl = window.CONFIG?.SUPABASE?.URL;
+        const supabaseKey = window.CONFIG?.SUPABASE?.ANON_KEY;
+        
+        if (!supabaseUrl || !supabaseKey) {
+            console.warn('Supabase config not available for realtime');
+            return null;
+        }
+        
+        // Create client (assumes @supabase/supabase-js is loaded)
+        if (typeof supabase !== 'undefined') {
+            window.supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
+            console.log('✅ Supabase realtime client created');
+            return window.supabaseClient;
+        }
+        
+        console.warn('Supabase library not loaded');
+        return null;
+    }
+    
+    // Update vote count display with animation
+    function updateVoteCount(name, count) {
+        // Find the name item by looking for the name text
+        const nameItems = document.querySelectorAll('.name-item');
+        let foundItem = null;
+        
+        nameItems.forEach(item => {
+            const nameEl = item.querySelector('.name');
+            if (nameEl && nameEl.textContent === name) {
+                foundItem = item;
+            }
+        });
+        
+        if (!foundItem) {
+            console.warn('Could not find name item for:', name);
+            return;
+        }
+        
+        const countEl = foundItem.querySelector('.vote-count');
+        if (countEl) {
+            // Update the count
+            countEl.textContent = count + ' vote' + (count !== 1 ? 's' : '');
+            
+            // Add animation class
+            countEl.classList.add('vote-count-updated');
+            
+            // Remove animation class after animation completes
+            setTimeout(() => {
+                countEl.classList.remove('vote-count-updated');
+            }, 1000);
+            
+            // Also animate the parent item
+            foundItem.classList.add('vote-item-updated');
+            setTimeout(() => {
+                foundItem.classList.remove('vote-item-updated');
+            }, 1000);
+        }
+    }
+    
+    // Handle new vote submission from realtime
+    function handleNewVote(payload) {
+        const newVote = payload.new;
+        
+        if (!newVote || !newVote.activity_data) {
+            return;
+        }
+        
+        const votedNames = newVote.activity_data.names;
+        if (!Array.isArray(votedNames)) {
+            return;
+        }
+        
+        // Increment vote counts for each voted name
+        votedNames.forEach(name => {
+            voteCounts[name] = (voteCounts[name] || 0) + 1;
+            updateVoteCount(name, voteCounts[name]);
+        });
+        
+        console.log('🗳️ Vote update received:', votedNames, voteCounts);
+    }
+    
+    // Subscribe to realtime voting updates
+    function initializeRealtimeVoting() {
+        const client = getSupabaseClient();
+        if (!client) {
+            console.warn('Realtime voting not available - no Supabase client');
+            return null;
+        }
+        
+        try {
+            const channel = client
+                .channel('voting-updates-' + Date.now())
+                .on('postgres_changes', {
+                    event: 'INSERT',
+                    schema: 'public',
+                    table: 'submissions',
+                    filter: 'activity_type=eq.voting'
+                }, (payload) => {
+                    handleNewVote(payload);
+                })
+                .subscribe((status) => {
+                    console.log('🗳️ Realtime voting subscription status:', status);
+                });
+            
+            console.log('✅ Subscribed to voting realtime updates');
+            return channel;
+        } catch (error) {
+            console.error('Failed to subscribe to voting realtime:', error);
+            return null;
+        }
+    }
+    
+    // Initialize realtime after voting is initialized
+    function initializeVotingRealtime() {
+        // Wait a bit for DOM to be ready, then subscribe
+        setTimeout(() => {
+            initializeRealtimeVoting();
+        }, 1000);
+    }
+    
+    // Call realtime initialization after init
+    const originalInit = init;
+    init = function() {
+        originalInit();
+        initializeVotingRealtime();
+    };
+    
     window.votingInitialized = true;
     
     console.log('🗳️ Voting module v2.0 loaded and ready');
