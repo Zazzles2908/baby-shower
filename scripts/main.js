@@ -397,14 +397,34 @@ function getActivityIcon(type) {
  * Initialize navigation between sections
  */
 function initializeNavigation() {
-    const activityButtons = document.querySelectorAll('.activity-btn');
+    const activityButtons = document.querySelectorAll('.activity-card');
+    
+    if (activityButtons.length === 0) {
+        console.warn('No activity cards found in DOM');
+        return;
+    }
 
     activityButtons.forEach(button => {
-        button.addEventListener('click', () => {
-            const sectionName = button.getAttribute('data-section');
-            navigateToSection(sectionName);
-        });
+        // Remove any existing listeners to prevent duplicates
+        button.removeEventListener('click', handleActivityClick);
+        button.addEventListener('click', handleActivityClick);
     });
+    
+    console.log(`Navigation initialized with ${activityButtons.length} activity cards`);
+}
+
+// Separate handler function for proper event management
+function handleActivityClick(event) {
+    const button = event.currentTarget;
+    const sectionName = button.getAttribute('data-section');
+    
+    if (!sectionName) {
+        console.error('Activity card missing data-section attribute');
+        return;
+    }
+    
+    console.log(`Activity clicked: ${sectionName}`);
+    navigateToSection(sectionName);
 }
 
 /**
@@ -412,11 +432,21 @@ function initializeNavigation() {
  * @param {string} sectionName - Name of the section to navigate to
  */
 function navigateToSection(sectionName) {
+    console.log(`navigateToSection called with: ${sectionName}`);
+    
+    if (!sectionName) {
+        console.error('navigateToSection: sectionName is null or empty');
+        return;
+    }
+    
     // Hide current section
     const currentSectionEl = document.getElementById(`${currentSection}-section`);
     if (currentSectionEl) {
         currentSectionEl.classList.remove('active');
         currentSectionEl.classList.add('hidden');
+        console.log(`Hid section: ${currentSection}-section`);
+    } else {
+        console.warn(`Current section element not found: ${currentSection}-section`);
     }
 
     // Show new section
@@ -425,10 +455,15 @@ function navigateToSection(sectionName) {
         newSectionEl.classList.remove('hidden');
         newSectionEl.classList.add('active');
         newSectionEl.classList.add('fade-in');
+        console.log(`Showed section: ${sectionName}-section`);
+    } else {
+        console.error(`Target section element not found: ${sectionName}-section`);
+        return;
     }
 
     // Update current section
     currentSection = sectionName;
+    console.log(`Current section updated to: ${currentSection}`);
 
     // Initialize section-specific functionality
     initializeSection(sectionName);
@@ -884,6 +919,8 @@ window.closeMilestoneModal = closeMilestoneModal;
 window.getGuestName = getGuestName;
 window.setGuestName = setGuestName;
 window.triggerMilestoneCelebration = triggerMilestoneCelebration;
+window.handleActivityClick = handleActivityClick;
+window.navigateToSection = navigateToSection;
 
 /**
  * Show error message
