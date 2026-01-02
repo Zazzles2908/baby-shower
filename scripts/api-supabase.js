@@ -110,17 +110,21 @@
     async function submitPool(data) {
         const url = getSupabaseFunctionUrl('pool');
         
-        // Combine date and time into prediction string (YYYY-MM-DD)
+        // Build comprehensive prediction string from all fields
         const dateGuess = data.dateGuess || '';
-        const prediction = dateGuess; // YYYY-MM-DD format
-        const dueDate = dateGuess; // Same as prediction
+        const timeGuess = data.timeGuess || '';
+        const weightGuess = data.weightGuess || '';
+        const lengthGuess = data.lengthGuess || '';
+        
+        // Create prediction string: "Date: YYYY-MM-DD, Time: HH:mm, Weight: X.Xkg, Length: XXcm"
+        const prediction = `Date: ${dateGuess}, Time: ${timeGuess}, Weight: ${weightGuess}kg, Length: ${lengthGuess}cm`;
         
         return apiFetch(url, {
             method: 'POST',
             body: JSON.stringify({
                 name: data.name?.trim() || '',
                 prediction: prediction,
-                dueDate: dueDate,
+                dueDate: dateGuess,
             }),
         });
     }
