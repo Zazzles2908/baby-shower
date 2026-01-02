@@ -9,6 +9,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=Quicksand:wght@400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles/main.css">
     <link rel="stylesheet" href="styles/animations.css">
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
 </head>
 <body>
     <div id="app">
@@ -146,6 +147,10 @@
                 <button class="back-btn">← Back to Activities</button>
                 <h1>🧩 Baby Emoji Pictionary</h1>
                 <p class="subtitle">Guess the baby-related phrases from emojis!</p>
+                <div id="quiz-score-display" class="quiz-score-display hidden">
+                    <span class="score-icon">🎯</span>
+                    <span class="score-text">Score: <span id="current-score">0</span>/5</span>
+                </div>
                 <form id="quiz-form">
                     <div class="form-group">
                         <label for="quiz-name">Your Name *</label>

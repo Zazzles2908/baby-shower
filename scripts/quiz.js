@@ -35,6 +35,29 @@ function validateQuizForm(form) {
 }
 
 /**
+ * Update quiz score display in real-time
+ * @param {number} score - Current score (0-5)
+ */
+function updateQuizScore(score) {
+    const scoreDisplay = document.getElementById('quiz-score-display');
+    const currentScoreEl = document.getElementById('current-score');
+    
+    if (scoreDisplay && currentScoreEl) {
+        // Show score display if hidden
+        scoreDisplay.classList.remove('hidden');
+        
+        // Update score with animation
+        currentScoreEl.textContent = score;
+        
+        // Add pulse animation
+        currentScoreEl.classList.add('score-updated');
+        setTimeout(() => {
+            currentScoreEl.classList.remove('score-updated');
+        }, 500);
+    }
+}
+
+/**
  * Get quiz form data
  * @param {HTMLFormElement} form - Quiz form
  * @returns {Object} Form data

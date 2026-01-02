@@ -85,7 +85,7 @@ async function calculateAverages(supabase: ReturnType<typeof createClient>): Pro
   const { data: submissions, error } = await supabase
     .from('submissions')
     .select('activity_data')
-    .eq('activity_type', 'pool')
+    .eq('activity_type', 'baby_pool')
     .not('activity_data', 'is', null)
 
   if (error || !submissions || submissions.length === 0) {
@@ -180,7 +180,7 @@ serve(async (req: Request) => {
     const { data, error } = await supabase
       .from('submissions')
       .insert({
-        activity_type: 'pool',
+        activity_type: 'baby_pool',
         name: sanitizedName,
         activity_data: {
           prediction: sanitizedPrediction,

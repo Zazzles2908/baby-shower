@@ -98,6 +98,9 @@
                 <div class="name">${name}</div>
                 <button class="heart-btn" data-name="${name}">🤍</button>
                 <div class="vote-count" id="count-${i}">0 votes</div>
+                <div class="vote-progress-bar-container">
+                    <div class="vote-progress-bar" id="progress-${i}" style="width: 0%"></div>
+                </div>
             `;
             list.appendChild(item);
         });
@@ -362,11 +365,13 @@
         // Find the name item by looking for the name text
         const nameItems = document.querySelectorAll('.name-item');
         let foundItem = null;
+        let itemIndex = -1;
         
-        nameItems.forEach(item => {
+        nameItems.forEach((item, index) => {
             const nameEl = item.querySelector('.name');
             if (nameEl && nameEl.textContent === name) {
                 foundItem = item;
+                itemIndex = index;
             }
         });
         
@@ -376,6 +381,8 @@
         }
         
         const countEl = foundItem.querySelector('.vote-count');
+        const progressEl = foundItem.querySelector('.vote-progress-bar');
+        
         if (countEl) {
             // Update the count
             countEl.textContent = count + ' vote' + (count !== 1 ? 's' : '');
@@ -393,6 +400,22 @@
             setTimeout(() => {
                 foundItem.classList.remove('vote-item-updated');
             }, 1000);
+        }
+        
+        // Update progress bar
+        if (progressEl) {
+            // Calculate total votes across all names
+            const totalCounts = Object.values(voteCounts);
+            const totalVotes = totalCounts.reduce((sum, val) => sum + val, 0) || 1; // Avoid division by zero
+            
+            const percentage = Math.round((count / totalVotes) * 100);
+            progressEl.style.width = percentage + '%';
+            
+            // Add pulse animation to progress bar
+            progressEl.classList.add('updating');
+            setTimeout(() => {
+                progressEl.classList.remove('updating');
+            }, 800);
         }
     }
     
