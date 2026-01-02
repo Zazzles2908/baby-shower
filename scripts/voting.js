@@ -80,11 +80,109 @@
         // Restore voting state
         restoreVotingState();
         
-        // Update submit button state
-        submitBtn.disabled = votingState.selected.length === 0;
+        // Update submit button state and helper text
+        updateVoteButtonState();
+        
+        // Fetch current vote counts from server
+        fetchAndDisplayVoteCounts();
         
         votingState.initialized = true;
         console.log('✅ Voting initialized with', window.CONFIG.BABY_NAMES.length, 'names, state:', votingState);
+    }
+    
+    // ========================================
+    // VOTE COUNT INITIALIZATION
+    // ========================================
+    
+    // Fetch current vote counts from server and display them
+    async function fetchAndDisplayVoteCounts() {
+        try {
+            // Show loading state on vote counts
+            showVoteCountsLoading();
+            
+            // Fetch vote counts from API
+            const voteData = await window.API.getVoteCounts();
+            
+            if (voteData && voteData.results) {
+                // Initialize vote counts from server response
+                voteData.results.forEach(result => {
+                    voteCounts[result.name] = result.count;
+                });
+                
+                // Display the vote counts
+                voteData.results.forEach(result => {
+                    displayVoteCount(result.name, result.count, voteData.totalVotes);
+                });
+                
+                console.log('✅ Vote counts loaded:', voteCounts, 'Total:', voteData.totalVotes);
+            }
+            
+        } catch (error) {
+            console.warn('⚠️ Failed to fetch vote counts (will use realtime):', error.message);
+            // Keep showing 0 votes, realtime updates will catch new votes
+            // This is graceful degradation - the app still works
+        } finally {
+            hideVoteCountsLoading();
+        }
+    }
+    
+    // Show loading state on vote count elements
+    function showVoteCountsLoading() {
+        const countElements = document.querySelectorAll('.vote-count');
+        const progressBars = document.querySelectorAll('.vote-progress-bar');
+        
+        countElements.forEach(el => {
+            el.classList.add('loading');
+        });
+        
+        progressBars.forEach(el => {
+            el.classList.add('loading');
+        });
+    }
+    
+    // Hide loading state on vote count elements
+    function hideVoteCountsLoading() {
+        const countElements = document.querySelectorAll('.vote-count');
+        const progressBars = document.querySelectorAll('.vote-progress-bar');
+        
+        countElements.forEach(el => {
+            el.classList.remove('loading');
+        });
+        
+        progressBars.forEach(el => {
+            el.classList.remove('loading');
+        });
+    }
+    
+    // Display a single vote count (called during initialization)
+    function displayVoteCount(name, count, totalVotes) {
+        const nameItems = document.querySelectorAll('.name-item');
+        let foundItem = null;
+        
+        nameItems.forEach((item) => {
+            const nameEl = item.querySelector('.name');
+            if (nameEl && nameEl.textContent === name) {
+                foundItem = item;
+            }
+        });
+        
+        if (!foundItem) {
+            console.warn('Could not find name item for:', name);
+            return;
+        }
+        
+        const countEl = foundItem.querySelector('.vote-count');
+        const progressEl = foundItem.querySelector('.vote-progress-bar');
+        
+        if (countEl) {
+            countEl.textContent = count + ' vote' + (count !== 1 ? 's' : '');
+        }
+        
+        if (progressEl && totalVotes > 0) {
+            const percentage = Math.round((count / totalVotes) * 100);
+            progressEl.style.width = percentage + '%';
+            progressEl.classList.remove('initial-load'); // Already loaded from server
+        }
     }
     
     function createNameItems(names) {
@@ -99,7 +197,7 @@
                 <button class="heart-btn" data-name="${name}">🤍</button>
                 <div class="vote-count" id="count-${i}">0 votes</div>
                 <div class="vote-progress-bar-container">
-                    <div class="vote-progress-bar" id="progress-${i}" style="width: 0%"></div>
+                    <div class="vote-progress-bar initial-load" id="progress-${i}" style="width: 0%"></div>
                 </div>
             `;
             list.appendChild(item);
@@ -142,10 +240,37 @@
             }
         });
         
-        // Update submit button
+        // Update submit button and helper text
+        updateVoteButtonState();
+    }
+    
+    function updateVoteButtonState() {
         const submitBtn = document.getElementById('vote-submit');
-        if (submitBtn) {
-            submitBtn.disabled = votingState.selected.length === 0;
+        const helperText = document.getElementById('vote-helper');
+        
+        if (!submitBtn || !helperText) return;
+        
+        const selectedCount = votingState.selected.length;
+        const remainingVotes = votingState.maxVotes - selectedCount;
+        
+        if (votingState.hasVoted) {
+            submitBtn.disabled = true;
+            submitBtn.setAttribute('data-tooltip', 'You already voted!');
+            helperText.textContent = 'You already voted ✅';
+        } else if (selectedCount === 0) {
+            submitBtn.disabled = true;
+            submitBtn.setAttribute('data-tooltip', 'Select at least 1 name');
+            helperText.textContent = 'Select up to 3 names to vote';
+        } else if (selectedCount >= votingState.maxVotes) {
+            submitBtn.disabled = false;
+            submitBtn.setAttribute('data-tooltip', 'You\'ve selected 3 names!');
+            helperText.textContent = 'Perfect! Submit your votes ❤️';
+            helperText.classList.add('updated');
+            setTimeout(() => helperText.classList.remove('updated'), 500);
+        } else {
+            submitBtn.disabled = false;
+            submitBtn.setAttribute('data-tooltip', `Select ${remainingVotes} more name${remainingVotes !== 1 ? 's' : ''}`);
+            helperText.textContent = `Select ${remainingVotes} more name${remainingVotes !== 1 ? 's' : ''} or submit`;
         }
     }
     
@@ -185,6 +310,13 @@
         if (submitBtn) {
             submitBtn.disabled = true;
             submitBtn.textContent = 'Already Voted ✅';
+            submitBtn.setAttribute('data-tooltip', 'You already voted!');
+        }
+        
+        // Update helper text
+        const helperText = document.getElementById('vote-helper');
+        if (helperText) {
+            helperText.textContent = 'You already voted ✅';
         }
     }
     
@@ -212,7 +344,8 @@
         // Save state to localStorage
         saveVotingState({ selected: votingState.selected, hasVoted: false });
         
-        document.getElementById('vote-submit').disabled = votingState.selected.length === 0;
+        // Update submit button and helper text
+        updateVoteButtonState();
     }
     
     async function handleSubmit(event) {
@@ -409,13 +542,18 @@
             const totalVotes = totalCounts.reduce((sum, val) => sum + val, 0) || 1; // Avoid division by zero
             
             const percentage = Math.round((count / totalVotes) * 100);
-            progressEl.style.width = percentage + '%';
             
             // Add pulse animation to progress bar
             progressEl.classList.add('updating');
             setTimeout(() => {
                 progressEl.classList.remove('updating');
+                progressEl.classList.remove('initial-load'); // Remove initial animation after first update
             }, 800);
+            
+            // Set the actual width (this happens after animation starts)
+            requestAnimationFrame(() => {
+                progressEl.style.width = percentage + '%';
+            });
         }
     }
     

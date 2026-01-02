@@ -149,7 +149,7 @@ async function initializeAPI() {
         }
         
         // Initialize API client (already auto-initialized in api-supabase.js)
-        const result = window.API.initializeAPI();
+        const result = await window.API.initializeAPI();
         
         if (result && result.success) {
             console.log('API client initialized successfully');
@@ -225,6 +225,12 @@ function updateStatsCache(submission) {
  */
 async function refreshStatsFromAPI() {
     try {
+        // Add loading state to stats displays
+        const statsDisplays = document.querySelectorAll('.stats-display');
+        statsDisplays.forEach(display => {
+            display.classList.add('stats-loading');
+        });
+        
         const stats = {
             guestbook_count: 0,
             pool_count: 0,
@@ -237,7 +243,7 @@ async function refreshStatsFromAPI() {
         for (const activity of activities) {
             try {
                 const submissions = await window.API.getSubmissions(activity);
-                stats[`${activity}_count`] = submissions.length || 0;
+                stats[activity + '_count'] = submissions.length || 0;
             } catch (e) {
                 console.warn(`Failed to get ${activity} submissions:`, e.message);
             }
@@ -249,10 +255,20 @@ async function refreshStatsFromAPI() {
         statsCache.advice_count = stats.advice_count;
         statsCache.lastUpdated = new Date();
         
+        // Remove loading state
+        statsDisplays.forEach(display => {
+            display.classList.remove('stats-loading');
+        });
+        
         updateStatsDisplay();
         console.log('Stats loaded:', statsCache);
     } catch (error) {
         console.error('Failed to load stats from API:', error);
+        // Remove loading state even on error
+        const statsDisplays = document.querySelectorAll('.stats-display');
+        statsDisplays.forEach(display => {
+            display.classList.remove('stats-loading');
+        });
     }
 }
 
@@ -535,6 +551,52 @@ function initializeBackButtons() {
 }
 
 /**
+ * Validate form before submission
+ * @param {HTMLFormElement} form - Form to validate
+ * @returns {boolean} - True if valid
+ */
+function validateForm(form) {
+    const inputs = form.querySelectorAll('input[required], select[required], textarea[required]');
+    let isValid = true;
+    let firstInvalidField = null;
+    
+    inputs.forEach(input => {
+        const value = input.value.trim();
+        const formGroup = input.closest('.form-group');
+        
+        // Remove previous error state
+        formGroup?.classList.remove('error');
+        const existingError = formGroup?.querySelector('.error-message');
+        if (existingError) {
+            existingError.remove();
+        }
+        
+        // Check if field is valid
+        if (!value) {
+            isValid = false;
+            formGroup?.classList.add('error');
+            
+            // Add error message
+            if (!firstInvalidField) {
+                firstInvalidField = input;
+            }
+            
+            const errorMsg = document.createElement('span');
+            errorMsg.className = 'error-message';
+            errorMsg.textContent = 'This field is required';
+            formGroup?.appendChild(errorMsg);
+        }
+    });
+    
+    // Focus first invalid field
+    if (firstInvalidField) {
+        firstInvalidField.focus();
+    }
+    
+    return isValid;
+}
+
+/**
  * Handle guestbook form submission
  * @param {Event} event - Form submit event
  */
@@ -542,6 +604,13 @@ async function handleGuestbookSubmit(event) {
     event.preventDefault();
 
     const form = event.target;
+    
+    // Validate form first
+    if (!validateForm(form)) {
+        // Validation will show error messages
+        return;
+    }
+
     const formData = new FormData(form);
 
     const data = {
@@ -552,8 +621,15 @@ async function handleGuestbookSubmit(event) {
 
     const photoInput = document.getElementById('guestbook-photo');
     const photoFile = photoInput ? photoInput.files[0] : null;
+    const submitBtn = form.querySelector('.submit-btn');
 
     try {
+        // Add loading state to submit button
+        if (submitBtn) {
+            submitBtn.classList.add('api-loading');
+            submitBtn.disabled = true;
+        }
+        
         showLoading();
 
         const response = await submitGuestbook(data, photoFile);
@@ -565,6 +641,12 @@ async function handleGuestbookSubmit(event) {
         }
 
         hideLoading();
+        
+        // Remove loading state from submit button
+        if (submitBtn) {
+            submitBtn.classList.remove('api-loading');
+            submitBtn.disabled = false;
+        }
         
         // Show inline success message
         showFormSuccessMessage('Thank you for your message!', form);
@@ -580,6 +662,13 @@ async function handleGuestbookSubmit(event) {
 
     } catch (error) {
         hideLoading();
+        
+        // Remove loading state from submit button
+        if (submitBtn) {
+            submitBtn.classList.remove('api-loading');
+            submitBtn.disabled = false;
+        }
+        
         showError(error);
     }
 }
@@ -709,6 +798,13 @@ async function handleAdviceSubmit(event) {
     event.preventDefault();
 
     const form = event.target;
+    
+    // Validate form first
+    if (!validateForm(form)) {
+        // Validation will show error messages
+        return;
+    }
+
     const formData = new FormData(form);
 
     const data = {
@@ -717,7 +813,15 @@ async function handleAdviceSubmit(event) {
         message: formData.get('message')
     };
 
+    const submitBtn = form.querySelector('.submit-btn');
+
     try {
+        // Add loading state to submit button
+        if (submitBtn) {
+            submitBtn.classList.add('api-loading');
+            submitBtn.disabled = true;
+        }
+        
         showLoading();
 
         const response = await submitAdvice(data);
@@ -923,12 +1027,58 @@ window.handleActivityClick = handleActivityClick;
 window.navigateToSection = navigateToSection;
 
 /**
- * Show error message
+ * Show error message as toast notification
  * @param {string|object} error - Error message or object
  */
 function showError(error) {
     const message = typeof error === 'object' ? (error.message || JSON.stringify(error)) : error;
-    alert('Error: ' + message);
+    showToast(message, 'error');
+}
+
+/**
+ * Show toast notification
+ * @param {string} message - Message to display
+ * @param {string} type - 'success' or 'error'
+ */
+function showToast(message, type = 'success') {
+    // Remove existing toast
+    const existingToast = document.querySelector('.toast');
+    if (existingToast) {
+        existingToast.classList.add('hide');
+        setTimeout(() => existingToast.remove(), 400);
+    }
+    
+    // Create toast container if needed
+    let container = document.querySelector('.toast-container');
+    if (!container) {
+        container = document.createElement('div');
+        container.className = 'toast-container';
+        document.body.appendChild(container);
+    }
+    
+    // Create toast element
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    
+    const icon = type === 'success' ? '✓' : '✕';
+    toast.innerHTML = `
+        <span class="toast-icon">${icon}</span>
+        <span class="toast-message">${message}</span>
+        <button class="toast-close" onclick="this.parentElement.remove()" aria-label="Close">×</button>
+    `;
+    
+    container.appendChild(toast);
+    
+    // Trigger animation
+    requestAnimationFrame(() => {
+        toast.classList.add('show');
+    });
+    
+    // Auto-hide after 5 seconds
+    setTimeout(() => {
+        toast.classList.add('hide');
+        setTimeout(() => toast.remove(), 400);
+    }, 5000);
 }
 
 /**

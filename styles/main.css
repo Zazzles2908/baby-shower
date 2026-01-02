@@ -409,6 +409,119 @@ form {
     display: none;
 }
 
+/* ========================================
+   FORM VALIDATION
+   ======================================== */
+
+.form-group.error input,
+.form-group.error select,
+.form-group.error textarea {
+    border-color: var(--color-error);
+    background: linear-gradient(135deg, rgba(224, 122, 95, 0.05) 0%, rgba(224, 122, 95, 0.02) 100%);
+    animation: errorShake 0.5s ease;
+}
+
+.form-group.error label {
+    color: var(--color-error);
+}
+
+.form-group.error .error-message {
+    color: var(--color-error);
+    font-size: 0.85rem;
+    margin-top: 6px;
+    display: block;
+    font-weight: 600;
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes errorShake {
+    0%, 100% {
+        transform: translateX(0);
+    }
+    25% {
+        transform: translateX(-8px);
+    }
+    75% {
+        transform: translateX(8px);
+    }
+}
+
+.form-group input:invalid,
+.form-group select:invalid,
+.form-group textarea:invalid {
+    border-color: var(--color-error);
+}
+
+.form-group input:valid,
+.form-group select:valid,
+.form-group textarea:valid {
+    border-color: var(--color-primary);
+}
+
+/* ========================================
+   TOOLTIP SYSTEM
+   ======================================== */
+
+.tooltip {
+    position: relative;
+    display: inline-block;
+}
+
+.tooltip::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%) translateY(-8px);
+    background: var(--color-text);
+    color: var(--color-cream);
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    white-space: nowrap;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+    z-index: 100;
+    pointer-events: none;
+    box-shadow: 0 4px 12px rgba(90, 82, 71, 0.2);
+}
+
+.tooltip:hover::after,
+.tooltip:focus::after {
+    opacity: 1;
+    visibility: visible;
+    transform: translateX(-50%) translateY(-12px);
+}
+
+/* Vote button helper text */
+.vote-helper-text {
+    text-align: center;
+    font-size: 0.95rem;
+    color: var(--color-text-light);
+    margin-top: 15px;
+    padding: 12px;
+    background: linear-gradient(135deg, var(--color-cream) 0%, var(--color-secondary) 100%);
+    border-radius: 10px;
+    border: 1px dashed var(--color-primary);
+    transition: all 0.3s ease;
+}
+
+.vote-helper-text.updated {
+    animation: highlightPulse 0.5s ease;
+}
+
+@keyframes highlightPulse {
+    0%, 100% {
+        background: linear-gradient(135deg, var(--color-cream) 0%, var(--color-secondary) 100%);
+    }
+    50% {
+        background: linear-gradient(135deg, rgba(156, 175, 136, 0.2) 0%, rgba(244, 228, 188, 0.2) 100%);
+        border-color: var(--color-primary);
+    }
+}
+
 /* Puzzles */
 .puzzle {
     margin-bottom: 25px;
@@ -1379,4 +1492,233 @@ form {
         height: 24px;
         font-size: 1rem;
     }
+}
+
+/* ========================================
+   INLINE LOADING STATES
+   ======================================== */
+
+.stats-loading {
+    position: relative;
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+.stats-loading::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 30px;
+    height: 30px;
+    border: 3px solid var(--color-beige);
+    border-top: 3px solid var(--color-accent);
+    border-radius: 50%;
+    animation: statsSpin 1s linear infinite;
+    margin-top: -15px;
+    margin-left: -15px;
+}
+
+.api-loading {
+    position: relative;
+}
+
+.api-loading::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    right: 15px;
+    width: 18px;
+    height: 18px;
+    border: 2px solid var(--color-beige);
+    border-top: 2px solid var(--color-primary);
+    border-radius: 50%;
+    animation: buttonSpin 0.8s linear infinite;
+    z-index: 1;
+    margin-top: -9px;
+}
+
+@keyframes statsSpin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+@keyframes buttonSpin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* ========================================
+   ERROR TOAST NOTIFICATION SYSTEM
+   ======================================== */
+
+.toast-container {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 10000;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    pointer-events: none;
+}
+
+.toast {
+    background: linear-gradient(135deg, var(--color-error) 0%, rgba(224, 122, 95, 0.95) 100%);
+    color: var(--color-white);
+    padding: 16px 24px;
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(224, 122, 95, 0.3);
+    animation: slideInRight 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    max-width: 350px;
+    font-family: 'Nunito', 'Quicksand', sans-serif;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    backdrop-filter: blur(8px);
+}
+
+.toast.success {
+    background: linear-gradient(135deg, var(--color-success) 0%, var(--color-primary) 100%);
+}
+
+.toast-icon {
+    font-size: 1.5rem;
+    flex-shrink: 0;
+}
+
+.toast-message {
+    font-size: 0.95rem;
+    font-weight: 600;
+    line-height: 1.4;
+}
+
+.toast-close {
+    background: transparent;
+    border: none;
+    color: var(--color-white);
+    font-size: 1.5rem;
+    cursor: pointer;
+    padding: 0;
+    margin-left: auto;
+    opacity: 0.8;
+    transition: all 0.3s ease;
+    flex-shrink: 0;
+}
+
+.toast-close:hover {
+    opacity: 1;
+    transform: scale(1.1);
+}
+
+.toast.show {
+    animation: slideInRight 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.toast.hide {
+    animation: slideOutRight 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+@keyframes slideInRight {
+    from {
+        transform: translateX(120%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes slideOutRight {
+    from {
+        transform: translateX(0);
+        opacity: 1;
+    }
+    to {
+        transform: translateX(120%);
+        opacity: 0;
+    }
+}
+
+/* ========================================
+   PROGRESS BAR LOAD ANIMATION
+   ======================================== */
+
+.vote-progress-bar.initial-load {
+    animation: growBar 0.8s ease-out;
+}
+
+@keyframes growBar {
+    from {
+        width: 0%;
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+/* ========================================
+   VOTE COUNT LOADING STATES
+   ======================================== */
+
+.vote-count.loading {
+    position: relative;
+    color: var(--color-text-light);
+    opacity: 0.7;
+}
+
+.vote-count.loading::before {
+    content: '';
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    margin-right: 8px;
+    border: 2px solid var(--color-beige);
+    border-top: 2px solid var(--color-primary);
+    border-radius: 50%;
+    animation: voteCountSpin 0.8s linear infinite;
+    vertical-align: middle;
+}
+
+.vote-progress-bar.loading {
+    opacity: 0.5;
+    background: linear-gradient(90deg, 
+        var(--color-beige) 0%, 
+        var(--color-primary) 25%, 
+        var(--color-beige) 50%, 
+        var(--color-primary) 75%, 
+        var(--color-beige) 100%);
+    background-size: 200% 100%;
+    animation: barShimmer 1.5s infinite linear;
+}
+
+@keyframes voteCountSpin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+@keyframes barShimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+
+/* Smooth transition when loading completes */
+.vote-count:not(.loading) {
+    animation: countFadeIn 0.3s ease-out;
+}
+
+.vote-progress-bar:not(.loading) {
+    animation: barFadeIn 0.3s ease-out;
+}
+
+@keyframes countFadeIn {
+    from { opacity: 0.7; }
+    to { opacity: 1; }
+}
+
+@keyframes barFadeIn {
+    from { opacity: 0.5; }
+    to { opacity: 1; }
 }

@@ -20,6 +20,22 @@ function setupAdviceToggle() {
         return;
     }
 
+    // Ensure hidden input has default value if empty
+    if (!hiddenInput.value) {
+        hiddenInput.value = 'For Parents';
+        console.log('Set default advice type: For Parents');
+    }
+
+    // Set initial state based on hidden input value
+    const currentValue = hiddenInput.value;
+    toggleOptions.forEach(option => {
+        const optionValue = option.getAttribute('data-value');
+        if (optionValue === currentValue) {
+            option.classList.add('selected');
+            option.setAttribute('aria-checked', 'true');
+        }
+    });
+
     toggleOptions.forEach(option => {
         option.addEventListener('click', function() {
             // Remove selected class from all options

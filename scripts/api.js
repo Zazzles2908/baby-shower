@@ -136,6 +136,17 @@
     }
 
     /**
+     * Get current vote counts
+     */
+    async function getVoteCounts() {
+        const url = `${SUPABASE_URL}/functions/v1/vote`;
+        
+        return apiFetch(url, {
+            method: 'GET',
+        });
+    }
+
+    /**
      * Get submissions for realtime updates
      */
     async function getSubmissions(activityType) {
@@ -207,6 +218,7 @@
         submitPool,
         submitQuiz,
         submitAdvice,
+        getVoteCounts,
         getSubmissions,
         getApiConfig,
         initializeAPI,

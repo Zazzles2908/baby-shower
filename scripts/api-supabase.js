@@ -91,6 +91,17 @@
     }
 
     /**
+     * Get current vote counts for baby names
+     */
+    async function getVoteCounts() {
+        const url = `${SUPABASE_URL}/functions/v1/vote`;
+        
+        return apiFetch(url, {
+            method: 'GET',
+        });
+    }
+
+    /**
      * Submit baby name vote
      */
     async function submitVote(data) {
@@ -99,6 +110,7 @@
         return apiFetch(url, {
             method: 'POST',
             body: JSON.stringify({
+                name: data.name?.trim() || '',
                 names: Array.isArray(data.names) ? data.names : [],
             }),
         });
@@ -259,6 +271,7 @@
         submitPool,
         submitQuiz,
         submitAdvice,
+        getVoteCounts,
         getSubmissions,
         getApiConfig,
         initializeAPI,

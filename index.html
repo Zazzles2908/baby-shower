@@ -252,7 +252,8 @@
                 <div id="name-list" class="name-list">
                     <!-- Names will be populated by JavaScript -->
                 </div>
-                <button id="vote-submit" class="submit-btn" disabled>Submit Votes ❤️</button>
+                <div id="vote-helper" class="vote-helper-text">Select up to 3 names to vote</div>
+                <button id="vote-submit" class="submit-btn tooltip" data-tooltip="Select names first!" disabled>Submit Votes ❤️</button>
                 <div id="vote-stats" class="stats-display"></div>
             </div>
         </section>
@@ -297,7 +298,7 @@
     <script src="scripts/voting.js"></script>
     
     <!-- Activity Ticker -->
-    <div id="activity-ticker" class="activity-ticker hidden">
+    <div id="activity-ticker" class="activity-ticker">
         <div class="ticker-content">
             <span class="ticker-label">📍 Live:</span>
             <div class="ticker-items-container">
