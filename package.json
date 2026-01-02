@@ -1,5 +1,57 @@
 {
+  "name": "baby-shower-app",
+  "version": "1.0.0",
+  "description": "Baby Shower App - A celebration platform with guestbook, voting, pool prediction, quiz, and advice activities",
+  "scripts": {
+    "dev": "npx http-server . -p 3000 -c-1",
+    "deploy": "npm run commit && npm run push",
+    "commit": "node scripts/commit.js",
+    "push": "git push origin main",
+    "status": "git status",
+    "add": "git add .",
+    "test": "playwright test --config=tests/playwright.config.js",
+    "test:ui": "playwright test --config=tests/playwright.config.js --ui",
+    "test:headed": "playwright test --config=tests/playwright.config.js --headed",
+    "test:debug": "playwright test --config=tests/playwright.config.js --debug",
+    "test:ci": "playwright test --config=tests/playwright.config.js --project=chromium --project=firefox --project=webkit",
+    "test:api": "playwright test --config=tests/playwright.config.js baby-shower.test.js --grep=\"API Integration\"",
+    "test:frontend": "playwright test --config=tests/playwright.config.js baby-shower.test.js --grep=\"Frontend Functionality\"",
+    "test:db": "playwright test --config=tests/playwright.config.js baby-shower.test.js --grep=\"Database Verification\"",
+    "test:errors": "playwright test --config=tests/playwright.config.js baby-shower.test.js --grep=\"Error Handling\"",
+    "test:flow": "playwright test --config=tests/playwright.config.js baby-shower.test.js --grep=\"Data Flow\"",
+    "test:chromium": "playwright test --config=tests/playwright.config.js --project=chromium",
+    "test:firefox": "playwright test --config=tests/playwright.config.js --project=firefox",
+    "test:webkit": "playwright test --config=tests/playwright.config.js --project=webkit",
+    "test:mobile": "playwright test --config=tests/playwright.config.js --project=mobile-chrome --project=mobile-safari",
+    "test:report": "playwright show-report test-results/html-report",
+    "test:install": "playwright install --with-deps chromium firefox webkit",
+    "test:install:chromium": "playwright install chromium",
+    "test:install:firefox": "playwright install firefox",
+    "test:install:webkit": "playwright install webkit",
+    "test:clean": "rm -rf test-results tests/e2e/.auth",
+    "test:generate": "node tests/e2e/data-generator.js"
+  },
   "dependencies": {
     "playwright": "^1.57.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.57.0"
+  },
+  "keywords": [
+    "baby-shower",
+    "e2e-tests",
+    "playwright",
+    "supabase",
+    "edge-functions",
+    "testing"
+  ],
+  "author": "",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-org/baby-shower.git"
   }
 }

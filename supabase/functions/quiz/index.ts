@@ -61,10 +61,8 @@ serve(async (req: Request) => {
     const { data, error } = await supabase
       .from('submissions')
       .insert({
+        name: 'Anonymous Quiz Taker',
         activity_type: 'quiz',
-        answers: body.answers,
-        score: body.score,
-        total_questions: body.totalQuestions,
         activity_data: {
           answers: body.answers,
           score: body.score,

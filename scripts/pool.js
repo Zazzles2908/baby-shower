@@ -12,9 +12,13 @@ function initializePool() {
  */
 async function loadPoolStats() {
     try {
-        const stats = await SupabaseClient.getStats();
-
-        if (stats && stats.poolCount > 0) {
+        const submissions = await window.API.getSubmissions('pool');
+        
+        if (submissions && submissions.length > 0) {
+            const stats = {
+                poolCount: submissions.length,
+                submissions: submissions
+            };
             displayPoolStats(stats);
         }
     } catch (error) {

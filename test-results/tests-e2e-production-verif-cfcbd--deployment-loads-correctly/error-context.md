@@ -1,0 +1,58 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - link "Skip to content":
+    - /url: "#geist-skip-nav"
+  - generic [ref=e3]:
+    - banner [ref=e4]:
+      - link "Vercel logo":
+        - /url: /home
+        - button "Vercel Logo":
+          - generic:
+            - img
+          - img "Vercel Logo"
+      - navigation [ref=e5]:
+        - navigation [ref=e6]:
+          - link "Sign Up" [ref=e7] [cursor=pointer]:
+            - /url: /signup?next=%2Fsso-api%3Furl%3Dhttps%253A%252F%252Fbaby-shower-qr-6y1c76cy4-michelle-huangs-projects-9e65d5ed.vercel.app%252F%26nonce%3D2ad628d534d5303189224b7ce433c499643a15166216e3d75dc6dac21a84e1cf
+            - paragraph [ref=e9]: Sign Up
+    - main [ref=e10]:
+      - generic [ref=e11]:
+        - heading "Log in to Vercel" [level=1] [ref=e14]
+        - generic [ref=e15]:
+          - generic [ref=e16]:
+            - textbox "Email Address" [ref=e18]
+            - button "Continue with Email" [ref=e20] [cursor=pointer]:
+              - generic [ref=e21]: Continue with Email
+          - generic [ref=e22]:
+            - button "Continue with Google" [ref=e23] [cursor=pointer]:
+              - img [ref=e25]
+              - generic [ref=e31]: Continue with Google
+            - button "Continue with GitHub" [ref=e32] [cursor=pointer]:
+              - img [ref=e34]
+              - generic [ref=e38]: Continue with GitHub
+            - button "Continue with SAML SSO" [ref=e40] [cursor=pointer]:
+              - img [ref=e42]
+              - generic [ref=e44]: Continue with SAML SSO
+            - button "Continue with Passkey" [ref=e45] [cursor=pointer]:
+              - img [ref=e47]
+              - generic [ref=e49]: Continue with Passkey
+            - button "Show other options" [ref=e50] [cursor=pointer]:
+              - generic [ref=e51]: Show other options
+        - paragraph [ref=e52]:
+          - text: Don't have an account?
+          - link "Sign Up" [ref=e53] [cursor=pointer]:
+            - /url: /signup?next=%2Fsso-api%3Furl%3Dhttps%3A%2F%2Fbaby-shower-qr-6y1c76cy4-michelle-huangs-projects-9e65d5ed.vercel.app%2F%26nonce%3D2ad628d534d5303189224b7ce433c499643a15166216e3d75dc6dac21a84e1cf
+      - generic [ref=e56]:
+        - link "Terms" [ref=e57] [cursor=pointer]:
+          - /url: /legal/terms
+        - link "Privacy Policy" [ref=e58] [cursor=pointer]:
+          - /url: /legal/privacy-policy
+  - alert [ref=e59]
+  - generic:
+    - generic:
+      - generic:
+        - generic:
+          - img
+```

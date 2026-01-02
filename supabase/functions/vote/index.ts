@@ -88,8 +88,8 @@ serve(async (req: Request) => {
     const { data, error } = await supabase
       .from('submissions')
       .insert({
+        name: 'Anonymous Voter',
         activity_type: 'vote',
-        names: sanitizedNames,
         activity_data: {
           names: sanitizedNames,
           vote_count: sanitizedNames.length,

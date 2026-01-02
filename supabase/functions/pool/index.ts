@@ -56,10 +56,7 @@ serve(async (req: Request) => {
       .insert({
         activity_type: 'pool',
         name: sanitizedName,
-        prediction: sanitizedPrediction,
-        due_date: body.dueDate,
         activity_data: {
-          name: sanitizedName,
           prediction: sanitizedPrediction,
           due_date: body.dueDate,
           submitted_at: new Date().toISOString(),

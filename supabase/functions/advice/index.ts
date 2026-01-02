@@ -60,9 +60,8 @@ serve(async (req: Request) => {
     const { data, error } = await supabase
       .from('submissions')
       .insert({
+        name: 'Anonymous Advisor',
         activity_type: 'advice',
-        advice: sanitizedAdvice,
-        category: sanitizedCategory,
         activity_data: {
           advice: sanitizedAdvice,
           category: sanitizedCategory,

@@ -91,7 +91,6 @@ serve(async (req: Request) => {
         activity_type: 'guestbook',
         name: sanitizedName,
         activity_data: {
-          name: sanitizedName,
           message: sanitizedMessage,
           relationship: sanitizedRelationship,
           submitted_at: new Date().toISOString(),

@@ -29,17 +29,40 @@ function doPost(e) {
     // Parse the incoming JSON data from Supabase
     const payload = JSON.parse(e.postData.contents);
     
-    // Handle Supabase webhook format (new or old)
-    const record = payload.record || payload;
+    // Handle different Supabase webhook payload formats
+    // Format 1: { "event": { "type": "INSERT", "table": "...", "record": {...} } }
+    // Format 2: { "record": {...} } (direct record format)
+    let record;
+    if (payload.event && payload.event.record) {
+      // Supabase Database Webhook with event wrapper
+      record = payload.event.record;
+    } else if (payload.record) {
+      // Direct record format
+      record = payload.record;
+    } else {
+      // Payload is the record itself
+      record = payload;
+    }
+    
+    // Get processed data (may be null for raw inserts)
     const processed = record.processed_data || {};
     
-    // Extract data for the sheet
+    // Extract name from guest_name or processed data
+    const guestName = record.guest_name || 
+                      processed.guest_name || 
+                      processed.guestName || 
+                      'Anonymous';
+    
+    // Extract and format activity data based on type
+    const activityData = formatActivityData(record.activity_type, record.raw_data, processed);
+    
+    // Create row data for the sheet
     const rowData = [
       record.id || '',
       formatDate(record.created_at),
-      record.guest_name || '',
+      guestName,
       record.activity_type || '',
-      JSON.stringify(record.raw_data || {}),
+      activityData,
       JSON.stringify(processed),
       record.processing_time_ms || 0
     ];
@@ -55,6 +78,7 @@ function doPost(e) {
   } catch (error) {
     // Log error and return failure
     console.error('Error processing webhook:', error);
+    console.error('Payload:', e.postData.contents);
     
     return ContentService
       .createTextOutput(JSON.stringify({ 
@@ -62,6 +86,51 @@ function doPost(e) {
         error: error.toString() 
       }))
       .setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+/**
+ * Format activity data based on activity type for better readability in Google Sheets
+ */
+function formatActivityData(activityType, rawData, processedData) {
+  try {
+    // Parse raw_data if it's a string
+    let raw;
+    if (typeof rawData === 'string') {
+      raw = JSON.parse(rawData);
+    } else {
+      raw = rawData || {};
+    }
+    
+    const proc = processedData || {};
+    
+    switch (activityType) {
+      case 'guestbook':
+        return `Guest: ${proc.guest_name || raw.name || 'Anonymous'} | Message: ${proc.message || raw.message || ''} | Relationship: ${proc.relationship || raw.relationship || ''}`;
+      
+      case 'vote':
+        const names = proc.names || raw.names || [];
+        const voteCount = proc.vote_count || names.length || 0;
+        return `Names: ${names.join(', ')} | Count: ${voteCount}`;
+      
+      case 'pool':
+        return `Guest: ${proc.guest_name || raw.name || 'Anonymous'} | Prediction: ${proc.prediction || raw.prediction || ''} | Due: ${proc.due_date || raw.due_date || ''}`;
+      
+      case 'quiz':
+        const score = proc.score || raw.score || 0;
+        const total = proc.total_questions || raw.totalQuestions || raw.total_questions || 0;
+        const answers = proc.answers || raw.answers || [];
+        return `Score: ${score}/${total} | Answers: [${answers.join(', ')}]`;
+      
+      case 'advice':
+        return `Category: ${proc.category || raw.category || 'General'} | Text: ${proc.advice_text || proc.advice || raw.advice || ''}`;
+      
+      default:
+        // Return formatted JSON for unknown types
+        return JSON.stringify(raw);
+    }
+  } catch (error) {
+    return JSON.stringify(rawData || {});
   }
 }
 
@@ -101,7 +170,7 @@ function getOrCreateSheet() {
       'Timestamp',
       'Guest Name',
       'Activity Type',
-      'Raw Data',
+      'Activity Data',
       'Processed Data',
       'Processing Time (ms)'
     ];
@@ -140,14 +209,18 @@ function formatDate(isoString) {
  */
 function testWebhook() {
   const testPayload = {
-    record: {
-      id: 999,
-      created_at: new Date().toISOString(),
-      guest_name: 'Test Guest',
-      activity_type: 'guestbook',
-      raw_data: { name: 'Test', message: 'Test message', relationship: 'Friend' },
-      processed_data: { guest_name: 'Test', message: 'Test message', migrated_at: new Date().toISOString() },
-      processing_time_ms: 5
+    event: {
+      type: 'INSERT',
+      table: 'internal.event_archive',
+      record: {
+        id: 999,
+        created_at: new Date().toISOString(),
+        guest_name: 'Test Guest',
+        activity_type: 'guestbook',
+        raw_data: { name: 'Test', message: 'Test message', relationship: 'Friend' },
+        processed_data: { guest_name: 'Test', message: 'Test message', migrated_at: new Date().toISOString() },
+        processing_time_ms: 5
+      }
     }
   };
   
@@ -159,6 +232,77 @@ function testWebhook() {
   
   const response = doPost(mockEvent);
   console.log('Test response:', response.getContent());
+  
+  // Test all activity types
+  const activityTypes = ['guestbook', 'vote', 'pool', 'quiz', 'advice'];
+  for (const type of activityTypes) {
+    const activityPayload = {
+      event: {
+        type: 'INSERT',
+        table: 'internal.event_archive',
+        record: {
+          id: Math.floor(Math.random() * 10000),
+          created_at: new Date().toISOString(),
+          guest_name: 'Test ' + type.charAt(0).toUpperCase() + type.slice(1),
+          activity_type: type,
+          raw_data: getTestDataForActivity(type),
+          processed_data: getTestProcessedDataForActivity(type),
+          processing_time_ms: Math.floor(Math.random() * 10)
+        }
+      }
+    };
+    
+    const activityEvent = {
+      postData: {
+        contents: JSON.stringify(activityPayload)
+      }
+    };
+    
+    const activityResponse = doPost(activityEvent);
+    console.log(`${type} test response:`, activityResponse.getContent());
+  }
+}
+
+/**
+ * Get test raw data for activity type
+ */
+function getTestDataForActivity(activityType) {
+  switch (activityType) {
+    case 'guestbook':
+      return { name: 'Test Guest', message: 'Hello!', relationship: 'friend' };
+    case 'vote':
+      return { names: ['Alice', 'Bob'], voteCount: 2 };
+    case 'pool':
+      return { name: 'Test Pool', prediction: '2026-02-15', dueDate: '2026-02-15' };
+    case 'quiz':
+      return { answers: [1, 2, 3], score: 3, totalQuestions: 3 };
+    case 'advice':
+      return { advice: 'Test advice', category: 'general' };
+    default:
+      return {};
+  }
+}
+
+/**
+ * Get test processed data for activity type
+ */
+function getTestProcessedDataForActivity(activityType) {
+  const base = { migrated_at: new Date().toISOString() };
+  
+  switch (activityType) {
+    case 'guestbook':
+      return { ...base, guest_name: 'Test Guest', message: 'Hello!', relationship: 'friend' };
+    case 'vote':
+      return { ...base, names: ['Alice', 'Bob'], vote_count: 2 };
+    case 'pool':
+      return { ...base, guest_name: 'Test Pool', prediction: '2026-02-15', due_date: '2026-02-15' };
+    case 'quiz':
+      return { ...base, answers: [1, 2, 3], score: 3, total_questions: 3 };
+    case 'advice':
+      return { ...base, advice_text: 'Test advice', category: 'general', is_approved: false };
+    default:
+      return base;
+  }
 }
 
 /**
@@ -200,12 +344,15 @@ function manualSyncFromSupabase() {
   for (const record of records) {
     try {
       const processed = record.processed_data || {};
+      const guestName = record.guest_name || processed.guest_name || 'Anonymous';
+      const activityData = formatActivityData(record.activity_type, record.raw_data, processed);
+      
       const rowData = [
         record.id,
         formatDate(record.created_at),
-        record.guest_name || '',
+        guestName,
         record.activity_type || '',
-        JSON.stringify(record.raw_data || {}),
+        activityData,
         JSON.stringify(processed),
         record.processing_time_ms || 0
       ];

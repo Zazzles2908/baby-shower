@@ -2,219 +2,267 @@
  * Baby Shower App - Supabase Edge Functions API Client
  * Production-ready integration with comprehensive error handling
  * 
- * Usage:
- *   import { submitGuestbook, submitVote, submitPool, submitQuiz, submitAdvice } from './api-supabase.js'
- *   
- *   // Submit to guestbook
- *   const result = await submitGuestbook({ name: 'John', message: 'Happy Baby Shower!', relationship: 'Friend' })
- *   
- *   // Submit a vote
- *   const result = await submitVote({ names: ['Emma', 'Olivia'] })
+ * Works as both ES6 module and regular script (IIFE)
+ * Attaches to window.API for global access
  */
 
-// Configuration - Replace with your Supabase project details
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || ''
-const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || ''
+(function(root) {
+    'use strict';
 
-// Fallback to Vercel API if Supabase not configured
-const USE_SUPABASE = SUPABASE_URL && SUPABASE_ANON_KEY
-const VERCEL_API_URL = import.meta.env.VITE_VERCEL_API_URL || ''
-
-/**
- * Build Supabase Edge Function URL
- */
-function getSupabaseFunctionUrl(functionName) {
-  return `${SUPABASE_URL}/functions/v1/${functionName}`
-}
-
-/**
- * Build Vercel API URL (fallback)
- */
-function getVercelApiUrl(endpoint) {
-  return `${VERCEL_API_URL}/${endpoint}`
-}
-
-/**
- * Get the appropriate API URL based on configuration
- */
-function getApiUrl(functionName, vercelEndpoint) {
-  return USE_SUPABASE ? getSupabaseFunctionUrl(functionName) : getVercelApiUrl(vercelEndpoint)
-}
-
-/**
- * Generic fetch wrapper with error handling
- */
-async function apiFetch(url, options = {}) {
-  const headers = {
-    'Content-Type': 'application/json',
-    ...options.headers,
-  }
-
-  // Add Supabase authorization header if using Supabase
-  if (USE_SUPABASE) {
-    headers['Authorization'] = `Bearer ${SUPABASE_ANON_KEY}`
-  }
-
-  const controller = new AbortController()
-  const timeoutId = setTimeout(() => controller.abort(), 30000) // 30s timeout
-
-  try {
-    const response = await fetch(url, {
-      ...options,
-      headers,
-      signal: controller.signal,
-    })
-
-    clearTimeout(timeoutId)
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}))
-      throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`)
-    }
-
-    return await response.json()
-  } catch (err) {
-    clearTimeout(timeoutId)
+    // Configuration from CONFIG or environment variables
+    const SUPABASE_URL = root.CONFIG?.SUPABASE?.URL || 
+                        (typeof import.meta !== 'undefined' && import.meta.env?.VITE_SUPABASE_URL) ||
+                        (typeof import.meta !== 'undefined' && import.meta.env?.NEXT_PUBLIC_SUPABASE_URL) || '';
     
-    if (err.name === 'AbortError') {
-      throw new Error('Request timed out. Please try again.')
+    const SUPABASE_ANON_KEY = root.CONFIG?.SUPABASE?.ANON_KEY || 
+                              (typeof import.meta !== 'undefined' && import.meta.env?.VITE_SUPABASE_ANON_KEY) ||
+                              (typeof import.meta !== 'undefined' && import.meta.env?.NEXT_PUBLIC_SUPABASE_ANON_KEY) || '';
+    
+    const USE_SUPABASE = SUPABASE_URL && SUPABASE_ANON_KEY;
+    
+    // Timeout settings
+    const API_TIMEOUT = 30000; // 30 seconds
+
+    /**
+     * Build Supabase Edge Function URL
+     */
+    function getSupabaseFunctionUrl(functionName) {
+        return `${SUPABASE_URL}/functions/v1/${functionName}`;
     }
-    throw err
-  }
-}
 
-/**
- * Submit guestbook entry
- */
-export async function submitGuestbook(data) {
-  const url = getApiUrl('guestbook', 'guestbook')
-  
-  return apiFetch(url, {
-    method: 'POST',
-    body: JSON.stringify({
-      name: data.name?.trim() || '',
-      message: data.message?.trim() || '',
-      relationship: data.relationship?.trim() || '',
-    }),
-  })
-}
+    /**
+     * Generic fetch wrapper with error handling
+     */
+    async function apiFetch(url, options = {}) {
+        const headers = {
+            'Content-Type': 'application/json',
+            ...options.headers,
+        };
 
-/**
- * Submit baby name vote
- */
-export async function submitVote(data) {
-  const url = getApiUrl('vote', 'vote')
-  
-  return apiFetch(url, {
-    method: 'POST',
-    body: JSON.stringify({
-      names: Array.isArray(data.names) ? data.names : [],
-    }),
-  })
-}
+        // Add Supabase authorization header
+        if (SUPABASE_ANON_KEY) {
+            headers['Authorization'] = `Bearer ${SUPABASE_ANON_KEY}`;
+        }
 
-/**
- * Submit due date prediction
- */
-export async function submitPool(data) {
-  const url = getApiUrl('pool', 'pool')
-  
-  return apiFetch(url, {
-    method: 'POST',
-    body: JSON.stringify({
-      name: data.name?.trim() || '',
-      prediction: data.prediction?.trim() || '',
-      dueDate: data.dueDate || '',
-    }),
-  })
-}
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), API_TIMEOUT);
 
-/**
- * Submit quiz answers
- */
-export async function submitQuiz(data) {
-  const url = getApiUrl('quiz', 'quiz')
-  
-  return apiFetch(url, {
-    method: 'POST',
-    body: JSON.stringify({
-      answers: data.answers || {},
-      score: Number(data.score) || 0,
-      totalQuestions: Number(data.totalQuestions) || 0,
-    }),
-  })
-}
+        try {
+            const response = await fetch(url, {
+                ...options,
+                headers,
+                signal: controller.signal,
+            });
 
-/**
- * Submit parenting advice
- */
-export async function submitAdvice(data) {
-  const url = getApiUrl('advice', 'advice')
-  
-  return apiFetch(url, {
-    method: 'POST',
-    body: JSON.stringify({
-      advice: data.advice?.trim() || '',
-      category: data.category?.trim() || 'general',
-    }),
-  })
-}
+            clearTimeout(timeoutId);
 
-/**
- * Get submissions for realtime updates
- */
-export async function getSubmissions(activityType) {
-  if (!SUPABASE_URL) {
-    throw new Error('Supabase URL not configured')
-  }
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`);
+            }
 
-  const url = `${SUPABASE_URL}/rest/v1/submissions?activity_type=eq.${activityType}&order=created_at.desc`
-  
-  const headers = {
-    'Content-Type': 'application/json',
-    'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-    'apikey': SUPABASE_ANON_KEY,
-  }
+            return await response.json();
+        } catch (err) {
+            clearTimeout(timeoutId);
+            
+            if (err.name === 'AbortError') {
+                throw new Error('Request timed out. Please try again.');
+            }
+            throw err;
+        }
+    }
 
-  const response = await fetch(url, { headers })
-  
-  if (!response.ok) {
-    throw new Error(`HTTP ${response.status}: ${response.statusText}`)
-  }
+    /**
+     * Submit guestbook entry
+     */
+    async function submitGuestbook(data) {
+        const url = getSupabaseFunctionUrl('guestbook');
+        
+        return apiFetch(url, {
+            method: 'POST',
+            body: JSON.stringify({
+                name: data.name?.trim() || '',
+                message: data.message?.trim() || '',
+                relationship: data.relationship?.trim() || '',
+            }),
+        });
+    }
 
-  return await response.json()
-}
+    /**
+     * Submit baby name vote
+     */
+    async function submitVote(data) {
+        const url = getSupabaseFunctionUrl('vote');
+        
+        return apiFetch(url, {
+            method: 'POST',
+            body: JSON.stringify({
+                names: Array.isArray(data.names) ? data.names : [],
+            }),
+        });
+    }
 
-/**
- * Subscribe to realtime updates
- */
-export function subscribeToSubmissions(activityType, callback) {
-  if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
-    console.warn('Realtime subscriptions require Supabase configuration')
-    return () => {}
-  }
+    /**
+     * Submit due date prediction
+     */
+    async function submitPool(data) {
+        const url = getSupabaseFunctionUrl('pool');
+        
+        return apiFetch(url, {
+            method: 'POST',
+            body: JSON.stringify({
+                name: data.name?.trim() || '',
+                dateGuess: data.dateGuess || '',
+                timeGuess: data.timeGuess || '',
+                weightGuess: data.weightGuess || '',
+                lengthGuess: data.lengthGuess || '',
+            }),
+        });
+    }
 
-  const subscription = {
-    channel: null,
-    unsubscribe: () => {
-      if (subscription.channel) {
-        subscription.channel.unsubscribe()
-      }
-    },
-  }
+    /**
+     * Submit quiz answers
+     */
+    async function submitQuiz(data) {
+        const url = getSupabaseFunctionUrl('quiz');
+        
+        return apiFetch(url, {
+            method: 'POST',
+            body: JSON.stringify({
+                name: data.name?.trim() || '',
+                puzzle1: data.puzzle1?.trim() || '',
+                puzzle2: data.puzzle2?.trim() || '',
+                puzzle3: data.puzzle3?.trim() || '',
+                puzzle4: data.puzzle4?.trim() || '',
+                puzzle5: data.puzzle5?.trim() || '',
+                score: Number(data.score) || 0,
+                totalQuestions: Number(data.totalQuestions) || 0,
+            }),
+        });
+    }
 
-  // Note: Full realtime implementation requires @supabase/supabase-js
-  // This is a placeholder for the subscription pattern
-  console.log(`Subscribed to ${activityType} submissions`)
+    /**
+     * Submit parenting advice
+     */
+    async function submitAdvice(data) {
+        const url = getSupabaseFunctionUrl('advice');
+        
+        return apiFetch(url, {
+            method: 'POST',
+            body: JSON.stringify({
+                name: data.name?.trim() || '',
+                adviceType: data.adviceType?.trim() || '',
+                advice: data.advice?.trim() || data.message?.trim() || '',
+            }),
+        });
+    }
 
-  return subscription.unsubscribe
-}
+    /**
+     * Get submissions for realtime updates
+     */
+    async function getSubmissions(activityType) {
+        if (!SUPABASE_URL) {
+            throw new Error('Supabase URL not configured');
+        }
 
-// Export configuration for debugging
-export function getApiConfig() {
-  return {
-    provider: USE_SUPABASE ? 'supabase' : 'vercel',
-    supabaseUrl: SUPABASE_URL ? '***configured***' : 'not configured',
-    vercelUrl: VERCEL_API_URL ? '***configured***' : 'not configured',
-  }
-}
+        const url = `${SUPABASE_URL}/rest/v1/submissions?activity_type=eq.${activityType}&order=created_at.desc`;
+        
+        const headers = {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+            'apikey': SUPABASE_ANON_KEY,
+        };
+
+        const response = await fetch(url, { headers });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+
+        return await response.json();
+    }
+
+    /**
+     * Export configuration for debugging
+     */
+    function getApiConfig() {
+        return {
+            provider: USE_SUPABASE ? 'supabase' : 'vercel',
+            supabaseUrl: SUPABASE_URL ? '***configured***' : 'not configured',
+            status: SUPABASE_URL ? 'ready' : 'not configured'
+        };
+    }
+
+    /**
+     * Initialize API and verify connection
+     */
+    async function initializeAPI() {
+        console.log('API Client initializing...');
+        console.log('Supabase URL:', SUPABASE_URL ? '***configured***' : 'missing');
+        
+        if (!SUPABASE_URL) {
+            console.error('Supabase URL not configured in CONFIG');
+            return { success: false, error: 'Supabase URL not configured' };
+        }
+
+        try {
+            // Test health check
+            const healthUrl = `${SUPABASE_URL}/rest/v1/submissions?select=id&limit=1`;
+            await fetch(healthUrl, {
+                headers: {
+                    'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+                    'apikey': SUPABASE_ANON_KEY,
+                }
+            });
+            console.log('API Client ready');
+            return { success: true };
+        } catch (err) {
+            console.error('API Client initialization failed:', err.message);
+            return { success: false, error: err.message };
+        }
+    }
+
+    // Create API object
+    const API = {
+        submitGuestbook,
+        submitVote,
+        submitPool,
+        submitQuiz,
+        submitAdvice,
+        getSubmissions,
+        getApiConfig,
+        initializeAPI,
+        // Legacy function name for compatibility
+        submit: function(activityType, data) {
+            switch(activityType) {
+                case 'guestbook': return submitGuestbook(data);
+                case 'vote': return submitVote(data);
+                case 'pool': return submitPool(data);
+                case 'quiz': return submitQuiz(data);
+                case 'advice': return submitAdvice(data);
+                default: return Promise.reject(new Error(`Unknown activity type: ${activityType}`));
+            }
+        }
+    };
+
+    // Attach to global scope (works in both browser and module contexts)
+    if (typeof root !== 'undefined') {
+        root.API = API;
+    }
+
+    // Auto-initialize when DOM is ready
+    if (typeof document !== 'undefined') {
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initializeAPI);
+        } else {
+            initializeAPI();
+        }
+    }
+
+    console.log('API Client (api-supabase.js) loaded successfully');
+
+    // Export for module usage if available
+    if (typeof module !== 'undefined' && module.exports) {
+        module.exports = API;
+    }
+})(typeof window !== 'undefined' ? window : this);

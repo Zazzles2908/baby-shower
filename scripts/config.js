@@ -1,16 +1,35 @@
 // Baby Shower App - Configuration
 
-console.log('CONFIG.js loading...');
-const CONFIG = {
-    API_BASE_URL: window.location.origin + '/api',
-    SUPABASE: {
-        ENABLED: true,
-        URL: 'https://bkszmvfsfgvdwzacgmfz.supabase.co',
-        ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJrc3ptdmZzZmd2ZHd6YWNnbWZ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQzODI1NjMsImV4cCI6MjA3OTk1ODU2M30.BswusP1pfDUStzAU8k-VKPailISimApapNeJGlid8sI',
-        PROJECT_REF: 'bkszmvfsfgvdwzacgmfz',
-        REALTIME_ENABLED: true,
-        CHANNEL: 'baby-shower-updates'
-    },
+// Environment variable detection with fallback to .env.local values
+// Supports Vite (import.meta.env) and script tag loading patterns
+(function() {
+    'use strict';
+    
+    console.log('CONFIG.js loading...');
+    
+    // Get environment variables - supports Vite (import.meta.env) and script loading
+    const ENV_SUPABASE_URL = typeof import.meta !== 'undefined' && import.meta.env?.VITE_SUPABASE_URL ||
+                              typeof import.meta !== 'undefined' && import.meta.env?.NEXT_PUBLIC_SUPABASE_URL ||
+                              '';
+    
+    const ENV_SUPABASE_ANON_KEY = typeof import.meta !== 'undefined' && import.meta.env?.VITE_SUPABASE_ANON_KEY ||
+                                  typeof import.meta !== 'undefined' && import.meta.env?.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
+                                  '';
+    
+    // Fallback to .env.local values if environment variables not available
+    const SUPABASE_URL = ENV_SUPABASE_URL || 'https://bkszmvfsfgvdwzacgmfz.supabase.co';
+    const SUPABASE_ANON_KEY = ENV_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJrc3ptdmZzZmd2ZHd6YWNnbWZ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQzODI1NjMsImV4cCI6MjA3OTk1ODU2M30.BswusP1pfDUStzAU8k-VKPailISimApapNeJGlid8sI';
+    
+    const CONFIG = {
+        API_BASE_URL: window.location.origin + '/api',
+        SUPABASE: {
+            ENABLED: true,
+            URL: SUPABASE_URL,
+            ANON_KEY: SUPABASE_ANON_KEY,
+            PROJECT_REF: 'bkszmvfsfgvdwzacgmfz',
+            REALTIME_ENABLED: true,
+            CHANNEL: 'baby-shower-updates'
+        },
     UI: {
         MAX_VOTES_PER_GUEST: 3,
         MAX_FILE_SIZE: 5 * 1024 * 1024,
@@ -50,6 +69,7 @@ const CONFIG = {
 };
 
 // Make CONFIG globally accessible
-window.CONFIG = CONFIG;
+    window.CONFIG = CONFIG;
 
-console.log("CONFIG ready!", CONFIG.BABY_NAMES.length, "names loaded");
+    console.log("CONFIG ready!", CONFIG.BABY_NAMES.length, "names loaded");
+})();
