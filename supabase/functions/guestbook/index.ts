@@ -84,14 +84,12 @@ serve(async (req: Request) => {
     const sanitizedMessage = body.message.trim().slice(0, 1000)
     const sanitizedRelationship = body.relationship.trim().slice(0, 50)
 
-    // Insert into submissions table
+    // Insert into submissions table (baby_shower schema uses activity_data JSONB)
     const { data, error } = await supabase
       .from('submissions')
       .insert({
         activity_type: 'guestbook',
         name: sanitizedName,
-        message: sanitizedMessage,
-        relationship: sanitizedRelationship,
         activity_data: {
           name: sanitizedName,
           message: sanitizedMessage,

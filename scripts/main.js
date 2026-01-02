@@ -385,7 +385,8 @@ async function handleGuestbookSubmit(event) {
         message: formData.get('message')
     };
 
-    const photoFile = document.getElementById('guestbook-photo').files[0];
+    const photoInput = document.getElementById('guestbook-photo');
+    const photoFile = photoInput ? photoInput.files[0] : null;
 
     try {
         showLoading();
@@ -701,3 +702,101 @@ function getPersonalProgress(feature) {
 // Make functions globally available
 window.closeModal = closeModal;
 window.closeMilestoneModal = closeMilestoneModal;
+
+/**
+ * Show error message
+ * @param {string|object} error - Error message or object
+ */
+function showError(error) {
+    const message = typeof error === 'object' ? (error.message || JSON.stringify(error)) : error;
+    alert('Error: ' + message);
+}
+
+/**
+ * Handle API response
+ * @param {object} response - Response from API
+ * @returns {object} Processed response
+ */
+function handleResponse(response) {
+    if (response.error) {
+        throw new Error(response.error.message || 'Submission failed');
+    }
+    return {
+        success: true,
+        data: response.data || { message: 'Submission successful!' }
+    };
+}
+
+/**
+ * Submit guestbook entry using Supabase directly
+ */
+async function submitGuestbook(data, photoFile) {
+    return await SupabaseClient.submit('guestbook', {
+        name: data.name,
+        activity_type: 'guestbook',
+        activity_data: JSON.stringify({
+            relationship: data.relationship,
+            message: data.message
+        })
+    });
+}
+
+/**
+ * Submit pool prediction using Supabase directly
+ */
+async function submitPool(data) {
+    return await SupabaseClient.submit('baby_pool', {
+        name: data.name,
+        activity_type: 'baby_pool',
+        activity_data: JSON.stringify({
+            dateGuess: data.dateGuess,
+            timeGuess: data.timeGuess,
+            weightGuess: parseFloat(data.weightGuess),
+            lengthGuess: parseInt(data.lengthGuess)
+        })
+    });
+}
+
+/**
+ * Submit quiz answers using Supabase directly
+ */
+async function submitQuiz(data) {
+    return await SupabaseClient.submit('quiz', {
+        name: data.name,
+        activity_type: 'quiz',
+        activity_data: JSON.stringify({
+            puzzle1: data.puzzle1,
+            puzzle2: data.puzzle2,
+            puzzle3: data.puzzle3,
+            puzzle4: data.puzzle4,
+            puzzle5: data.puzzle5
+        })
+    });
+}
+
+/**
+ * Submit advice using Supabase directly
+ */
+async function submitAdvice(data) {
+    return await SupabaseClient.submit('advice', {
+        name: data.name,
+        activity_type: 'advice',
+        activity_data: JSON.stringify({
+            adviceType: data.adviceType,
+            message: data.message
+        })
+    });
+}
+
+/**
+ * Load pool statistics
+ */
+async function loadPoolStats() {
+    try {
+        if (SupabaseClient.isInitialized()) {
+            await refreshStatsFromSupabase();
+        }
+    } catch (error) {
+        console.error('Failed to load pool stats:', error);
+    }
+}

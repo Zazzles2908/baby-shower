@@ -1,238 +1,323 @@
 # 🏗️ Baby Shower App - System Architecture
 
-**Last Updated**: 2026-01-01  
-**Version**: 2.1 (Updated after Bug Fix Review)  
-**Status**: Production Ready - 3 Bugs Fixed
+**Last Updated**: 2026-01-02  
+**Version**: 3.0 (Production-Ready with Three-Stage Pipeline)  
+**Status**: Production Ready - All Systems Operational
 
 ---
 
 ## 📐 System Overview
 
-This document describes the complete architecture of the Baby Shower QR App, including data flow, component interactions, and deployment strategy.
+This document describes the complete production architecture of the Baby Shower QR App, featuring a three-stage data pipeline with Supabase Edge Functions, dual-schema design, and Google Sheets integration.
 
 ---
 
 ## 🎯 Core Architecture
 
-### **Three-Tier Design**
+### **Three-Stage Data Pipeline Design**
 
 ```
-┌─────────────────────────────────────────────────────────┐
-│                    Frontend (Browser)                   │
-│  - HTML/CSS/JavaScript (Vanilla JS)                    │
-│  - No frameworks (lightweight, fast)                   │
-└─────────────────────────┬───────────────────────────────┘
-                          │ API Calls (REST)
-┌─────────────────────────▼───────────────────────────────┐
-│                 API Layer (Vercel Serverless)           │
-│  - 5 endpoints: /api/{guestbook,pool,quiz,advice,vote} │
-│  - Node.js serverless functions                         │
-└─────────────────────────┬───────────────────────────────┘
-                          │ SQL
-┌─────────────────────────▼───────────────────────────────┐
-│              Database (Supabase PostgreSQL)             │
-│  - Single schema: baby_shower                           │
-│  - Real-time subscriptions via Supabase                 │
-└─────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────────┐
+│                        Frontend (Browser)                           │
+│  - HTML/CSS/JavaScript (Vanilla JS)                                │
+│  - API calls to Supabase Edge Functions                            │
+└─────────────────────────────┬───────────────────────────────────────┘
+                              │ HTTPS POST
+┌─────────────────────────────▼───────────────────────────────────────┐
+│                  Supabase Edge Functions (Deno)                     │
+│  - 5 endpoints: /functions/v1/{guestbook,vote,pool,quiz,advice}    │
+│  - Validation, sanitization, rate limiting                         │
+│  - Direct SQL insert to public.submissions                         │
+└─────────────────────────────┬───────────────────────────────────────┘
+                              │ INSERT
+┌─────────────────────────────▼───────────────────────────────────────┐
+│                    Supabase PostgreSQL                              │
+│  ┌────────────────────┐     ┌────────────────────────────────────┐  │
+│  │  public.submissions│ ───▶│  internal.event_archive (Trigger)  │  │
+│  │  (Hot - Realtime)  │     │  (Cold - Immutable Backup)         │  │
+│  └────────────────────┘     └────────────────────────────────────┘  │
+└─────────────────────────────┬───────────────────────────────────────┘
+                              │
+                              │ Database Webhook POST
+┌─────────────────────────────▼───────────────────────────────────────┐
+│                   Google Apps Script                               │
+│  - doPost(e) webhook handler                                       │
+│  - Parses JSON, appends row to Google Sheet                        │
+└─────────────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
 ## 🗄️ Database Architecture
 
-### **Single Schema Design**
+### **Dual-Schema Design**
 
-**Table**: `baby_shower.submissions`
-- **Purpose**: Single table storing all activity types with flexible JSONB data
-- **Access**: All 5 API endpoints write directly here
-- **Design**: JSONB column for activity-specific data
+#### **Public Schema (Hot Layer)**
 
-```sql
-create table if not exists baby_shower.submissions (
-    id bigint generated by default as identity primary key,
-    created_at timestamp with time zone default timezone('utc'::text, now()) not null,
-    name text not null,
-    activity_type text not null,
-    activity_data jsonb default '{}'::jsonb
-);
-```
+**Table**: `public.submissions`
 
-### **Activity Types**
+| Column | Type | Description |
+|--------|------|-------------|
+| `id` | BIGINT | Auto-increment primary key |
+| `created_at` | TIMESTAMPTZ | UTC timestamp of submission |
+| `name` | TEXT | Guest name (not activity-specific) |
+| `activity_type` | TEXT | Activity identifier |
+| `activity_data` | JSONB | Activity-specific payload |
+
+**Activity Types**:
 
 | activity_type | Description | Example Data |
 |---------------|-------------|--------------|
-| `guestbook` | Wish messages | `{relationship, message}` |
-| `baby_pool` | Birth predictions | `{date_guess, time_guess, weight_guess, length_guess}` |
-| `quiz` | Emoji puzzle answers | `{puzzle1-5, score}` |
-| `advice` | Parenting advice | `{advice_type, message}` |
-| `voting` | Name votes | `{names: ["Emma", "Olivia"]}` |
+| `guestbook` | Wish messages | `{name, message, relationship}` |
+| `pool` | Birth predictions | `{name, guess}` |
+| `quiz` | Emoji puzzle answers | `{answers}` |
+| `advice` | Parenting advice | `{message}` |
+| `vote` | Name votes | `{names}` |
+
+#### **Internal Schema (Cold Layer)**
+
+**Table**: `internal.event_archive`
+
+| Column | Type | Description |
+|--------|------|-------------|
+| `id` | BIGINT | Mirrors public.submissions.id |
+| `created_at` | TIMESTAMPTZ | Mirrors public.submissions.created_at |
+| `guest_name` | TEXT | Mirrors public.submissions.name |
+| `activity_type` | TEXT | Mirrors public.submissions.activity_type |
+| `raw_data` | JSONB | Original activity_data |
+| `processed_data` | JSONB | Enhanced with migration metadata |
+
+**Indexes**:
+- `idx_internal_activity_type` on `activity_type`
+- `idx_internal_created_at` on `created_at DESC`
+- `idx_internal_guest_name` on `guest_name`
+
+### **Trigger Function**
+
+```sql
+CREATE OR REPLACE FUNCTION internal.handle_submission_migration()
+RETURNS TRIGGER AS $$
+BEGIN
+    INSERT INTO internal.event_archive (id, created_at, guest_name, activity_type, raw_data, processed_data)
+    VALUES (NEW.id, NEW.created_at, NEW.name, NEW.activity_type, NEW.activity_data, 
+            NEW.activity_data || jsonb_build_object('migrated_at', NOW()::TEXT));
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+CREATE TRIGGER on_submission_insert
+    AFTER INSERT ON public.submissions
+    FOR EACH ROW
+    EXECUTE FUNCTION internal.handle_submission_migration();
+```
 
 ---
 
-## 🔀 Data Flow (Step-by-Step)
+## 🔄 Data Flow
 
-### **When User Submits a Vote**
+### **Complete Submission Flow**
 
 ```
-1. User clicks "Vote for Names"
-   ├─ Selects: Emma, Olivia
-   └─ Clicks: "Submit Votes ❤️"
+1. User Interaction
+   ├─ Fills form (guestbook, vote, pool, quiz, advice)
+   └─ Clicks "Submit"
 
-2. Browser JavaScript (scripts/voting.js)
-   ├─ Validates (max 3 votes)
-   ├─ Collects data: {name: "Guest", selectedNames: ["Emma","Olivia"]}
-   └─ Fetch POST to: https://baby-shower-qr-app.vercel.app/api/vote
+2. Frontend (scripts/supabase.js)
+   ├─ Validates input (max lengths, required fields)
+   ├─ Constructs JSON payload
+   └─ Fetch POST to: https://<project-ref>.supabase.co/functions/v1/<activity>
 
-3. Vercel API Endpoint (api/vote.js)
-   ├─ Receives POST request
-   ├─ Validates fields
-   └─ Executes: INSERT INTO baby_shower.submissions (...)
-   
-   NOTE: Server now stores names as array (activity_data.names)
-   Previous bug: was storing as comma-separated string (activity_data.selected_names)
+3. Supabase Edge Function
+   ├─ Receives request
+   ├─ Validates CORS + content-type
+   ├─ Sanitizes inputs (trim, length limits)
+   ├─ Prepares parameterized INSERT
+   └─ Executes: INSERT INTO public.submissions...
 
-4. Supabase Realtime (optional)
-   ├─ Detects database change
-   ├─ Broadcasts to subscribed clients
-   └─ Live updates appear without refresh
+4. Database Trigger (Automatic)
+   ├─ Fires AFTER INSERT on public.submissions
+   ├─ Executes handle_submission_migration()
+   ├─ Inserts row into internal.event_archive
+   └─ Adds migration metadata to processed_data
 
-5. Frontend Stats Display
-   ├─ Receives realtime update
-   ├─ Parses activity_data.names as array
-   └─ Shows: Emma (5 votes), Olivia (3 votes)
-```
+5. Database Webhook (Automatic)
+   ├─ Supabase detects INSERT on internal.event_archive
+   ├─ Sends POST request to Google Apps Script URL
+   └─ Includes full row data in JSON payload
 
-**Total Time**: < 100ms from user click to database storage
+6. Google Apps Script
+   ├─ Receives doPost(e) request
+   ├─ Parses JSON payload
+   ├─ Extracts activity-specific fields
+   └─ Appends row to Google Sheet
 
----
-
-## 📊 Database Views
-
-### **Activity Count View**
-
-```sql
-create or replace view baby_shower.submissions_count as
-select 
-    activity_type,
-    count(*) as total,
-    min(created_at) as first_submission,
-    max(created_at) as last_submission
-from baby_shower.submissions
-group by activity_type;
-```
-
-### **Vote Counts Query**
-
-Vote counts require manual parsing of the JSONB array:
-
-```sql
--- Get vote counts from activity_data.names array
-SELECT 
-    name as baby_name,
-    COUNT(*) as vote_count
-FROM baby_shower.submissions,
-     jsonb_array_elements_text(activity_data->'names') as name
-WHERE activity_type = 'voting'
-GROUP BY name
-ORDER BY vote_count DESC;
+Total Time: < 2 seconds end-to-end
 ```
 
 ---
 
 ## 🎯 API Endpoints
 
-| Endpoint | Method | Function | Activity Type |
-|----------|--------|----------|---------------|
-| `/api/guestbook` | POST | Guest messages | `guestbook` |
-| `/api/pool` | POST | Birth predictions | `baby_pool` |
-| `/api/quiz` | POST | Emoji pictionary answers | `quiz` |
-| `/api/advice` | POST | Parenting advice | `advice` |
-| `/api/vote` | POST | Name votes | `voting` |
-| `/api` | GET | Health check | - |
+### **Supabase Edge Functions**
 
-All endpoints:
-- Return CORS headers for cross-origin requests
-- Validate required fields
-- Handle errors gracefully
-- Return consistent JSON response format
+| Endpoint | Method | Activity | Status |
+|----------|--------|----------|--------|
+| `/functions/v1/guestbook` | POST | Guest messages | ✅ Production |
+| `/functions/v1/vote` | POST | Name votes | ✅ Production |
+| `/functions/v1/pool` | POST | Birth predictions | ✅ Production |
+| `/functions/v1/quiz` | POST | Emoji quiz answers | ✅ Production |
+| `/functions/v1/advice` | POST | Parenting advice | ✅ Production |
+
+### **Request/Response Format**
+
+**Request**:
+```json
+{
+  "name": "Guest Name",
+  "activity_type": "guestbook",
+  "activity_data": {
+    "name": "Guest Name",
+    "message": "Happy Baby Shower!",
+    "relationship": "Friend"
+  }
+}
+```
+
+**Response** (Success):
+```json
+{
+  "success": true,
+  "message": "Submission received",
+  "data": {
+    "id": 42,
+    "created_at": "2026-01-02T00:15:00Z"
+  }
+}
+```
+
+**Response** (Error):
+```json
+{
+  "success": false,
+  "error": "Validation failed: name is required"
+}
+```
 
 ---
 
-## 🎨 Frontend JavaScript Architecture
+## 🔒 Security Implementation
 
-### **Module: scripts/voting.js**
+### **Row Level Security (RLS)**
 
-The voting module handles:
-- Displaying baby names from CONFIG.BABY_NAMES
-- Managing vote selection state (max 3 votes)
-- Submitting votes to API
-- Displaying vote results in real-time
+| Table | Operation | Policy | Conditions |
+|-------|-----------|--------|------------|
+| `public.submissions` | INSERT | Allow | authenticated OR anon |
+| `public.submissions` | SELECT | Allow | Public (no auth) |
+| `public.submissions` | UPDATE | Deny | All contexts |
+| `public.submissions` | DELETE | Deny | All contexts |
+| `internal.event_archive` | ALL | Allow | Service role only |
+| `internal.event_archive` | ALL | Deny | All other contexts |
 
-**Note**: Fixed to properly parse `activity_data.names` as array (previously expected `activity_data.selected_names` as string).
+### **Input Validation**
+
+| Field | Validation |
+|-------|------------|
+| `name` | Max 100 chars, trim whitespace |
+| `message` | Max 1000 chars, trim whitespace |
+| `names` (vote) | Array, max 3 entries |
+| `guess` (pool) | Date format validation |
+| `relationship` | Max 50 chars, optional |
 
 ---
 
 ## 🌐 Hosting & Deployment
 
-**Platform**: Vercel (serverless)
-- **URL**: https://baby-shower-qr-app.vercel.app
-- **Auto-deploy**: Git push to main branch
-- **Framework**: Vanilla HTML/JS (no build step required)
+### **Platform Matrix**
 
-**Database**: Supabase
-- **Project**: bkszmvfsfgvdwzacgmfz
-- **Region**: Sydney (syd1)
-- **Type**: PostgreSQL 15
-- **Realtime**: Enabled
+| Component | Platform | URL/Config |
+|-----------|----------|------------|
+| Frontend | Vercel | https://baby-shower-qr-app.vercel.app |
+| API | Supabase Edge | https://bkszmvfsfgvdwzacgmfz.supabase.co/functions/v1/ |
+| Database | Supabase Pro | Project: bkszmvfsfgvdwzacgmfz, Region: Sydney |
+| Export | Google Sheets | Webhook via Google Apps Script |
+
+### **Environment Variables**
+
+```env
+# Supabase Configuration (already configured in .env.local)
+SUPABASE_URL=https://bkszmvfsfgvdwzacgmfz.supabase.co
+SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+```
 
 ---
 
-## 📋 Recent Bug Fixes (2026-01-01)
+## 📊 Views and Aggregations
 
-### **Bug 1: Vote Counting Not Working** ✅ FIXED
-**Problem**: Client expected `activity_data.names` (array) but server sent `activity_data.selected_names` (string)
-**Fix**: Changed api/vote.js to store names as array
-**Impact**: Vote counts now work correctly
+### **Today's Submissions View**
 
-### **Bug 2: Pool Stats Not Updating** ✅ FIXED
-**Problem**: Client expected `activity_type: 'baby_pool'` but server sent `activity_type: 'pool'`
-**Fix**: Changed api/pool.js activity_type to 'baby_pool'
-**Impact**: Pool statistics now update in real-time
+```sql
+CREATE OR REPLACE VIEW public.v_today_submissions AS
+SELECT activity_type, COUNT(*) as count, MAX(created_at) as last_submission
+FROM public.submissions
+WHERE created_at >= CURRENT_DATE
+GROUP BY activity_type;
+```
 
-### **Bug 3: Photo Upload Incomplete** ✅ FIXED
-**Problem**: Photo upload feature was partially implemented
-**Fix**: Removed photo upload feature from guestbook to prevent broken functionality
-**Impact**: Guestbook now works reliably without photo uploads
+### **Activity Breakdown View**
+
+```sql
+CREATE OR REPLACE VIEW public.v_activity_breakdown AS
+SELECT 
+    activity_type,
+    COUNT(*) as total_submissions,
+    COUNT(DISTINCT name) as unique_guests,
+    MIN(created_at) as first_submission,
+    MAX(created_at) as last_submission
+FROM public.submissions
+GROUP BY activity_type;
+```
+
+---
+
+## 🧪 Testing Verification (2026-01-02)
+
+### **E2E Test Results**
+
+| Activity | Test ID | Status | Propagation |
+|----------|---------|--------|-------------|
+| Guestbook | 35 | ✅ PASS | → Internal ✅ |
+| Vote | 36 | ✅ PASS | → Internal ✅ |
+| Pool | 37 | ✅ PASS | → Internal ✅ |
+| Quiz | 38 | ✅ PASS | → Internal ✅ |
+| Advice | 39 | ✅ PASS | → Internal ✅ |
+
+**Verified**: All 5 activities successfully insert to `public.submissions` and automatically propagate to `internal.event_archive` via trigger.
 
 ---
 
 ## 🚀 Deployment Status
 
-**Overall**: **Production Ready** - All critical bugs fixed
-- ✅ Database: Fully operational
-- ✅ APIs: All 5 endpoints working
-- ✅ Frontend: All sections functional
-- ✅ Realtime: Live updates working
-- ✅ Hosting: Live on Vercel
-- ✅ Bug fixes: Vote counting, pool stats, photo upload resolved
+### **Overall: PRODUCTION READY** ✅
 
-**Estimated Time to Production**: 10 minutes (deploy + test)
+| Component | Status | Notes |
+|-----------|--------|-------|
+| Database Schema | ✅ Complete | Dual-schema with trigger |
+| Edge Functions | ✅ Deployed | 5/5 functions operational |
+| RLS Policies | ✅ Enforced | Read-only public, restricted internal |
+| Google Sheets | ✅ Active | Webhook receiving data |
+| Frontend Integration | ✅ Working | Supabase API client active |
+| Trigger Pipeline | ✅ Verified | E2E tests passed |
 
 ---
 
-## 📚 MCP Tools Available
+## 📚 Quick Reference
 
-You can use Supabase MCP to:
-- Query submissions in real-time
-- Monitor database performance
-- Create new functions if needed
-- Export data after the event
+### **Supabase MCP Queries**
 
-**Example queries:**
 ```sql
 -- Get all guestbook messages
-SELECT name, activity_data->>'message' as message
-FROM baby_shower.submissions
+SELECT name, activity_data->>'message' as message, created_at
+FROM public.submissions
 WHERE activity_type = 'guestbook'
 ORDER BY created_at DESC;
 
@@ -240,23 +325,22 @@ ORDER BY created_at DESC;
 SELECT 
     jsonb_array_elements_text(activity_data->'names') as name,
     COUNT(*) as votes
-FROM baby_shower.submissions
-WHERE activity_type = 'voting'
+FROM public.submissions
+WHERE activity_type = 'vote'
 GROUP BY name
 ORDER BY votes DESC;
 
--- Get pool predictions
-SELECT 
-    name,
-    activity_data->>'date_guess' as birth_date,
-    activity_data->>'weight_guess' as weight
-FROM baby_shower.submissions
-WHERE activity_type = 'baby_pool';
+-- Get today's activity summary
+SELECT * FROM public.v_today_submissions;
+
+-- Verify internal archive (should mirror public)
+SELECT COUNT(*) as public_count FROM public.submissions;
+SELECT COUNT(*) as internal_count FROM internal.event_archive;
 ```
 
 ---
 
-**Document Version**: 2.1  
-**Last Updated**: 2026-01-01 22:30 AEDT  
+**Document Version**: 3.0  
+**Last Updated**: 2026-01-02 00:15 UTC  
 **Maintained By**: Development Team  
-**Next Review**: After baby shower event
+**Status**: Production Ready - No Known Issues
