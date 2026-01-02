@@ -846,3 +846,141 @@
         height: 25px;
     }
 }
+
+/* ========================================
+   50-SUBMISSION MILESTONE CELEBRATION
+   ======================================== */
+
+/* Full-screen milestone overlay */
+.milestone-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.75);
+    z-index: 99999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: fadeIn 0.3s ease-out;
+}
+
+.milestone-overlay.fading-out {
+    animation: fadeOut 0.5s ease-out forwards;
+}
+
+/* Milestone celebration message */
+.milestone-message {
+    background: linear-gradient(135deg, #FFD700 0%, #FFA500 50%, #FF6B6B 100%);
+    padding: 3rem 4rem;
+    border-radius: 1.5rem;
+    text-align: center;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+    max-width: 90%;
+    animation: milestonePopIn 0.6s ease-out;
+}
+
+@keyframes milestonePopIn {
+    0% {
+        transform: scale(0.5);
+        opacity: 0;
+    }
+    50% {
+        transform: scale(1.1);
+    }
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+.milestone-icon {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+    animation: milestoneBounce 1s ease-in-out infinite;
+}
+
+@keyframes milestoneBounce {
+    0%, 100% {
+        transform: translateY(0) scale(1);
+    }
+    50% {
+        transform: translateY(-15px) scale(1.1);
+    }
+}
+
+.milestone-title {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #fff;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+    margin: 0 0 1rem 0;
+    line-height: 1.3;
+}
+
+.milestone-subtitle {
+    font-size: 1.2rem;
+    color: rgba(255, 255, 255, 0.9);
+    margin: 0 0 0.5rem 0;
+}
+
+.milestone-count {
+    font-size: 1rem;
+    color: rgba(255, 255, 255, 0.8);
+    margin-top: 1rem;
+    font-weight: 500;
+}
+
+/* Milestone confetti container */
+.milestone-confetti-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 99998;
+    overflow: hidden;
+}
+
+.milestone-confetti {
+    position: absolute;
+    top: -20px;
+    animation: milestoneConfettiFall 4s linear forwards;
+}
+
+@keyframes milestoneConfettiFall {
+    0% {
+        transform: translateY(0) rotate(0deg);
+        opacity: 1;
+    }
+    100% {
+        transform: translateY(100vh) rotate(720deg);
+        opacity: 0;
+    }
+}
+
+/* Mobile adjustments for milestone */
+@media (max-width: 600px) {
+    .milestone-message {
+        padding: 2rem 2.5rem;
+        border-radius: 1rem;
+    }
+    
+    .milestone-icon {
+        font-size: 3rem;
+    }
+    
+    .milestone-title {
+        font-size: 1.5rem;
+    }
+    
+    .milestone-subtitle {
+        font-size: 1rem;
+    }
+    
+    .milestone-count {
+        font-size: 0.9rem;
+    }
+}

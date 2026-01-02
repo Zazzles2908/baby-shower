@@ -524,6 +524,11 @@ async function handleGuestbookSubmit(event) {
         const response = await submitGuestbook(data, photoFile);
         const processedResponse = handleResponse(response);
 
+        // Check for 50-submission milestone
+        if (response?.milestone?.triggered) {
+            triggerMilestoneCelebration(response.milestone);
+        }
+
         hideLoading();
         
         // Show inline success message
@@ -567,6 +572,11 @@ async function handlePoolSubmit(event) {
 
         const response = await submitPool(data);
         const processedResponse = handleResponse(response);
+
+        // Check for 50-submission milestone
+        if (response?.milestone?.triggered) {
+            triggerMilestoneCelebration(response.milestone);
+        }
 
         hideLoading();
         
@@ -632,6 +642,11 @@ async function handleQuizSubmit(event) {
         const response = await submitQuiz(data);
         const processedResponse = handleResponse(response);
 
+        // Check for 50-submission milestone
+        if (response?.milestone?.triggered) {
+            triggerMilestoneCelebration(response.milestone);
+        }
+
         hideLoading();
         
         // Show success message with pre-calculated score
@@ -672,6 +687,11 @@ async function handleAdviceSubmit(event) {
 
         const response = await submitAdvice(data);
         const processedResponse = handleResponse(response);
+
+        // Check for 50-submission milestone
+        if (response?.milestone?.triggered) {
+            triggerMilestoneCelebration(response.milestone);
+        }
 
         hideLoading();
         
@@ -863,6 +883,7 @@ window.closeModal = closeModal;
 window.closeMilestoneModal = closeMilestoneModal;
 window.getGuestName = getGuestName;
 window.setGuestName = setGuestName;
+window.triggerMilestoneCelebration = triggerMilestoneCelebration;
 
 /**
  * Show error message

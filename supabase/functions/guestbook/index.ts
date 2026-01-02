@@ -84,6 +84,13 @@ serve(async (req: Request) => {
     const sanitizedMessage = body.message.trim().slice(0, 1000)
     const sanitizedRelationship = body.relationship.trim().slice(0, 50)
 
+    // Count total submissions BEFORE insert to check milestone
+    const { count: totalCount } = await supabase
+      .from('submissions')
+      .select('*', { count: 'exact', head: true })
+    const currentCount = totalCount || 0
+    const isMilestone = currentCount + 1 === 50
+
     // Insert into submissions table (baby_shower schema uses activity_data JSONB)
     const { data, error } = await supabase
       .from('submissions')
@@ -115,6 +122,11 @@ serve(async (req: Request) => {
           relationship: sanitizedRelationship,
           created_at: data.created_at,
         },
+        milestone: isMilestone ? {
+          triggered: true,
+          threshold: 50,
+          message: '🎉 We hit 50 submissions! Cake time!'
+        } : undefined
       }),
       { status: 201, headers }
     )

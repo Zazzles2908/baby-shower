@@ -170,6 +170,13 @@ serve(async (req: Request) => {
     // Calculate averages for AI roast
     const { avgWeight, avgLength } = await calculateAverages(supabase)
 
+    // Count total submissions BEFORE insert to check milestone
+    const { count: totalCount } = await supabase
+      .from('submissions')
+      .select('*', { count: 'exact', head: true })
+    const currentCount = totalCount || 0
+    const isMilestone = currentCount + 1 === 50
+
     const { data, error } = await supabase
       .from('submissions')
       .insert({
@@ -203,6 +210,11 @@ serve(async (req: Request) => {
         message: 'Prediction recorded!',
         data: { id: data.id, name: sanitizedName, prediction: sanitizedPrediction, due_date: body.dueDate },
         roast: roast,
+        milestone: isMilestone ? {
+          triggered: true,
+          threshold: 50,
+          message: '🎉 We hit 50 submissions! Cake time!'
+        } : undefined
       }),
       { status: 201, headers }
     )

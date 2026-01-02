@@ -84,6 +84,13 @@ serve(async (req: Request) => {
       .map(n => n.trim().slice(0, 50))
       .filter(n => n.length > 0)
 
+    // Count total submissions BEFORE insert to check milestone
+    const { count: totalCount } = await supabase
+      .from('submissions')
+      .select('*', { count: 'exact', head: true })
+    const currentCount = totalCount || 0
+    const isMilestone = currentCount + 1 === 50
+
     // Insert into submissions
     const { data, error } = await supabase
       .from('submissions')
@@ -113,6 +120,11 @@ serve(async (req: Request) => {
           vote_count: sanitizedNames.length,
           created_at: data.created_at,
         },
+        milestone: isMilestone ? {
+          triggered: true,
+          threshold: 50,
+          message: '🎉 We hit 50 submissions! Cake time!'
+        } : undefined
       }),
       { status: 201, headers }
     )

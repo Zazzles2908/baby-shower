@@ -231,10 +231,15 @@
         try {
             showLoading();
             
-            await window.API.submitVote({
+            const response = await window.API.submitVote({
                 name: name.trim(),
                 names: votingState.selected
             });
+            
+            // Check for 50-submission milestone
+            if (response?.milestone?.triggered) {
+                triggerMilestoneCelebration(response.milestone);
+            }
             
             // Mark as voted and save state
             votingState.hasVoted = true;

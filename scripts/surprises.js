@@ -1,6 +1,110 @@
 // Baby Shower App - Milestone and Surprise System
 
 /**
+ * Check if a submission response contains a milestone trigger
+ * @param {Object} response - API response object
+ * @returns {boolean} Whether milestone was triggered
+ */
+function checkForMilestone(response) {
+    return response?.milestone?.triggered === true;
+}
+
+/**
+ * Trigger full-screen milestone celebration
+ * @param {Object} milestone - Milestone data from API response
+ */
+function triggerMilestoneCelebration(milestone) {
+    // Create overlay
+    const overlay = document.createElement('div');
+    overlay.className = 'milestone-overlay';
+    overlay.id = 'milestone-celebration-overlay';
+    
+    // Create celebration content
+    const content = document.createElement('div');
+    content.className = 'milestone-message';
+    content.innerHTML = `
+        <div class="milestone-icon">🎉</div>
+        <h2 class="milestone-title">${milestone.message || '🎉 We hit 50 submissions! Cake time!'}</h2>
+        <p class="milestone-subtitle">Thank you for being part of this magical moment!</p>
+        <div class="milestone-count">50 amazing guests have contributed!</div>
+    `;
+    
+    overlay.appendChild(content);
+    document.body.appendChild(overlay);
+    
+    // Trigger confetti
+    triggerFullscreenConfetti();
+    
+    // Auto-dismiss after 6 seconds
+    setTimeout(() => {
+        dismissMilestoneCelebration();
+    }, 6000);
+}
+
+/**
+ * Dismiss the milestone celebration
+ */
+function dismissMilestoneCelebration() {
+    const overlay = document.getElementById('milestone-celebration-overlay');
+    if (overlay) {
+        overlay.classList.add('fading-out');
+        setTimeout(() => {
+            if (overlay.parentNode) {
+                overlay.parentNode.removeChild(overlay);
+            }
+        }, 500);
+    }
+}
+
+/**
+ * Trigger full-screen confetti animation
+ */
+function triggerFullscreenConfetti() {
+    const container = document.createElement('div');
+    container.className = 'milestone-confetti-container';
+    
+    // Create more confetti pieces for full-screen effect
+    const colors = [
+        '#FF6B6B', '#4ECDC4', '#FFE66D', '#95E1D3', '#F38181',
+        '#AA96DA', '#FCBAD3', '#A8D8EA', '#FF9F43', '#54A0FF',
+        '#FFD700', '#FF69B4', '#00CED1', '#32CD32', '#FF6347'
+    ];
+    
+    for (let i = 0; i < 150; i++) {
+        const confetti = document.createElement('div');
+        confetti.className = 'milestone-confetti';
+        confetti.style.left = Math.random() * 100 + '%';
+        confetti.style.animationDelay = Math.random() * 3 + 's';
+        confetti.style.animationDuration = (Math.random() * 2 + 2.5) + 's';
+        confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+        
+        // Randomize shapes
+        const shapes = ['square', 'circle'];
+        const shape = shapes[Math.floor(Math.random() * shapes.length)];
+        
+        if (shape === 'circle') {
+            confetti.style.borderRadius = '50%';
+        }
+        
+        // Randomize size
+        const size = Math.random() * 8 + 6;
+        confetti.style.width = size + 'px';
+        confetti.style.height = size + 'px';
+        
+        container.appendChild(confetti);
+    }
+    
+    document.body.appendChild(container);
+    
+    // Remove confetti after animation
+    setTimeout(() => {
+        if (document.body.contains(container)) {
+            document.body.removeChild(container);
+        }
+    }, 6000);
+}
+
+/**
  * Show milestone surprise
  * @param {string} milestoneKey - Milestone key
  */
@@ -338,6 +442,10 @@ if (typeof module !== 'undefined' && module.exports) {
         getUnlockedMilestones,
         saveUnlockedMilestone,
         isMilestoneUnlocked,
-        resetMilestones
+        resetMilestones,
+        checkForMilestone,
+        triggerMilestoneCelebration,
+        dismissMilestoneCelebration,
+        triggerFullscreenConfetti
     };
 }

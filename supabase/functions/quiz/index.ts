@@ -73,6 +73,13 @@ serve(async (req: Request) => {
       return new Response(JSON.stringify({ error: 'Validation failed', details: errors }), { status: 400, headers })
     }
 
+    // Count total submissions BEFORE insert to check milestone
+    const { count: totalCount } = await supabase
+      .from('submissions')
+      .select('*', { count: 'exact', head: true })
+    const currentCount = totalCount || 0
+    const isMilestone = currentCount + 1 === 50
+
     const { data, error } = await supabase
       .from('submissions')
       .insert({
@@ -103,6 +110,11 @@ serve(async (req: Request) => {
           percentage,
           created_at: data.created_at,
         },
+        milestone: isMilestone ? {
+          triggered: true,
+          threshold: 50,
+          message: '🎉 We hit 50 submissions! Cake time!'
+        } : undefined
       }),
       { status: 201, headers }
     )
