@@ -23,6 +23,11 @@ document.addEventListener('DOMContentLoaded', () => {
     initializeBackButtons();
     loadPersonalProgress();
     initializeWelcomeName();
+    
+    // Initialize gallery and image features
+    if (window.Gallery && typeof window.Gallery.init === 'function') {
+        window.Gallery.init();
+    }
 });
 
 /**

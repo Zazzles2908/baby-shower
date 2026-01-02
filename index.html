@@ -17,7 +17,9 @@
         <section id="welcome-section" class="active">
             <div class="hero-section">
                 <div class="hero-image">
-                    <span class="hero-placeholder">👨‍👩‍👧 🍊</span>
+                    <div class="hero-image-wrapper image-wrapper" id="hero-image-container">
+                        <!-- Hero image will be loaded by JavaScript -->
+                    </div>
                 </div>
                 <div class="hero-content">
                     <h1 class="hero-title">Welcome to Our Baby Shower</h1>
@@ -40,29 +42,37 @@
                 </div>
                 
                 <div class="activities" id="activities-container">
+                    <!-- Decorative floating elements -->
+                    <div class="floating-decoration floating-decoration-1">🐰</div>
+                    <div class="floating-decoration floating-decoration-2">🐻</div>
                     <h2 class="activities-heading">Choose an Activity</h2>
                     <div class="activity-buttons">
                         <button class="activity-card" data-section="guestbook" aria-label="Guestbook - Leave your wishes for baby">
+                            <div class="card-background-image"></div>
                             <span class="card-icon">💌</span>
                             <span class="card-title">Guestbook</span>
                             <span class="card-subtitle">Leave your wishes for baby</span>
                         </button>
                         <button class="activity-card" data-section="pool" aria-label="Baby Pool - Predict the big arrival">
+                            <div class="card-background-image"></div>
                             <span class="card-icon">🎯</span>
                             <span class="card-title">Baby Pool</span>
                             <span class="card-subtitle">Predict the big arrival</span>
                         </button>
                         <button class="activity-card" data-section="quiz" aria-label="Baby Quiz - Decode baby emoji puzzles">
+                            <div class="card-background-image"></div>
                             <span class="card-icon">🧩</span>
                             <span class="card-title">Baby Quiz</span>
                             <span class="card-subtitle">Decode baby emoji puzzles</span>
                         </button>
                         <button class="activity-card" data-section="advice" aria-label="Advice - Share your wisdom">
+                            <div class="card-background-image"></div>
                             <span class="card-icon">💡</span>
                             <span class="card-title">Advice</span>
                             <span class="card-subtitle">Share your wisdom</span>
                         </button>
                         <button class="activity-card" data-section="voting" aria-label="Voting - Help choose the perfect name">
+                            <div class="card-background-image"></div>
                             <span class="card-icon">❤️</span>
                             <span class="card-title">Voting</span>
                             <span class="card-subtitle">Help choose the perfect name</span>
@@ -72,10 +82,33 @@
             </div>
         </section>
 
+        <!-- Our Story Gallery Section -->
+        <section id="gallery-section" class="hidden">
+            <div class="container">
+                <button class="back-btn">← Back to Activities</button>
+                <div class="gallery-hero">
+                    <div class="gallery-hero-icon">📸</div>
+                    <h1>Our Journey to Baby</h1>
+                    <p class="subtitle">A timeline of precious moments leading to the big day</p>
+                </div>
+                
+                <!-- Gallery Timeline -->
+                <div class="gallery-timeline" id="gallery-container">
+                    <!-- Timeline items will be populated by JavaScript -->
+                </div>
+            </div>
+        </section>
+
         <!-- Guestbook Section -->
         <section id="guestbook-section" class="hidden">
             <div class="container">
                 <button class="back-btn">← Back to Activities</button>
+                <div class="section-decoration">
+                    <div class="corner-decoration top-left">🐷</div>
+                    <div class="corner-decoration top-right">🐔</div>
+                    <div class="corner-decoration bottom-left">🐄</div>
+                    <div class="corner-decoration bottom-right">🐑</div>
+                </div>
                 <h1>💬 Leave a Wish</h1>
                 <p class="subtitle">Share your message for baby!</p>
                 <form id="guestbook-form">
@@ -108,6 +141,11 @@
         <section id="pool-section" class="hidden">
             <div class="container">
                 <button class="back-btn">← Back to Activities</button>
+                <div class="section-decoration">
+                    <div class="corner-decoration top-center">🦢</div>
+                    <div class="corner-decoration bottom-left">🌸</div>
+                    <div class="corner-decoration bottom-right">🌸</div>
+                </div>
                 <h1>🎯 Guess Baby's Stats</h1>
                 <p class="subtitle">Predict when and how big baby will be!</p>
                 <form id="pool-form">
@@ -145,8 +183,13 @@
         <section id="quiz-section" class="hidden">
             <div class="container">
                 <button class="back-btn">← Back to Activities</button>
+                <div class="section-decoration">
+                    <div class="corner-decoration top-left">🦊</div>
+                    <div class="corner-decoration top-right">🐰</div>
+                    <div class="corner-decoration bottom-center">🐻</div>
+                </div>
                 <h1>🧩 Baby Emoji Pictionary</h1>
-                <p class="subtitle">Guess the baby-related phrases from emojis!</p>
+                <p class="subtitle">Guess baby-related phrases from emojis!</p>
                 <div id="quiz-score-display" class="quiz-score-display hidden">
                     <span class="score-icon">🎯</span>
                     <span class="score-text">Score: <span id="current-score">0</span>/5</span>
@@ -192,6 +235,11 @@
                     <p class="subtitle">Share your wisdom for the parents or seal a wish for baby's 18th birthday</p>
                 </div>
 
+                <div class="section-decoration advice-decoration">
+                    <div class="floral-border-left"></div>
+                    <div class="floral-border-right"></div>
+                </div>
+
                 <form id="advice-form">
                     <!-- Name Line styled as "From:" on a letter -->
                     <div class="advice-name-line">
@@ -229,6 +277,7 @@
                         <div class="advice-paper">
                             <textarea id="advice-message" name="message" rows="8" required placeholder="Write your wisdom here..."></textarea>
                             <div class="paper-seal-decoration"></div>
+                            <div class="paper-wax-seal"></div>
                         </div>
                         <div class="paper-corner-decoration bottom-left"></div>
                         <div class="paper-corner-decoration bottom-right"></div>
@@ -247,6 +296,12 @@
         <section id="voting-section" class="hidden">
             <div class="container">
                 <button class="back-btn">← Back to Activities</button>
+                <div class="section-decoration">
+                    <div class="corner-decoration top-left">💕</div>
+                    <div class="corner-decoration top-right">💕</div>
+                    <div class="corner-decoration bottom-left">❤️</div>
+                    <div class="corner-decoration bottom-right">❤️</div>
+                </div>
                 <h1>❤️ Vote for Baby Names</h1>
                 <p class="subtitle">Heart up to 3 names you like!</p>
                 <div id="name-list" class="name-list">
@@ -288,6 +343,8 @@
     
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="scripts/config.js"></script>
+    <script src="scripts/image-service.js"></script>
+    <script src="scripts/gallery.js"></script>
     <script src="scripts/api-supabase.js"></script>
     <script src="scripts/surprises.js"></script>
     <script src="scripts/main.js"></script>
@@ -305,6 +362,15 @@
                 <span class="ticker-message" id="ticker-message">Loading...</span>
             </div>
             <button class="ticker-close" onclick="closeActivityTicker()" aria-label="Close ticker">×</button>
+        </div>
+    </div>
+
+    <!-- Image Lightbox Modal -->
+    <div id="lightbox-modal" class="overlay hidden">
+        <div class="lightbox-content">
+            <button class="lightbox-close" aria-label="Close lightbox">×</button>
+            <img id="lightbox-image" src="" alt="Enlarged image">
+            <div class="lightbox-caption"></div>
         </div>
     </div>
 </body>
