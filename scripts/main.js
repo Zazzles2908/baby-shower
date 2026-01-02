@@ -90,6 +90,20 @@ function initializeWelcomeName() {
 }
 
 /**
+ * Re-populate name field after form reset
+ * @param {string} fieldId - ID of the name field
+ */
+function repopulateNameField(fieldId) {
+    const name = getGuestName();
+    if (name) {
+        const input = document.getElementById(fieldId);
+        if (input) {
+            input.value = name;
+        }
+    }
+}
+
+/**
  * Pre-fill all activity name fields with the guest's name
  * @param {string} name - Guest name
  */
@@ -518,8 +532,9 @@ async function handleGuestbookSubmit(event) {
         // Update personal progress
         updatePersonalProgress('guestbook');
 
-        // Reset form
+        // Reset form and re-populate name
         form.reset();
+        repopulateNameField('guestbook-name');
         clearPhotoPreview();
 
     } catch (error) {
@@ -564,8 +579,9 @@ async function handlePoolSubmit(event) {
         // Refresh stats
         loadPoolStats();
 
-        // Reset form
+        // Reset form and re-populate name
         form.reset();
+        repopulateNameField('pool-name');
 
     } catch (error) {
         hideLoading();
@@ -616,8 +632,9 @@ async function handleQuizSubmit(event) {
         // Update personal progress
         updatePersonalProgress('quiz');
 
-        // Reset form (but show score first in the message above)
+        // Reset form (but show score first in the message above) and re-populate name
         form.reset();
+        repopulateNameField('quiz-name');
 
     } catch (error) {
         hideLoading();
@@ -656,8 +673,9 @@ async function handleAdviceSubmit(event) {
         // Update personal progress
         updatePersonalProgress('advice');
 
-        // Reset form
+        // Reset form and re-populate name
         form.reset();
+        repopulateNameField('advice-name');
 
     } catch (error) {
         hideLoading();
