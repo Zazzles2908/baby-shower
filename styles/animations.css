@@ -419,22 +419,23 @@
 /* Activity Toast Notification */
 .activity-toast {
     position: fixed;
-    bottom: 20px;
+    bottom: 80px;
     left: 50%;
     transform: translateX(-50%) translateY(100px);
-    background: linear-gradient(135deg, var(--color-accent), var(--color-secondary));
+    background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-accent) 100%);
     color: white;
     padding: 12px 24px;
     border-radius: 50px;
     display: flex;
     align-items: center;
     gap: 10px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 4px 20px rgba(156, 175, 136, 0.3);
     z-index: 10000;
     opacity: 0;
-    transition: all 0.3s ease;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     font-size: 0.95rem;
-    font-weight: 500;
+    font-weight: 600;
+    font-family: 'Nunito', 'Quicksand', sans-serif;
 }
 
 .activity-toast.show {
@@ -453,13 +454,13 @@
 /* Stat Updated Pulse Animation */
 @keyframes statPulse {
     0% { transform: scale(1); }
-    50% { transform: scale(1.3); color: var(--color-accent); }
+    50% { transform: scale(1.3); color: var(--color-primary); }
     100% { transform: scale(1); }
 }
 
 .stat-updated {
     animation: statPulse 0.5s ease-out;
-    color: var(--color-accent) !important;
+    color: var(--color-primary) !important;
     font-weight: 700;
 }
 
