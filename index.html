@@ -355,13 +355,15 @@
     <script src="scripts/voting.js"></script>
     
     <!-- Activity Ticker -->
-    <div id="activity-ticker" class="activity-ticker">
+    <div id="activity-ticker" class="activity-ticker hidden" role="status" aria-live="polite" aria-atomic="true">
         <div class="ticker-content">
-            <span class="ticker-label">📍 Live:</span>
+            <span class="ticker-label">Live Activity</span>
             <div class="ticker-items-container">
-                <span class="ticker-message" id="ticker-message">Loading...</span>
+                <span class="ticker-message loading-state" id="ticker-message">Loading...</span>
             </div>
-            <button class="ticker-close" onclick="closeActivityTicker()" aria-label="Close ticker">×</button>
+            <button class="ticker-close" onclick="closeActivityTicker()" aria-label="Close activity ticker" tabindex="0">
+                <span aria-hidden="true">×</span>
+            </button>
         </div>
     </div>
 

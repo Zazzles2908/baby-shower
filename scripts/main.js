@@ -1210,11 +1210,33 @@ async function loadPoolStats() {
 // Ticker state
 const tickerState = {
     activities: [],
-    maxActivities: 15,
+    maxActivities: 10,
     currentIndex: 0,
     intervalId: null,
-    channel: null
+    dismissTimeoutId: null,
+    channel: null,
+    lastActivityTime: null,
+    autoDismissDelay: 15000 // 15 seconds of inactivity
 };
+
+// Format timestamp for display
+function formatTimeAgo(timestamp) {
+    const now = Date.now();
+    const diff = now - timestamp;
+    const seconds = Math.floor(diff / 1000);
+    const minutes = Math.floor(seconds / 60);
+    
+    if (seconds < 10) {
+        return 'just now';
+    } else if (seconds < 60) {
+        return `${seconds}s ago`;
+    } else if (minutes < 60) {
+        return `${minutes}m ago`;
+    } else {
+        const hours = Math.floor(minutes / 60);
+        return `${hours}h ago`;
+    }
+}
 
 // Format activity message based on type
 function formatActivityMessage(submission) {
@@ -1299,10 +1321,13 @@ function addTickerActivity(submission) {
         timestamp: Date.now()
     });
     
-    // Limit to max activities
+    // Limit to max activities (reduced from 15 to 10 for cleaner display)
     if (tickerState.activities.length > tickerState.maxActivities) {
         tickerState.activities = tickerState.activities.slice(0, tickerState.maxActivities);
     }
+    
+    // Reset index to show newest activity
+    tickerState.currentIndex = 0;
     
     // Show ticker if hidden
     showActivityTicker();
@@ -1318,13 +1343,27 @@ function updateTickerDisplay() {
     const messageEl = document.getElementById('ticker-message');
     if (!messageEl) return;
     
+    // Remove loading state
+    messageEl.classList.remove('loading-state');
+    
     if (tickerState.activities.length === 0) {
-        messageEl.textContent = 'Waiting for activity...';
+        messageEl.className = 'ticker-message empty-state';
+        messageEl.innerHTML = '<span class="ticker-text">No recent activity</span>';
         return;
     }
     
     const current = tickerState.activities[tickerState.currentIndex];
-    messageEl.innerHTML = `<span class="ticker-icon">${current.icon}</span> ${current.message}`;
+    const timeAgo = formatTimeAgo(current.timestamp);
+    
+    messageEl.className = 'ticker-message';
+    messageEl.innerHTML = `
+        <span class="ticker-icon">${current.icon}</span>
+        <span class="ticker-text">${current.message}</span>
+        <span class="ticker-time">${timeAgo}</span>
+    `;
+    
+    // Reset auto-dismiss timer on activity change
+    resetAutoDismissTimer();
 }
 
 // Show ticker
@@ -1332,6 +1371,32 @@ function showActivityTicker() {
     const ticker = document.getElementById('activity-ticker');
     if (ticker) {
         ticker.classList.remove('hidden');
+        ticker.classList.remove('fading-out');
+        resetAutoDismissTimer();
+    }
+}
+
+// Reset auto-dismiss timer
+function resetAutoDismissTimer() {
+    // Clear existing timeout
+    if (tickerState.dismissTimeoutId) {
+        clearTimeout(tickerState.dismissTimeoutId);
+    }
+    
+    // Set new auto-dismiss timer
+    tickerState.dismissTimeoutId = setTimeout(() => {
+        dismissTickerAuto();
+    }, tickerState.autoDismissDelay);
+}
+
+// Auto dismiss ticker after inactivity
+function dismissTickerAuto() {
+    const ticker = document.getElementById('activity-ticker');
+    if (ticker) {
+        ticker.classList.add('fading-out');
+        setTimeout(() => {
+            ticker.classList.add('hidden');
+        }, 400); // Wait for fade animation
     }
 }
 
@@ -1339,7 +1404,15 @@ function showActivityTicker() {
 window.closeActivityTicker = function() {
     const ticker = document.getElementById('activity-ticker');
     if (ticker) {
-        ticker.classList.add('hidden');
+        ticker.classList.add('fading-out');
+        setTimeout(() => {
+            ticker.classList.add('hidden');
+        }, 400);
+    }
+    
+    // Clear auto-dismiss timer
+    if (tickerState.dismissTimeoutId) {
+        clearTimeout(tickerState.dismissTimeoutId);
     }
 };
 
@@ -1423,6 +1496,10 @@ function initializeActivityTicker() {
 function cleanupTicker() {
     if (tickerState.intervalId) {
         clearInterval(tickerState.intervalId);
+    }
+    
+    if (tickerState.dismissTimeoutId) {
+        clearTimeout(tickerState.dismissTimeoutId);
     }
     
     if (tickerState.channel) {
