@@ -28,7 +28,7 @@ export default async function handler(req, res) {
     // Write to Supabase
     const supabaseResult = await writeToSupabase({
       name: name,
-      activity_type: 'pool',
+      activity_type: 'baby_pool',  // Changed from 'pool' to match client expectations
       activity_data: {
         date_guess: dateGuess,
         time_guess: timeGuess,

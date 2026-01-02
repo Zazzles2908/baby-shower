@@ -1,234 +1,353 @@
-# 📋 Baby Shower App - Implementation Plan
+# Baby Shower Application - Development Plan
 
-## 🎯 Executive Summary
+## 📋 Executive Summary
 
-Complete plan for building, deploying, and running a QR-code activated baby shower celebration web app with 5 interactive activities.
-
----
-
-## ✅ Completed Features
-
-### **Feature 1: Guestbook** 💬
-- **Status**: ✅ COMPLETE
-- **Frontend**: Name, relationship, message, photo upload
-- **API**: POST /api/guestbook → public.submissions
-- **Database**: Saves to baby_shower via trigger
-- **Testing**: 10 submissions recorded
-
-### **Feature 2: Baby Pool** 🎯
-- **Status**: ✅ COMPLETE
-- **Frontend**: Date, time, weight, length predictions
-- **API**: POST /api/pool → public.submissions
-- **Database**: Saves to baby_shower via trigger
-- **Testing**: 5 predictions recorded
-
-### **Feature 3: Emoji Quiz** 🧩
-- **Status**: ✅ COMPLETE
-- **Frontend**: 5 emoji puzzles with auto-scoring
-- **API**: POST /api/quiz → public.submissions
-- **Answers**: Baby Shower, Three Little Pigs, Rock a Bye Baby, Baby Bottle, Diaper Change
-- **Testing**: 3 quiz submissions recorded
-
-### **Feature 4: Parenting Advice** 💡
-- **Status**: ✅ COMPLETE
-- **Frontend**: Advice type (For Parents/For Baby), message
-- **API**: POST /api/advice → public.submissions
-- **Database**: Saves to baby_shower via trigger
-- **Testing**: 3 advice entries recorded
-
-### **Feature 5: Name Voting** ❤️
-- **Status**: ⚠️ DONE (pending deploy)
-- **Frontend**: 10 baby names (Emma, Olivia, Sophia, etc.)
-- **API**: POST /api/vote → public.submissions
-- **Database**: Saves to baby_shower via trigger
-- **Testing**: 3 votes recorded successfully
+**Project**: Baby Shower 2026 Interactive Web Application  
+**Version**: 1.0.0  
+**Target Deployment**: Vercel + Supabase  
+**Event Date**: January 4th, 2026  
+**Expected Users**: 50-100 concurrent guests
 
 ---
 
-## 🗓️ Timeline
+## 🎯 Application Overview
 
-### **Phase 1: Development** (Completed)
-- ✅ Database design (Supabase schema)
-- ✅ API endpoints (5 Vercel functions)
-- ✅ Frontend development (HTML/CSS/JS)
-- ✅ Real-time integration (Supabase Realtime)
-- ✅ Testing (all features functional)
+The Baby Shower 2026 application is an interactive web platform designed to engage guests through five distinct activities during the celebration. The application provides real-time updates, milestone celebrations, and a seamless user experience optimized for mobile and desktop devices.
 
-### **Phase 2: Clean Rebuild** (Completed)
-- ✅ Consolidated database schema
-- ✅ Fixed caching issues (version strings)
-- ✅ Resolved variable scoping
-- ✅ Improved error handling
-- ✅ Created clean-rebuild branch
-
-### **Phase 3: Deployment** (Pending)
-- ⏳ Deploy clean-rebuild to Vercel
-- ⏳ Test on mobile devices
-- ⏳ Generate QR codes
-- ⏳ Print materials
-
-### **Phase 4: Event Day** (Future)
-- ⏳ Monitor submissions in real-time
-- ⏳ Show live statistics
-- ⏳ Export data after event
+### Core Features
+1. **Guestbook** - Leave wishes and messages for the baby
+2. **Baby Pool** - Guess birth date, time, weight, and length
+3. **Baby Emoji Pictionary** - Interactive quiz game
+4. **Advice Time Capsule** - Parenting advice and wishes for baby's 18th birthday
+5. **Name Voting** - Vote for favorite baby names with heart reactions
 
 ---
 
-## 🎯 Event Day Plan
+## 🏗️ Architecture
 
-### **Setup** (1 hour before)
-1. Print QR codes (5 copies)
-2. Test on mobile phone (Android + iOS)
-3. Open Supabase dashboard on laptop
-4. Verify real-time updates working
+### Technology Stack
 
-### **Activities During Event** (3 hours)
+```
+Frontend:
+├── HTML5 (semantic, accessible)
+├── CSS3 (custom properties, animations, responsive)
+└── JavaScript (ES6+, Supabase client, realtime subscriptions)
 
-**Hour 1: Arrival & Mingling**
-- Guestbook: Guests sign with photo
-- QR codes posted at entrance
-- Real-time guestbook display
+Backend:
+├── Vercel Serverless Functions (api/guestbook, api/pool, etc.)
+└── Supabase (PostgreSQL, Realtime, Storage)
 
-**Hour 2: Games & Fun**
-- Baby Pool: Predictions submitted
-- Emoji Quiz: Friendly competition
-- Name Voting: Real-time leaderboard
+Infrastructure:
+├── Vercel (hosting, CDN, serverless functions)
+└── Supabase (managed database with RLS policies)
+```
 
-**Hour 3: Advice & Celebration**
-- Advice Time Capsule: Messages for baby's 18th
-- Show final stats on projector
-- Announce pool winners
+### Data Flow Architecture
 
-### **Technology Checklist**
-- [ ] Vercel deployment live
-- [ ] Supabase realtime enabled
-- [ ] Phone with QR scanner ready
-- [ ] Laptop monitoring dashboard
-- [ ] Backup plan (paper forms just in case)
-
----
-
-## 📊 Expected Usage
-
-**Guest Count**: ~30-50 people  
-**Submissions Estimated**: 150-250 total
-- Guestbook: 30-50 entries
-- Pool: 20-30 predictions
-- Quiz: 20-30 attempts
-- Advice: 15-20 entries
-- Voting: 30-40 votes (90-120 selections)
-
-**Peak Load**: 10 concurrent users
-**Database Growth**: ~200 rows
-**Storage**: < 5MB (photos compressed)
-
----
-
-## 📈 Success Metrics
-
-**Before Event**:
-- ✅ All 5 features tested
-- ✅ Mobile responsive verified
-- ✅ Database migrations complete
-- ✅ Cache issues resolved
-
-**During Event**:
-- [ ] 100% feature availability
-- [ ] < 2s response time per submission
-- [ ] Real-time updates working
-- [ ] Zero data loss
-
-**After Event**:
-- [ ] Export all submissions
-- [ ] Backup database
-- [ ] Create photo album from uploads
-- [ ] Share results with guests
+```
+┌─────────────────────────────────────────────────────────────┐
+│                      Client Browser                          │
+├─────────────────────────────────────────────────────────────┤
+│  index.html + styles/ + scripts/                             │
+│  • SPA navigation between sections                           │
+│  • Supabase realtime subscriptions                           │
+│  • Local storage for personal progress                       │
+└─────────────────┬───────────────────────────────────────────┘
+                  │ HTTP POST/GET
+                  ▼
+┌─────────────────────────────────────────────────────────────┐
+│                   Vercel API Routes                          │
+├─────────────────────────────────────────────────────────────┤
+│  /api/guestbook  → Supabase REST API                        │
+│  /api/pool       → Supabase REST API                        │
+│  /api/quiz       → Supabase REST API                        │
+│  /api/advice     → Supabase REST API                        │
+│  /api/vote       → Supabase REST API                        │
+└─────────────────┬───────────────────────────────────────────┘
+                  │ REST API (Service Role)
+                  ▼
+┌─────────────────────────────────────────────────────────────┐
+│                   Supabase Platform                          │
+├─────────────────────────────────────────────────────────────┤
+│  baby_shower schema                                          │
+│  ├── submissions table (single table for all activities)    │
+│  ├── Row Level Security policies                             │
+│  ├── Indexed queries (activity_type, name, created_at)      │
+│  └── Realtime publication                                    │
+└─────────────────────────────────────────────────────────────┘
+```
 
 ---
 
-## ⚠️ Risk Mitigation
+## 📁 File Structure
 
-### **Risk 1: WiFi Issues**
-- **Mitigation**: Venue has strong WiFi confirmed
-- **Backup**: Use mobile hotspot if needed
-
-### **Risk 2: Supabase Downtime**
-- **Mitigation**: Supabase has 99.9% uptime SLA
-- **Backup**: Enable offline mode (store locally, sync later)
-
-### **Risk 3: Vercel Deployment Failure**
-- **Mitigation**: Test deployment 1 day before
-- **Backup**: Keep previous deployment active
-
-### **Risk 4: Browser Compatibility**
-- **Mitigation**: Test on Chrome, Safari, Edge
-- **Backup**: Include browser recommendation on QR sheet
-
----
-
-## 🎁 Post-Event Deliverables
-
-1. **Guestbook Booklet**: Print all messages with photos
-2. **Baby Pool Results**: Calculate closest prediction
-3. **Quiz Winners**: Award prizes
-4. **Advice Book**: Compile for baby's 18th birthday
-5. **Name Results**: Announce most popular names
-6. **Photo Archive**: Download all uploaded photos
-
----
-
-## 💻 Technical Tasks Remaining
-
-**Priority 1** (Must Fix):
-- [ ] Deploy clean-rebuild branch to production
-- [ ] Create `getStats()` function in scripts/api.js
-- [ ] Add error boundaries to all modules
-
-**Priority 2** (Should Fix):
-- [ ] Test on iPhone Safari (8+)
-- [ ] Test on Android Chrome (90+)
-- [ ] Compress photos before upload
-- [ ] Add loading states for stats
-
-**Priority 3** (Nice to Have):
-- [ ] Add success animations
-- [ ] Offline mode support
-- [ ] Export to PDF feature
+```
+baby-shower/
+├── index.html                    # Main SPA entry point
+├── vercel.json                   # Vercel deployment config
+├── .vercelignore                 # Build exclusions
+├── .env.local                    # Environment variables (local)
+├── .gitignore
+├── README.md
+│
+├── styles/
+│   ├── main.css                  # Core styles (443 lines)
+│   └── animations.css            # CSS animations (464 lines)
+│
+├── api/
+│   ├── index.js                  # API health check
+│   ├── guestbook.js              # Guestbook submissions
+│   ├── pool.js                   # Baby pool predictions
+│   ├── quiz.js                   # Quiz answers
+│   ├── advice.js                 # Advice submissions
+│   └── vote.js                   # Name voting
+│
+├── scripts/
+│   ├── config.js                 # Application configuration
+│   ├── api.js                    # API client functions
+│   ├── main.js                   # Main application logic
+│   ├── supabase.js               # Supabase client wrapper
+│   ├── guestbook.js              # Guestbook-specific logic
+│   ├── pool.js                   # Pool-specific logic
+│   ├── quiz.js                   # Quiz-specific logic
+│   ├── advice.js                 # Advice-specific logic
+│   ├── voting.js                 # Voting-specific logic
+│   └── surprises.js              # Milestone celebrations
+│
+└── backend/
+    ├── supabase-schema.sql       # Database schema (143 lines)
+    └── supabase-integration.md   # Integration documentation
+```
 
 ---
 
-## 📞 Support Contacts
+## 🗄️ Database Schema
 
-**Technical Issues**:
-- Vercel Dashboard: vercel.com/dashboard
-- Supabase Dashboard: supabase.com/dashboard
-- GitHub Repo: github.com/Zazzles2908/baby-shower
+### Single Table Design
+The application uses a unified `baby_shower.submissions` table with a JSONB column for activity-specific data:
 
-**Event Day**:
-- QR Code Generator: qr-code-generator.com
-- Photo Backup: Google Drive folder
+```sql
+CREATE TABLE baby_shower.submissions (
+    id BIGINT PRIMARY KEY,
+    created_at TIMESTAMPTZ,
+    name TEXT NOT NULL,
+    activity_type TEXT NOT NULL,  -- 'guestbook', 'baby_pool', 'quiz', 'advice', 'voting'
+    activity_data JSONB DEFAULT '{}'
+);
+```
+
+### Activity Data Schemas
+
+| Activity | Key Fields in activity_data |
+|----------|---------------------------|
+| guestbook | relationship, message, photo_url |
+| baby_pool | date_guess, time_guess, weight_guess, length_guess |
+| quiz | puzzle1-5, score |
+| advice | advice_type, message |
+| voting | names (array of selected names) |
+
+### Indexes
+- `idx_baby_shower_activity` - Query by activity type
+- `idx_baby_shower_name` - Query by guest name
+- `idx_baby_shower_created` - Sort by submission time
+
+### RLS Policies
+- `Allow anonymous reads` - SELECT for all authenticated users
+- `Allow anonymous inserts` - INSERT for all authenticated users
 
 ---
 
-## 📝 Notes
+## 🎨 UI/UX Design
 
-**Special Considerations**:
-- Older relatives may need QR code scanning help
-- Have iPad as backup device for scanning
-- Consider printing large QR codes (A4 size)
-- Test venue lighting for photo uploads
+### Color Palette
+```css
+:root {
+    --color-primary: #8B4513;      /* Saddle Brown */
+    --color-secondary: #D2691E;    /* Chocolate */
+    --color-accent: #FFA500;       /* Orange */
+    --color-cream: #FFF8DC;        /* Cornsilk */
+    --color-beige: #F5F5DC;        /* Beige */
+    --color-green: #556B2F;        /* Dark Olive Green */
+    --color-text: #3E2723;         /* Dark Brown */
+    --color-white: #FFFFFF;
+    --color-success: #4CAF50;
+    --color-error: #F44336;
+}
+```
 
-**Post-Event**:
-- Export data within 7 days
-- Create physical keepsake book
-- Send thank-you messages with links to photos
-- Archive GitHub repo after project complete
+### Theme: Warm, Rustic Farm
+- Appropriate for outdoor farm venue (Myuna Farm, Doveton)
+- Warm, inviting color scheme
+- Playful animations and confetti effects
+
+### Responsive Breakpoints
+- Mobile: < 600px (single column layout)
+- Tablet: 600px - 800px (2-column grid)
+- Desktop: > 800px (multi-column layout)
 
 ---
 
-**Plan Version**: 2.0  
-**Last Updated**: 2026-01-01  
-**Next Review**: Day before event  
-**Status**: 95% Complete - Ready for Production
-ENDOFFILE
-echo "✅ Created PLANS.md" && wc -l PLANS.md
+## 🔒 Security Measures
+
+### Supabase RLS
+- All tables protected with Row Level Security
+- Service role key used only in server-side API routes
+- Anon key exposed to client for realtime subscriptions only
+
+### CORS Configuration
+```javascript
+res.setHeader('Access-Control-Allow-Origin', '*');
+res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+```
+
+### Input Validation
+- Server-side validation of all required fields
+- Client-side maxlength constraints
+- File type and size validation for photo uploads
+
+---
+
+## 🚀 Deployment Strategy
+
+### Vercel Configuration
+```json
+{
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }
+      ]
+    }
+  ]
+}
+```
+
+### Environment Variables
+Required in Vercel project settings:
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- `SUPABASE_SERVICE_ROLE_KEY`
+
+### Build Process
+1. Static files served directly from CDN
+2. API routes deployed as serverless functions
+3. Supabase client initialized in browser
+
+---
+
+## 🧪 Testing Strategy
+
+### End-to-End Tests (Playwright)
+1. **Navigation Tests** - Verify section transitions
+2. **Form Submission Tests** - Test each activity form
+3. **Validation Tests** - Verify required field enforcement
+4. **Realtime Tests** - Test Supabase subscription updates
+5. **Responsive Tests** - Test mobile and desktop layouts
+
+### Manual Testing Checklist
+- [ ] Guestbook form submits and shows success
+- [ ] Baby pool accepts valid date/time/weight/length
+- [ ] Quiz scores answers correctly
+- [ ] Advice form submits with type selection
+- [ ] Voting limits to 3 hearts per person
+- [ ] Milestone modals appear at thresholds
+- [ ] Confetti animation triggers on success
+- [ ] Back buttons navigate correctly
+- [ ] Loading overlay appears during submission
+- [ ] Error messages display on failure
+
+---
+
+## 📊 Performance Requirements
+
+### Load Time Targets
+| Metric | Target |
+|--------|--------|
+| First Contentful Paint | < 1.5s |
+| Time to Interactive | < 3s |
+| API Response Time | < 500ms |
+
+### Scalability
+- Expected concurrent users: 50-100
+- Database supports unlimited concurrent connections
+- Vercel serverless scales automatically
+
+### Caching Strategy
+- No caching for dynamic API responses
+- Static assets cached by CDN
+- LocalStorage for personal progress only
+
+---
+
+## 🗓️ Implementation Timeline
+
+### Phase 1: Foundation (Current State) ✅
+- [x] Database schema design
+- [x] API endpoint implementation
+- [x] Frontend HTML structure
+- [x] CSS styling and animations
+- [x] JavaScript application logic
+
+### Phase 2: Integration & Testing (Current)
+- [ ] Docker Compose setup for local development
+- [ ] Playwright E2E test suite
+- [ ] Test execution and bug fixes
+- [ ] Performance benchmarking
+
+### Phase 3: Production Hardening
+- [ ] Security audit
+- [ ] Error handling improvements
+- [ ] Fallback for Supabase unavailability
+- [ ] Loading state optimization
+
+### Phase 4: Deployment
+- [ ] Vercel production deployment
+- [ ] DNS configuration
+- [ ] SSL certificate verification
+- [ ] Final acceptance testing
+
+---
+
+## 🔧 Maintenance & Monitoring
+
+### Supabase Dashboard
+- Monitor query performance
+- Track realtime subscription counts
+- Review RLS policy effectiveness
+
+### Vercel Analytics
+- Track page views and API calls
+- Monitor function execution time
+- Set up error alerting
+
+### Backup Strategy
+- Supabase provides automatic daily backups
+- Point-in-time recovery available
+- Export schema documentation maintained
+
+---
+
+## 📝 Document History
+
+| Version | Date | Changes |
+|---------|------|---------|
+| 1.0.0 | 2026-01-01 | Initial development plan |
+
+---
+
+## ✅ Definition of Done
+
+- [ ] All 5 activities functional
+- [ ] API endpoints return correct responses
+- [ ] Database schema applied and verified
+- [ ] Playwright tests pass (100% pass rate)
+- [ ] Mobile responsive design verified
+- [ ] Confetti and milestone animations working
+- [ ] Supabase realtime subscriptions active
+- [ ] Error handling graceful degradation
+- [ ] Performance targets met
+- [ ] Security review passed
+- [ ] Production deployment successful
+- [ ] Stakeholder acceptance complete

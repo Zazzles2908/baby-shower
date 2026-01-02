@@ -6,7 +6,7 @@ A fun, interactive QR-code based web app for baby showers with multiple activiti
 
 ## Features
 
-- **Digital Guestbook** - Leave wishes and optionally upload photos to Supabase Storage
+- **Digital Guestbook** - Leave wishes and messages for baby (no photos)
 - **Baby Pool** - Predict birth date, time, weight, and length with live stats
 - **Emoji Pictionary** - Solve 5 baby-themed emoji puzzles with scoring
 - **Advice Capsule** - Leave parenting advice or wishes for baby's 18th birthday
@@ -18,8 +18,7 @@ A fun, interactive QR-code based web app for baby showers with multiple activiti
 - **Frontend**: Plain HTML/CSS/JavaScript (responsive, mobile-first)
 - **Backend**: Vercel API Routes + Supabase
   - Supabase PostgreSQL (primary database)
-  - Supabase Storage (photo uploads)
-  - Google Sheets (automated backup via webhook)
+  - Supabase Realtime (live updates)
 - **Hosting**: Vercel (global edge network, including Sydney for Australian guests)
 
 ## Project Structure
@@ -32,22 +31,28 @@ Baby_Shower/
 │   └── animations.css     # Confetti, milestone animations
 ├── scripts/
 │   ├── config.js          # App configuration (milestones, baby names)
-│   ├── api.js             # API client for Supabase
+│   ├── api.js             # API client for Vercel API routes
 │   ├── main.js            # Core navigation and utilities
 │   ├── guestbook.js       # Guestbook functionality
 │   ├── pool.js            # Baby pool predictions
 │   ├── quiz.js            # Emoji pictionary game
 │   ├── advice.js          # Advice capsule
 │   ├── voting.js          # Name voting system
-│   └── surprises.js       # Milestone and celebration logic
+│   ├── supabase-client.js # Supabase client with realtime
+│   └── supabase.js        # Supabase utilities
+├── api/                   # Vercel API routes (serverless)
+│   ├── index.js          # Health check endpoint
+│   ├── guestbook.js      # POST /api/guestbook
+│   ├── pool.js           # POST /api/pool
+│   ├── quiz.js           # POST /api/quiz
+│   ├── advice.js         # POST /api/advice
+│   └── vote.js           # POST /api/vote
 ├── backend/
-│   ├── supabase-webhook/  # Google Apps Script for backup sync
-│   │   └── Code.gs        # Webhook handler (deprecated GAS version archived)
-│   ├── supabase-check.sql # Database validation queries
-│   ├── supabase-schema.sql # Database schema for setup
-│   └── supabase-integration.md # Optional dual-write guide
-├── baby_content/          # Personal media (excluded from git)
-└── vercel.json            # Vercel deployment configuration
+│   ├── supabase-schema.sql     # Database schema for setup
+│   ├── supabase-integration.md # Dual-write guide
+│   └── supabase-check.sql      # Database validation queries
+├── vercel.json            # Vercel deployment configuration
+└── README.md              # This file
 ```
 
 ## Quick Start Guide
@@ -56,10 +61,9 @@ Baby_Shower/
 
 The app uses Supabase as the primary backend. Ensure your Supabase project is configured:
 
-1. Project URL and anon key in `scripts/config.js`
+1. Project URL and anon key in environment variables
 2. Tables created from `backend/supabase-schema.sql`
-3. Storage bucket "guestbook-photos" created
-4. Row Level Security (RLS) policies configured
+3. Row Level Security (RLS) policies configured
 
 ### 2. Deploy to Vercel
 
@@ -81,19 +85,10 @@ In your Vercel project dashboard, add these environment variables:
 ```
 NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+SUPABASE_SERVICE_ROLE_KEY=your_service_role_key  # Server-side only
 ```
 
-### 4. Configure Google Sheets Backup (Optional)
-
-If you want automated backup to Google Sheets:
-
-1. Create a Google Sheet named "BabyShower2025"
-2. Add tabs: `Guestbook`, `BabyPool`, `QuizAnswers`, `Advice`, `NameVotes`, `Milestones`
-3. Copy `backend/supabase-webhook/Code.gs` to Google Apps Script
-4. Deploy as Web App with "Anyone" access
-5. Set up Supabase webhook to trigger the Google Apps Script URL
-
-### 5. Customize Configuration
+### 4. Customize Configuration
 
 Edit `scripts/config.js`:
 
@@ -107,15 +102,9 @@ CONFIG.MILESTONES = {
     GUESTBOOK_10: 10,
     // ... etc
 };
-
-// Quiz answers
-CONFIG.QUIZ_ANSWERS = {
-    puzzle1: 'Baby Shower',
-    // ... etc
-};
 ```
 
-### 6. Generate QR Codes
+### 5. Generate QR Codes
 
 1. Go to a QR code generator (e.g., https://www.qrcode-monkey.com)
 2. Enter your Vercel deployment URL
@@ -130,29 +119,23 @@ Open `index.html` directly in a browser. Note: API calls will only work if Supab
 
 ### Full Test
 
-1. Submit a guestbook entry (with and without photo)
+1. Submit a guestbook entry
 2. Submit a baby pool prediction
 3. Complete the emoji quiz
 4. Submit advice
 5. Vote on names (test 3-vote limit)
 6. Check Supabase dashboard for data
-7. Check Google Sheets (if backup is configured)
 
 ## Troubleshooting
 
 ### "Supabase URL is required"
-- Ensure Supabase URL and anon key are in `scripts/config.js`
+- Ensure Supabase URL and anon key are in environment variables
 - Check that the Supabase project is active
 
-### Photos Not Uploading
-- Verify Supabase Storage bucket "guestbook-photos" exists
-- Check bucket permissions (should be public for read access)
-- Max file size: 5MB per photo
-
-### Data Not Appearing in Google Sheets
-- Verify webhook URL is set in Supabase
-- Check Google Apps Script deployment has "Anyone" access
-- Review Apps Script execution logs for errors
+### Data Not Appearing
+- Check browser console for JavaScript errors
+- Verify Supabase project is active
+- Review Vercel deployment logs
 
 ### Milestones Not Unlocking
 - Check milestone thresholds in `scripts/config.js`
@@ -167,13 +150,7 @@ Open `index.html` directly in a browser. Note: API calls will only work if Supab
 - Modern PostgreSQL database with real-time capabilities
 - Built-in authentication and row-level security
 - Excellent for learning modern backend development
-- Handles photo storage efficiently
-
-**Google Sheets Backup:**
-- Provides familiar interface for non-technical users
-- Easy data export to CSV/Excel
-- Redundant backup ensures data is never lost
-- Low cost (free tier is sufficient)
+- Handles data storage efficiently
 
 **Vercel Hosting:**
 - Global edge network for fast load times
@@ -192,19 +169,14 @@ Vercel Edge Network (global CDN)
     ↓
 Supabase PostgreSQL (primary storage)
     ↓
-Supabase Storage (if photo uploaded)
+Supabase Realtime (live updates)
     ↓
-Supabase Webhook (async)
-    ↓
-Google Apps Script
-    ↓
-Google Sheets (backup)
+All connected clients update automatically
 ```
 
 ## Performance
 
 - **Load Time**: ~2-3 seconds on first visit
-- **Image Optimization**: Automatic via Supabase CDN
 - **Database**: Indexes on timestamp columns for fast queries
 - **Rate Limiting**: Supabase free tier handles 50+ concurrent guests easily
 
@@ -218,13 +190,11 @@ Google Sheets (backup)
 
 - **Supabase**: Free tier (sufficient for baby shower)
 - **Vercel**: Free tier (100GB bandwidth/month)
-- **Google Sheets/Drive**: Free
 - **Total**: $0/month for typical usage
 
 ## Security
 
 - No sensitive data stored (no emails, phone numbers, addresses)
-- Photo uploads limited to 5MB to prevent abuse
 - Supabase RLS policies prevent unauthorized access
 - Public URL but not indexed by search engines
 
@@ -247,3 +217,8 @@ For issues:
 ## License
 
 Personal use only. Not for redistribution or commercial use.
+
+---
+
+**Last Updated**: 2026-01-01
+**Version**: 2.1 - Bug fixes applied, photo upload removed

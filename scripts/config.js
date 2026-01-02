@@ -48,4 +48,8 @@ const CONFIG = {
     },
     DEBUG: false
 };
+
+// Make CONFIG globally accessible
+window.CONFIG = CONFIG;
+
 console.log("CONFIG ready!", CONFIG.BABY_NAMES.length, "names loaded");

@@ -35,7 +35,7 @@ export default async function handler(req, res) {
       name: name,
       activity_type: 'voting',
       activity_data: {
-        selected_names: selectedNames.join(',')
+        names: selectedNames  // Send as array for client compatibility
       }
     });
 
@@ -50,7 +50,7 @@ export default async function handler(req, res) {
             data: {
               Timestamp: new Date().toISOString(),
               Name: name,
-              SelectedNames: selectedNames.join(',')
+              SelectedNames: selectedNames.join(',')  // Comma-separated for Sheets
             }
           })
         });

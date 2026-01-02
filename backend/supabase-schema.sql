@@ -27,7 +27,8 @@ create table if not exists baby_shower.submissions (
     -- Guest info (common to all)
     name text not null,
     
-    -- Activity type: 'guestbook', 'pool', 'quiz', 'advice', 'voting'
+    -- Activity type: 'guestbook', 'baby_pool', 'quiz', 'advice', 'voting'
+    -- Note: baby_pool (not pool) to match frontend client expectations
     activity_type text not null,
     
     -- Activity-specific data (JSON for flexibility)
@@ -94,7 +95,7 @@ order by created_at desc;
 
 create or replace view baby_shower.pool_entries as
 select * from baby_shower.submissions 
-where activity_type = 'pool'
+where activity_type = 'baby_pool'
 order by created_at desc;
 
 create or replace view baby_shower.quiz_entries as

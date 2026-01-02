@@ -125,13 +125,26 @@
     window.voting = { toggle: toggleVote, state: votingState };
     window.initializeVoting = function() {
         console.log('🗳️ initializeVoting() called from main.js');
-        // Check CONFIG is ready before calling init
+        // Check CONFIG is ready before calling init, or wait for it
         if (window.CONFIG && window.CONFIG.BABY_NAMES) {
             console.log('✅ CONFIG available, calling init()');
             init();
         } else {
-            console.error('❌ CONFIG not ready when initializeVoting() called');
-            showError();
+            console.warn('⚠️ CONFIG not ready when initializeVoting() called, waiting...');
+            // Wait for CONFIG to become available
+            let attempts = 0;
+            const check = () => {
+                if (window.CONFIG && window.CONFIG.BABY_NAMES) {
+                    console.log('✅ CONFIG available (attempt ' + attempts + '), calling init()');
+                    init();
+                } else if (attempts++ > 100) {
+                    console.error('❌ CONFIG never became available');
+                    showError();
+                } else {
+                    setTimeout(check, 50);
+                }
+            };
+            check();
         }
     };
     window.votingInitialized = true;
