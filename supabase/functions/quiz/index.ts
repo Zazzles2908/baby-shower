@@ -2,7 +2,13 @@ import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 interface QuizRequest {
-  answers: Record<string, string>
+  name?: string
+  puzzle1?: string
+  puzzle2?: string
+  puzzle3?: string
+  puzzle4?: string
+  puzzle5?: string
+  answers?: Record<string, string>
   score: number
   totalQuestions: number
 }
@@ -31,15 +37,24 @@ serve(async (req: Request) => {
 
     const body: QuizRequest = await req.json()
 
+    // Build answers object from individual puzzle fields if not provided
+    const answers = body.answers || {
+      puzzle1: body.puzzle1 || '',
+      puzzle2: body.puzzle2 || '',
+      puzzle3: body.puzzle3 || '',
+      puzzle4: body.puzzle4 || '',
+      puzzle5: body.puzzle5 || '',
+    }
+
     // Validation
     const errors: string[] = []
     
-    if (!body.answers || typeof body.answers !== 'object') {
+    if (!answers || Object.keys(answers).length === 0) {
       errors.push('Answers object is required')
     }
     
-    if (body.answers && Object.keys(body.answers).length === 0) {
-      errors.push('At least one answer is required')
+    if (answers && Object.keys(answers).length < 5) {
+      errors.push('All 5 puzzle answers are required')
     }
     
     if (typeof body.score !== 'number' || body.score < 0) {
@@ -61,10 +76,10 @@ serve(async (req: Request) => {
     const { data, error } = await supabase
       .from('submissions')
       .insert({
-        name: 'Anonymous Quiz Taker',
+        name: body.name || 'Anonymous Quiz Taker',
         activity_type: 'quiz',
         activity_data: {
-          answers: body.answers,
+          answers: answers,
           score: body.score,
           total_questions: body.totalQuestions,
           percentage: Math.round((body.score / body.totalQuestions) * 100),

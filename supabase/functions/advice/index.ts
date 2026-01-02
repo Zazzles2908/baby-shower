@@ -2,8 +2,11 @@ import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 interface AdviceRequest {
-  advice: string
-  category: string
+  name?: string
+  adviceType?: string
+  advice?: string
+  message?: string
+  category?: string
 }
 
 serve(async (req: Request) => {
@@ -30,23 +33,39 @@ serve(async (req: Request) => {
 
     const body: AdviceRequest = await req.json()
 
+    // Accept either adviceType (from frontend) or category
+    const category = body.category || body.adviceType || ''
+    const adviceText = body.advice || body.message || ''
+    const name = body.name || 'Anonymous Advisor'
+
     // Validation
     const errors: string[] = []
     
-    if (!body.advice || body.advice.trim().length === 0) {
+    if (!adviceText || adviceText.trim().length === 0) {
       errors.push('Advice text is required')
     }
     
-    if (body.advice && body.advice.length > 2000) {
+    if (adviceText && adviceText.length > 2000) {
       errors.push('Advice must be 2000 characters or less')
     }
     
-    if (!body.category || body.category.trim().length === 0) {
+    if (!category || category.trim().length === 0) {
       errors.push('Category is required')
     }
     
+    // Map frontend adviceType to valid categories if needed
+    const normalizedCategory = category.toLowerCase().trim()
     const validCategories = ['general', 'naming', 'feeding', 'sleeping', 'safety', 'fun']
-    if (body.category && !validCategories.includes(body.category.toLowerCase())) {
+    
+    // Map "For Parents" -> "general", "For Baby" -> "fun"
+    let finalCategory = normalizedCategory
+    if (normalizedCategory === 'for parents') {
+      finalCategory = 'general'
+    } else if (normalizedCategory === 'for baby') {
+      finalCategory = 'fun'
+    }
+    
+    if (finalCategory && !validCategories.includes(finalCategory)) {
       errors.push(`Category must be one of: ${validCategories.join(', ')}`)
     }
 
@@ -54,17 +73,16 @@ serve(async (req: Request) => {
       return new Response(JSON.stringify({ error: 'Validation failed', details: errors }), { status: 400, headers })
     }
 
-    const sanitizedAdvice = body.advice.trim().slice(0, 2000)
-    const sanitizedCategory = body.category.toLowerCase().trim()
+    const sanitizedAdvice = adviceText.trim().slice(0, 2000)
 
     const { data, error } = await supabase
       .from('submissions')
       .insert({
-        name: 'Anonymous Advisor',
+        name: name,
         activity_type: 'advice',
         activity_data: {
           advice: sanitizedAdvice,
-          category: sanitizedCategory,
+          category: finalCategory,
           is_approved: false,
           submitted_at: new Date().toISOString(),
         },
@@ -80,7 +98,7 @@ serve(async (req: Request) => {
         data: {
           id: data.id,
           advice: sanitizedAdvice,
-          category: sanitizedCategory,
+          category: finalCategory,
           created_at: data.created_at,
         },
       }),
