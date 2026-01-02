@@ -135,14 +135,14 @@
     async function submitQuiz(data) {
         const url = getSupabaseFunctionUrl('quiz');
         
-        // Build answers array [puzzle1, puzzle2, puzzle3, puzzle4, puzzle5]
-        const answers = [
-            data.puzzle1?.trim() || '',
-            data.puzzle2?.trim() || '',
-            data.puzzle3?.trim() || '',
-            data.puzzle4?.trim() || '',
-            data.puzzle5?.trim() || '',
-        ];
+        // Build answers object with puzzle1, puzzle2, etc. keys
+        const answers = {
+            puzzle1: data.puzzle1?.trim() || '',
+            puzzle2: data.puzzle2?.trim() || '',
+            puzzle3: data.puzzle3?.trim() || '',
+            puzzle4: data.puzzle4?.trim() || '',
+            puzzle5: data.puzzle5?.trim() || '',
+        };
         
         // Use pre-calculated score if provided, otherwise calculate
         const score = Number(data.score) || 0;
