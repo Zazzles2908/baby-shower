@@ -85,37 +85,42 @@ serve(async (req: Request) => {
       return await handleAIRoast(supabase, name, sanitizedAdvice, headers)
     }
 
-    // Count total submissions BEFORE insert to check milestone
+    // Count total submissions in baby_shower.advice BEFORE insert to check milestone
     const { count: totalCount } = await supabase
-      .from('submissions')
+      .from('baby_shower.advice')
       .select('*', { count: 'exact', head: true })
     const currentCount = totalCount || 0
     const isMilestone = currentCount + 1 === 50
 
+    console.log(`[advice] Writing advice to baby_shower.advice, current count: ${currentCount}`)
+
+    // Insert into baby_shower.advice with dedicated columns
     const { data, error } = await supabase
-      .from('submissions')
+      .from('baby_shower.advice')
       .insert({
-        name: name,
-        activity_type: 'advice',
-        activity_data: {
-          advice: sanitizedAdvice,
-          category: finalCategory,
-          is_approved: false,
-          submitted_at: new Date().toISOString(),
-        },
+        advice_giver: name,
+        advice_text: sanitizedAdvice,
+        delivery_option: finalCategory,
+        is_approved: false,
+        submitted_by: name,
       })
       .select()
       .single()
 
-    if (error) throw new Error(`Database error: ${error.message}`)
+    if (error) {
+      console.error('Supabase insert error:', error)
+      throw new Error(`Database error: ${error.message}`)
+    }
+
+    console.log(`[advice] Successfully inserted advice with id: ${data.id}`)
 
     return new Response(
       JSON.stringify({
         success: true,
         data: {
           id: data.id,
-          advice: sanitizedAdvice,
-          category: finalCategory,
+          advice_text: sanitizedAdvice,
+          delivery_option: finalCategory,
           created_at: data.created_at,
         },
         milestone: isMilestone ? {
@@ -178,32 +183,33 @@ async function handleAIRoast(supabase: any, name: string, topic: string, headers
     const aiData = await response.json()
     const generatedAdvice = aiData.choices?.[0]?.message?.content || 'Sorry, the roast generator is on break!'
 
-    // Save to database
+    console.log(`[advice] AI generated roast: ${generatedAdvice}`)
+
+    // Save to baby_shower.advice table (AI-generated advice)
     const { data, error } = await supabase
-      .from('submissions')
+      .from('baby_shower.advice')
       .insert({
-        name: name,
-        activity_type: 'ai_roast',
-        activity_data: {
-          advice: generatedAdvice,
-          topic: topic,
-          category: 'ai_roast',
-          is_approved: true,
-          submitted_at: new Date().toISOString(),
-        },
+        advice_giver: name,
+        advice_text: generatedAdvice,
+        delivery_option: 'ai_roast',
+        is_approved: true,
+        ai_generated: true,
+        submitted_by: name,
       })
       .select()
       .single()
 
     if (error) throw new Error(`Database error: ${error.message}`)
 
+    console.log(`[advice] Successfully inserted AI roast with id: ${data.id}`)
+
     return new Response(
       JSON.stringify({
         success: true,
         data: {
           id: data.id,
-          advice: generatedAdvice,
-          category: 'ai_roast',
+          advice_text: generatedAdvice,
+          delivery_option: 'ai_roast',
           created_at: data.created_at,
           ai_generated: true,
         },

@@ -49,26 +49,27 @@ serve(async (req: Request) => {
         auth: { autoRefreshToken: false, persistSession: false },
       })
 
-      // Fetch all vote submissions
+      console.log('[vote] GET: Fetching all votes from baby_shower.votes')
+
+      // Fetch all vote submissions from baby_shower.votes
       const { data: votes, error } = await supabase
-        .from('submissions')
-        .select('activity_data')
-        .eq('activity_type', 'voting')
+        .from('baby_shower.votes')
+        .select('id, voter_name, selected_names, created_at')
+        .order('created_at', { ascending: false })
 
       if (error) {
         console.error('Supabase query error:', error)
         throw new Error(`Database error: ${error.message}`)
       }
 
-      // Calculate vote counts and percentages
+      // Calculate vote counts and percentages from selected_names JSONB
       const nameCounts: Record<string, number> = {}
       let totalVotes = 0
 
       for (const vote of votes || []) {
-        const activityData = vote.activity_data as Record<string, unknown>
-        const names = activityData?.names as string[] | undefined
-        if (names && Array.isArray(names)) {
-          for (const name of names) {
+        const selectedNames = vote.selected_names as string[] | undefined
+        if (selectedNames && Array.isArray(selectedNames)) {
+          for (const name of selectedNames) {
             const normalizedName = name.trim()
             if (normalizedName) {
               nameCounts[normalizedName] = (nameCounts[normalizedName] || 0) + 1
@@ -77,6 +78,8 @@ serve(async (req: Request) => {
           }
         }
       }
+
+      console.log(`[vote] GET: Calculated ${totalVotes} votes across ${Object.keys(nameCounts).length} names`)
 
       // Build results with percentages
       const results: VoteResult[] = Object.entries(nameCounts)
@@ -170,24 +173,22 @@ serve(async (req: Request) => {
       .map(n => n.trim().slice(0, 50))
       .filter(n => n.length > 0)
 
-    // Count total submissions BEFORE insert to check milestone
+    // Count total submissions in baby_shower.votes BEFORE insert to check milestone
     const { count: totalCount } = await supabase
-      .from('submissions')
+      .from('baby_shower.votes')
       .select('*', { count: 'exact', head: true })
     const currentCount = totalCount || 0
     const isMilestone = currentCount + 1 === 50
 
-    // Insert into submissions
+    console.log(`[vote] POST: Writing vote to baby_shower.votes, current count: ${currentCount}`)
+
+    // Insert into baby_shower.votes with dedicated columns
     const { data, error } = await supabase
-      .from('submissions')
+      .from('baby_shower.votes')
       .insert({
-        name: 'Anonymous Voter',
-        activity_type: 'voting',
-        activity_data: {
-          names: sanitizedNames,
-          vote_count: sanitizedNames.length,
-          submitted_at: new Date().toISOString(),
-        },
+        voter_name: 'Anonymous Voter',
+        selected_names: sanitizedNames,
+        submitted_by: 'Anonymous Voter',
       })
       .select()
       .single()
@@ -197,20 +198,20 @@ serve(async (req: Request) => {
       throw new Error(`Database error: ${error.message}`)
     }
 
-    // Calculate updated progress data
+    console.log(`[vote] POST: Successfully inserted vote with id: ${data.id}`)
+
+    // Calculate updated progress data from baby_shower.votes
     const allVotes = await supabase
-      .from('submissions')
-      .select('activity_data')
-      .eq('activity_type', 'voting')
+      .from('baby_shower.votes')
+      .select('id, selected_names, created_at')
 
     const nameCounts: Record<string, number> = {}
     let totalVotes = 0
 
     for (const vote of allVotes.data || []) {
-      const activityData = vote.activity_data as Record<string, unknown>
-      const names = activityData?.names as string[] | undefined
-      if (names && Array.isArray(names)) {
-        for (const name of names) {
+      const selectedNames = vote.selected_names as string[] | undefined
+      if (selectedNames && Array.isArray(selectedNames)) {
+        for (const name of selectedNames) {
           const normalizedName = name.trim()
           if (normalizedName) {
             nameCounts[normalizedName] = (nameCounts[normalizedName] || 0) + 1
@@ -233,7 +234,7 @@ serve(async (req: Request) => {
         success: true,
         data: {
           id: data.id,
-          names: sanitizedNames,
+          selected_names: sanitizedNames,
           vote_count: sanitizedNames.length,
           created_at: data.created_at,
         },

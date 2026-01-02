@@ -73,30 +73,37 @@ serve(async (req: Request) => {
       return new Response(JSON.stringify({ error: 'Validation failed', details: errors }), { status: 400, headers })
     }
 
-    // Count total submissions BEFORE insert to check milestone
+    const participantName = body.name || 'Anonymous Quiz Taker'
+
+    // Count total submissions in baby_shower.quiz_results BEFORE insert to check milestone
     const { count: totalCount } = await supabase
-      .from('submissions')
+      .from('baby_shower.quiz_results')
       .select('*', { count: 'exact', head: true })
     const currentCount = totalCount || 0
     const isMilestone = currentCount + 1 === 50
 
+    console.log(`[quiz] Writing result to baby_shower.quiz_results, current count: ${currentCount}`)
+
+    // Insert into baby_shower.quiz_results with dedicated columns
     const { data, error } = await supabase
-      .from('submissions')
+      .from('baby_shower.quiz_results')
       .insert({
-        name: body.name || 'Anonymous Quiz Taker',
-        activity_type: 'quiz',
-        activity_data: {
-          answers: answers,
-          score: body.score,
-          total_questions: body.totalQuestions,
-          percentage: Math.round((body.score / body.totalQuestions) * 100),
-          submitted_at: new Date().toISOString(),
-        },
+        participant_name: participantName,
+        answers: answers,
+        score: body.score,
+        total_questions: body.totalQuestions,
+        percentage: Math.round((body.score / body.totalQuestions) * 100),
+        submitted_by: participantName,
       })
       .select()
       .single()
 
-    if (error) throw new Error(`Database error: ${error.message}`)
+    if (error) {
+      console.error('Supabase insert error:', error)
+      throw new Error(`Database error: ${error.message}`)
+    }
+
+    console.log(`[quiz] Successfully inserted quiz result with id: ${data.id}`)
 
     const percentage = Math.round((body.score / body.totalQuestions) * 100)
 
@@ -105,6 +112,7 @@ serve(async (req: Request) => {
         success: true,
         data: {
           id: data.id,
+          participant_name: participantName,
           score: body.score,
           total_questions: body.totalQuestions,
           percentage,

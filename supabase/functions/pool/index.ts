@@ -7,6 +7,10 @@ interface PoolRequest {
   dueDate: string
   weight: number
   length: number
+  gender?: string
+  hairColor?: string
+  eyeColor?: string
+  personality?: string
 }
 
 // Baby average statistics for roasts
@@ -79,16 +83,16 @@ Be clever, funny, and family-friendly. Keep it under 100 characters. Return only
 }
 
 /**
- * Calculate average weight and length from submissions
+ * Calculate average weight and length from baby_shower.pool_predictions
  */
 async function calculateAverages(supabase: ReturnType<typeof createClient>): Promise<{ avgWeight: number; avgLength: number }> {
-  const { data: submissions, error } = await supabase
-    .from('submissions')
-    .select('activity_data')
-    .eq('activity_type', 'baby_pool')
-    .not('activity_data', 'is', null)
+  const { data: predictions, error } = await supabase
+    .from('baby_shower.pool_predictions')
+    .select('weight_kg, length_cm')
+    .not('weight_kg', 'is', null)
+    .not('length_cm', 'is', null)
 
-  if (error || !submissions || submissions.length === 0) {
+  if (error || !predictions || predictions.length === 0) {
     return { avgWeight: AVERAGE_WEIGHT_KG, avgLength: AVERAGE_LENGTH_CM }
   }
 
@@ -96,11 +100,10 @@ async function calculateAverages(supabase: ReturnType<typeof createClient>): Pro
   let totalLength = 0
   let count = 0
 
-  for (const sub of submissions) {
-    const activityData = sub.activity_data as Record<string, unknown>
-    if (activityData?.weight && activityData?.length) {
-      totalWeight += Number(activityData.weight)
-      totalLength += Number(activityData.length)
+  for (const pred of predictions) {
+    if (pred.weight_kg && pred.length_cm) {
+      totalWeight += Number(pred.weight_kg)
+      totalLength += Number(pred.length_cm)
       count++
     }
   }
@@ -160,6 +163,11 @@ serve(async (req: Request) => {
       errors.push('Length must be between 30 and 60 cm')
     }
 
+    // Validate optional gender field
+    if (body.gender && !['boy', 'girl', 'surprise'].includes(body.gender.toLowerCase())) {
+      errors.push('Gender must be boy, girl, or surprise')
+    }
+
     if (errors.length > 0) {
       return new Response(JSON.stringify({ error: 'Validation failed', details: errors }), { status: 400, headers })
     }
@@ -170,35 +178,51 @@ serve(async (req: Request) => {
     // Calculate averages for AI roast
     const { avgWeight, avgLength } = await calculateAverages(supabase)
 
-    // Count total submissions BEFORE insert to check milestone
+    // Count total submissions in baby_shower.pool_predictions BEFORE insert to check milestone
     const { count: totalCount } = await supabase
-      .from('submissions')
+      .from('baby_shower.pool_predictions')
       .select('*', { count: 'exact', head: true })
     const currentCount = totalCount || 0
     const isMilestone = currentCount + 1 === 50
 
+    console.log(`[pool] Writing prediction to baby_shower.pool_predictions, current count: ${currentCount}`)
+
+    // Insert into baby_shower.pool_predictions with dedicated columns
     const { data, error } = await supabase
-      .from('submissions')
+      .from('baby_shower.pool_predictions')
       .insert({
-        activity_type: 'baby_pool',
-        name: sanitizedName,
-        activity_data: {
-          prediction: sanitizedPrediction,
-          due_date: body.dueDate,
-          weight: body.weight,
-          length: body.length,
-          submitted_at: new Date().toISOString(),
-        },
+        predictor_name: sanitizedName,
+        gender: body.gender?.toLowerCase() || 'surprise',
+        birth_date: body.dueDate,
+        weight_kg: body.weight,
+        length_cm: body.length,
+        hair_color: body.hairColor?.trim().slice(0, 50) || null,
+        eye_color: body.eyeColor?.trim().slice(0, 50) || null,
+        personality: body.personality?.trim().slice(0, 200) || null,
+        submitted_by: sanitizedName,
       })
       .select()
       .single()
 
-    if (error) throw new Error(`Database error: ${error.message}`)
+    if (error) {
+      console.error('Supabase insert error:', error)
+      throw new Error(`Database error: ${error.message}`)
+    }
+
+    console.log(`[pool] Successfully inserted prediction with id: ${data.id}`)
 
     // Generate AI roast (wrapped in try/catch - never block submission)
     let roast: string | null = null
     try {
       roast = await generateRoast(body.weight, body.length, sanitizedPrediction, avgWeight, avgLength)
+      if (roast) {
+        console.log(`[pool] Generated AI roast: ${roast}`)
+        // Optionally store roast in baby_shower.ai_roasts table with foreign key
+        // await supabase.from('baby_shower.ai_roasts').insert({
+        //   pool_prediction_id: data.id,
+        //   roast_text: roast,
+        // })
+      }
     } catch (roastError) {
       console.error('Roast generation error:', roastError)
       // Silently continue without roast
@@ -208,7 +232,14 @@ serve(async (req: Request) => {
       JSON.stringify({
         success: true,
         message: 'Prediction recorded!',
-        data: { id: data.id, name: sanitizedName, prediction: sanitizedPrediction, due_date: body.dueDate },
+        data: { 
+          id: data.id, 
+          predictor_name: sanitizedName, 
+          gender: body.gender?.toLowerCase() || 'surprise',
+          birth_date: body.dueDate,
+          weight_kg: body.weight,
+          length_cm: body.length,
+        },
         roast: roast,
         milestone: isMilestone ? {
           triggered: true,

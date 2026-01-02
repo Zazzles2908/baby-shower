@@ -1,6 +1,7 @@
 /**
  * Baby Shower App - Supabase Edge Functions API Client
  * Production-ready integration with comprehensive error handling
+ * Updated to query baby_shower schema for all reads
  * 
  * Works as regular script (IIFE) attached to window.API
  */
@@ -24,6 +25,29 @@
 
     // Timeout settings
     const API_TIMEOUT = 30000; // 30 seconds
+
+    // Lazy-loaded Supabase client for realtime
+    let supabaseClient = null;
+
+    function getSupabaseClient() {
+        if (supabaseClient) return supabaseClient;
+        
+        // Check if Supabase client is already available globally
+        if (typeof root.supabase !== 'undefined') {
+            supabaseClient = root.supabase;
+            return supabaseClient;
+        }
+        
+        // Check if @supabase/supabase-js is loaded via module
+        if (typeof root.SupabaseClient !== 'undefined') {
+            supabaseClient = root.SupabaseClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+            return supabaseClient;
+        }
+        
+        // Supabase client not available - realtime won't work
+        console.warn('Supabase client not available - realtime subscriptions disabled');
+        return null;
+    }
 
     /**
      * Build Supabase Edge Function URL
@@ -72,6 +96,140 @@
             }
             throw err;
         }
+    }
+
+    /**
+     * Transform baby_shower.submissions row to frontend format
+     * Maps from: { id, created_at, name, activity_type, activity_data }
+     * To: { activity_type, data, metadata, created_at }
+     */
+    function transformSubmissionToFrontendFormat(row) {
+        const activityType = row.activity_type;
+        const activityData = row.activity_data || {};
+        
+        // Build data object based on activity type
+        let data = {};
+        let metadata = {};
+        
+        switch (activityType) {
+            case 'guestbook':
+                data = {
+                    name: row.name || activityData.name || '',
+                    message: activityData.message || '',
+                    relationship: activityData.relationship || ''
+                };
+                break;
+                
+            case 'baby_pool':
+            case 'pool':
+                data = {
+                    name: row.name || activityData.name || '',
+                    prediction: activityData.prediction || '',
+                    dateGuess: activityData.dueDate || activityData.dateGuess || '',
+                    timeGuess: activityData.timeGuess || '',
+                    weightGuess: activityData.weight || activityData.weightGuess || 3.5,
+                    lengthGuess: activityData.length || activityData.lengthGuess || 50
+                };
+                break;
+                
+            case 'quiz':
+                data = {
+                    name: row.name || activityData.name || 'Anonymous Quiz Taker',
+                    answers: activityData.answers || {},
+                    score: activityData.score || 0,
+                    totalQuestions: activityData.totalQuestions || 5,
+                    percentage: activityData.percentage || 0
+                };
+                metadata = {
+                    puzzle1: activityData.answers?.puzzle1 || '',
+                    puzzle2: activityData.answers?.puzzle2 || '',
+                    puzzle3: activityData.answers?.puzzle3 || '',
+                    puzzle4: activityData.answers?.puzzle4 || '',
+                    puzzle5: activityData.answers?.puzzle5 || ''
+                };
+                break;
+                
+            case 'advice':
+                data = {
+                    name: row.name || activityData.name || 'Anonymous Advisor',
+                    advice: activityData.advice || activityData.advice_text || '',
+                    adviceType: activityData.category || activityData.adviceType || ''
+                };
+                break;
+                
+            case 'voting':
+            case 'vote':
+                data = {
+                    name: row.name || activityData.name || '',
+                    names: activityData.names || activityData.vote_names || []
+                };
+                metadata = {
+                    voteCount: activityData.vote_count || (activityData.names ? activityData.names.length : 0)
+                };
+                break;
+                
+            default:
+                // Generic fallback
+                data = {
+                    name: row.name || '',
+                    ...activityData
+                };
+        }
+        
+        return {
+            activity_type: activityType,
+            data: data,
+            metadata: metadata,
+            created_at: row.created_at,
+            id: row.id
+        };
+    }
+
+    /**
+     * Query baby_shower.submissions table directly
+     * Uses Supabase REST API with proper schema prefix
+     */
+    async function queryBabyShowerSubmissions(options = {}) {
+        const {
+            activityType = null,
+            limit = 100,
+            orderBy = 'created_at',
+            orderDir = 'desc'
+        } = options;
+
+        if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+            throw new Error('Supabase credentials not configured');
+        }
+
+        let url = `${SUPABASE_URL}/rest/v1/submissions?select=*`;
+        
+        // Add activity_type filter if specified
+        if (activityType) {
+            url += `&activity_type=eq.${activityType}`;
+        }
+        
+        // Add ordering
+        url += `&order=${orderBy}.${orderDir}`;
+        
+        // Add limit
+        url += `&limit=${limit}`;
+
+        const headers = {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+            'apikey': SUPABASE_ANON_KEY,
+            'Accept-Profile': 'baby_shower' // Important: specify schema
+        };
+
+        const response = await fetch(url, { headers });
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`HTTP ${response.status}: ${errorText}`);
+        }
+
+        const rows = await response.json();
+        return rows.map(transformSubmissionToFrontendFormat);
     }
 
     /**
@@ -200,7 +358,43 @@
     }
 
     /**
+     * Get all guestbook entries from baby_shower.guestbook_entries view
+     */
+    async function getAllGuestbook() {
+        return queryBabyShowerSubmissions({ activityType: 'guestbook' });
+    }
+
+    /**
+     * Get all pool predictions from baby_shower.pool_entries view
+     */
+    async function getAllPool() {
+        return queryBabyShowerSubmissions({ activityType: 'baby_pool' });
+    }
+
+    /**
+     * Get all quiz results from baby_shower.quiz_entries view
+     */
+    async function getAllQuiz() {
+        return queryBabyShowerSubmissions({ activityType: 'quiz' });
+    }
+
+    /**
+     * Get all advice entries from baby_shower.advice_entries view
+     */
+    async function getAllAdvice() {
+        return queryBabyShowerSubmissions({ activityType: 'advice' });
+    }
+
+    /**
+     * Get all votes from baby_shower.submissions
+     */
+    async function getAllVotes() {
+        return queryBabyShowerSubmissions({ activityType: 'voting' });
+    }
+
+    /**
      * Get submissions for realtime updates
+     * Updated to query baby_shower schema
      */
     async function getSubmissions(activityType) {
         if (!SUPABASE_URL) {
@@ -213,6 +407,7 @@
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
             'apikey': SUPABASE_ANON_KEY,
+            'Accept-Profile': 'baby_shower' // Query from baby_shower schema
         };
 
         const response = await fetch(url, { headers });
@@ -221,7 +416,201 @@
             throw new Error(`HTTP ${response.status}: ${response.statusText}`);
         }
 
-        return await response.json();
+        const rows = await response.json();
+        return rows.map(transformSubmissionToFrontendFormat);
+    }
+
+    /**
+     * Get all submissions (aggregated from all activity types)
+     */
+    async function getAllSubmissions() {
+        return queryBabyShowerSubmissions({ limit: 500 });
+    }
+
+    /**
+     * Subscribe to guestbook realtime changes
+     */
+    function subscribeToGuestbook(callback) {
+        if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+            console.warn('Supabase not configured for realtime');
+            return () => {};
+        }
+
+        const supabase = getSupabaseClient();
+        if (!supabase) {
+            console.warn('Supabase client not available for realtime');
+            return () => {};
+        }
+
+        // Create channel for guestbook changes
+        const channel = supabase
+            .channel('guestbook-changes')
+            .on(
+                'postgres_changes',
+                {
+                    event: 'INSERT',
+                    schema: 'baby_shower',
+                    table: 'submissions',
+                    filter: "activity_type=eq.guestbook"
+                },
+                (payload) => {
+                    const transformed = transformSubmissionToFrontendFormat(payload.new);
+                    callback(transformed, 'INSERT');
+                }
+            )
+            .subscribe();
+
+        // Return unsubscribe function
+        return () => {
+            supabase.removeChannel(channel);
+        };
+    }
+
+    /**
+     * Subscribe to pool realtime changes
+     */
+    function subscribeToPool(callback) {
+        if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+            console.warn('Supabase not configured for realtime');
+            return () => {};
+        }
+
+        const supabase = getSupabaseClient();
+        if (!supabase) {
+            console.warn('Supabase client not available for realtime');
+            return () => {};
+        }
+
+        const channel = supabase
+            .channel('pool-changes')
+            .on(
+                'postgres_changes',
+                {
+                    event: 'INSERT',
+                    schema: 'baby_shower',
+                    table: 'submissions',
+                    filter: "activity_type=eq.baby_pool"
+                },
+                (payload) => {
+                    const transformed = transformSubmissionToFrontendFormat(payload.new);
+                    callback(transformed, 'INSERT');
+                }
+            )
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(channel);
+        };
+    }
+
+    /**
+     * Subscribe to quiz realtime changes
+     */
+    function subscribeToQuiz(callback) {
+        if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+            console.warn('Supabase not configured for realtime');
+            return () => {};
+        }
+
+        const supabase = getSupabaseClient();
+        if (!supabase) {
+            console.warn('Supabase client not available for realtime');
+            return () => {};
+        }
+
+        const channel = supabase
+            .channel('quiz-changes')
+            .on(
+                'postgres_changes',
+                {
+                    event: 'INSERT',
+                    schema: 'baby_shower',
+                    table: 'submissions',
+                    filter: "activity_type=eq.quiz"
+                },
+                (payload) => {
+                    const transformed = transformSubmissionToFrontendFormat(payload.new);
+                    callback(transformed, 'INSERT');
+                }
+            )
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(channel);
+        };
+    }
+
+    /**
+     * Subscribe to advice realtime changes
+     */
+    function subscribeToAdvice(callback) {
+        if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+            console.warn('Supabase not configured for realtime');
+            return () => {};
+        }
+
+        const supabase = getSupabaseClient();
+        if (!supabase) {
+            console.warn('Supabase client not available for realtime');
+            return () => {};
+        }
+
+        const channel = supabase
+            .channel('advice-changes')
+            .on(
+                'postgres_changes',
+                {
+                    event: 'INSERT',
+                    schema: 'baby_shower',
+                    table: 'submissions',
+                    filter: "activity_type=eq.advice"
+                },
+                (payload) => {
+                    const transformed = transformSubmissionToFrontendFormat(payload.new);
+                    callback(transformed, 'INSERT');
+                }
+            )
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(channel);
+        };
+    }
+
+    /**
+     * Subscribe to all submission changes
+     */
+    function subscribeToAllSubmissions(callback) {
+        if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+            console.warn('Supabase not configured for realtime');
+            return () => {};
+        }
+
+        const supabase = getSupabaseClient();
+        if (!supabase) {
+            console.warn('Supabase client not available for realtime');
+            return () => {};
+        }
+
+        const channel = supabase
+            .channel('all-submissions-changes')
+            .on(
+                'postgres_changes',
+                {
+                    event: 'INSERT',
+                    schema: 'baby_shower',
+                    table: 'submissions'
+                },
+                (payload) => {
+                    const transformed = transformSubmissionToFrontendFormat(payload.new);
+                    callback(transformed, 'INSERT');
+                }
+            )
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(channel);
+        };
     }
 
     /**
@@ -231,7 +620,9 @@
         return {
             provider: USE_SUPABASE ? 'supabase' : 'vercel',
             supabaseUrl: SUPABASE_URL ? '***configured***' : 'not configured',
-            status: SUPABASE_URL ? 'ready' : 'not configured'
+            status: SUPABASE_URL ? 'ready' : 'not configured',
+            schema: 'baby_shower',
+            tables: ['submissions']
         };
     }
 
@@ -248,45 +639,78 @@
         }
 
         try {
-            // Test health check
+            // Test health check against baby_shower schema
             const healthUrl = `${SUPABASE_URL}/rest/v1/submissions?select=id&limit=1`;
-            await fetch(healthUrl, {
+            const response = await fetch(healthUrl, {
                 headers: {
                     'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
                     'apikey': SUPABASE_ANON_KEY,
+                    'Accept-Profile': 'baby_shower'
                 }
             });
-            console.log('API Client ready');
-            return { success: true };
+
+            if (!response.ok) {
+                throw new Error(`Health check failed: HTTP ${response.status}`);
+            }
+
+            console.log('API Client ready - reading from baby_shower schema');
+            return { success: true, schema: 'baby_shower' };
         } catch (err) {
             console.error('API Client initialization failed:', err.message);
             return { success: false, error: err.message };
         }
     }
 
-    // Create API object
+    // Create API object with all functions
     const API = {
+        // Submit functions (via Edge Functions)
         submitGuestbook,
         submitVote,
         submitPool,
         submitQuiz,
         submitAdvice,
+        submit,
+        
+        // Read functions (from baby_shower schema)
         getVoteCounts,
         getSubmissions,
+        getAllSubmissions,
+        getAllGuestbook,
+        getAllPool,
+        getAllQuiz,
+        getAllAdvice,
+        getAllVotes,
+        
+        // Realtime subscription functions
+        subscribeToGuestbook,
+        subscribeToPool,
+        subscribeToQuiz,
+        subscribeToAdvice,
+        subscribeToAllSubmissions,
+        
+        // Utility functions
         getApiConfig,
         initializeAPI,
-        // Legacy function name for compatibility
-        submit: function(activityType, data) {
-            switch(activityType) {
-                case 'guestbook': return submitGuestbook(data);
-                case 'vote': return submitVote(data);
-                case 'pool': return submitPool(data);
-                case 'quiz': return submitQuiz(data);
-                case 'advice': return submitAdvice(data);
-                default: return Promise.reject(new Error(`Unknown activity type: ${activityType}`));
-            }
-        }
+        
+        // Expose transform function for external use
+        transformSubmission: transformSubmissionToFrontendFormat,
+        
+        // Expose query helper
+        queryBabyShower: queryBabyShowerSubmissions
     };
+
+    // Legacy function name for compatibility
+    function submit(activityType, data) {
+        switch(activityType) {
+            case 'guestbook': return submitGuestbook(data);
+            case 'vote': return submitVote(data);
+            case 'baby_pool':
+            case 'pool': return submitPool(data);
+            case 'quiz': return submitQuiz(data);
+            case 'advice': return submitAdvice(data);
+            default: return Promise.reject(new Error(`Unknown activity type: ${activityType}`));
+        }
+    }
 
     // Attach to global scope
     if (typeof root !== 'undefined') {
@@ -302,6 +726,6 @@
         }
     }
 
-    console.log('API Client (api-supabase.js) loaded successfully');
+    console.log('API Client (api-supabase.js) loaded successfully - baby_shower schema enabled');
 
 })(typeof window !== 'undefined' ? window : this);

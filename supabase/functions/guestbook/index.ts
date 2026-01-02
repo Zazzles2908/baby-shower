@@ -84,24 +84,23 @@ serve(async (req: Request) => {
     const sanitizedMessage = body.message.trim().slice(0, 1000)
     const sanitizedRelationship = body.relationship.trim().slice(0, 50)
 
-    // Count total submissions BEFORE insert to check milestone
+    // Count total entries in baby_shower.guestbook BEFORE insert to check milestone
     const { count: totalCount } = await supabase
-      .from('submissions')
+      .from('baby_shower.guestbook')
       .select('*', { count: 'exact', head: true })
     const currentCount = totalCount || 0
     const isMilestone = currentCount + 1 === 50
 
-    // Insert into submissions table (baby_shower schema uses activity_data JSONB)
+    console.log(`[guestbook] Writing to baby_shower.guestbook, current count: ${currentCount}`)
+
+    // Insert into baby_shower.guestbook table with dedicated columns
     const { data, error } = await supabase
-      .from('submissions')
+      .from('baby_shower.guestbook')
       .insert({
-        activity_type: 'guestbook',
-        name: sanitizedName,
-        activity_data: {
-          message: sanitizedMessage,
-          relationship: sanitizedRelationship,
-          submitted_at: new Date().toISOString(),
-        },
+        guest_name: sanitizedName,
+        relationship: sanitizedRelationship,
+        message: sanitizedMessage,
+        submitted_by: sanitizedName,
       })
       .select()
       .single()
@@ -111,15 +110,17 @@ serve(async (req: Request) => {
       throw new Error(`Database error: ${error.message}`)
     }
 
+    console.log(`[guestbook] Successfully inserted entry with id: ${data.id}`)
+
     // Success response
     return new Response(
       JSON.stringify({
         success: true,
         data: {
           id: data.id,
-          name: sanitizedName,
-          message: sanitizedMessage,
+          guest_name: sanitizedName,
           relationship: sanitizedRelationship,
+          message: sanitizedMessage,
           created_at: data.created_at,
         },
         milestone: isMilestone ? {
