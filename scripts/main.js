@@ -14,7 +14,7 @@ let statsCache = {
 
 // Initialize app when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
-    initializeSupabase();
+    initializeAPI();
     initializeNavigation();
     initializeForms();
     initializeBackButtons();
@@ -22,37 +22,34 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 /**
- * Initialize Supabase client and realtime subscriptions
+ * Initialize API client and load stats
  */
-async function initializeSupabase() {
+async function initializeAPI() {
     try {
-        // Initialize Supabase client
-        const client = SupabaseClient.initialize();
+        // Initialize API client (already auto-initialized in api.js)
+        const result = window.API.initializeAPI();
         
-        if (client && SupabaseClient.isInitialized()) {
-            console.log('Supabase client initialized, setting up realtime subscription...');
-            
-            // Subscribe to realtime updates
-            SupabaseClient.subscribe(handleRealtimeUpdate);
+        if (result && result.success) {
+            console.log('API client initialized successfully');
             
             // Load initial stats
-            await refreshStatsFromSupabase();
+            await refreshStatsFromAPI();
             
-            console.log('Supabase realtime enabled successfully');
+            console.log('API ready');
         } else {
-            console.log('Supabase realtime disabled - client not initialized');
+            console.log('API initialization pending or failed:', result?.error);
         }
     } catch (error) {
-        console.error('Failed to initialize Supabase:', error);
+        console.error('Failed to initialize API:', error);
     }
 }
 
 /**
- * Handle realtime update from Supabase
+ * Handle new submission data
  * @param {Object} submission - New submission data
  */
 function handleRealtimeUpdate(submission) {
-    console.log('Realtime update received:', submission);
+    console.log('New submission received:', submission);
     
     // Update local stats cache
     updateStatsCache(submission);
@@ -102,27 +99,38 @@ function updateStatsCache(submission) {
 }
 
 /**
- * Refresh stats from Supabase (initial load or fallback)
+ * Refresh stats from API (initial load or fallback)
  */
-async function refreshStatsFromSupabase() {
+async function refreshStatsFromAPI() {
     try {
-        if (!SupabaseClient.isInitialized()) return;
+        const stats = {
+            guestbook_count: 0,
+            pool_count: 0,
+            quiz_count: 0,
+            advice_count: 0
+        };
         
-        const stats = await SupabaseClient.getStats();
-        
-        if (stats) {
-            statsCache.guestbook_count = stats.guestbook_count || 0;
-            statsCache.pool_count = stats.pool_count || 0;
-            statsCache.quiz_count = stats.quiz_count || 0;
-            statsCache.advice_count = stats.advice_count || 0;
-            statsCache.votes = stats.votes || {};
-            statsCache.lastUpdated = new Date();
-            
-            updateStatsDisplay();
-            console.log('Stats refreshed from Supabase:', statsCache);
+        // Get counts for each activity type
+        const activities = ['guestbook', 'pool', 'quiz', 'advice'];
+        for (const activity of activities) {
+            try {
+                const submissions = await window.API.getSubmissions(activity);
+                stats[`${activity}_count`] = submissions.length || 0;
+            } catch (e) {
+                console.warn(`Failed to get ${activity} submissions:`, e.message);
+            }
         }
+        
+        statsCache.guestbook_count = stats.guestbook_count;
+        statsCache.pool_count = stats.pool_count;
+        statsCache.quiz_count = stats.quiz_count;
+        statsCache.advice_count = stats.advice_count;
+        statsCache.lastUpdated = new Date();
+        
+        updateStatsDisplay();
+        console.log('Stats loaded:', statsCache);
     } catch (error) {
-        console.error('Failed to refresh stats from Supabase:', error);
+        console.error('Failed to load stats from API:', error);
     }
 }
 
@@ -728,63 +736,53 @@ function handleResponse(response) {
 }
 
 /**
- * Submit guestbook entry using Supabase directly
+ * Submit guestbook entry using Supabase Edge Functions
  */
 async function submitGuestbook(data, photoFile) {
-    return await SupabaseClient.submit('guestbook', {
+    return await window.API.submitGuestbook({
         name: data.name,
-        activity_type: 'guestbook',
-        activity_data: JSON.stringify({
-            relationship: data.relationship,
-            message: data.message
-        })
+        relationship: data.relationship,
+        message: data.message
     });
 }
 
 /**
- * Submit pool prediction using Supabase directly
+ * Submit pool prediction using Supabase Edge Functions
  */
 async function submitPool(data) {
-    return await SupabaseClient.submit('baby_pool', {
+    return await window.API.submitPool({
         name: data.name,
-        activity_type: 'baby_pool',
-        activity_data: JSON.stringify({
-            dateGuess: data.dateGuess,
-            timeGuess: data.timeGuess,
-            weightGuess: parseFloat(data.weightGuess),
-            lengthGuess: parseInt(data.lengthGuess)
-        })
+        prediction: `${data.dateGuess} ${data.timeGuess}`,
+        dueDate: data.dateGuess,
+        weight: parseFloat(data.weightGuess),
+        length: parseInt(data.lengthGuess)
     });
 }
 
 /**
- * Submit quiz answers using Supabase directly
+ * Submit quiz answers using Supabase Edge Functions
  */
 async function submitQuiz(data) {
-    return await SupabaseClient.submit('quiz', {
+    return await window.API.submitQuiz({
         name: data.name,
-        activity_type: 'quiz',
-        activity_data: JSON.stringify({
+        answers: {
             puzzle1: data.puzzle1,
             puzzle2: data.puzzle2,
             puzzle3: data.puzzle3,
             puzzle4: data.puzzle4,
             puzzle5: data.puzzle5
-        })
+        }
     });
 }
 
 /**
- * Submit advice using Supabase directly
+ * Submit advice using Supabase Edge Functions
  */
 async function submitAdvice(data) {
-    return await SupabaseClient.submit('advice', {
+    return await window.API.submitAdvice({
         name: data.name,
-        activity_type: 'advice',
-        activity_data: JSON.stringify({
-            adviceType: data.adviceType,
-            message: data.message
-        })
+        category: data.adviceType,
+        advice: data.message
     });
 }
 
@@ -793,9 +791,7 @@ async function submitAdvice(data) {
  */
 async function loadPoolStats() {
     try {
-        if (SupabaseClient.isInitialized()) {
-            await refreshStatsFromSupabase();
-        }
+        await refreshStatsFromAPI();
     } catch (error) {
         console.error('Failed to load pool stats:', error);
     }

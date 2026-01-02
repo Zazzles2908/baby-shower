@@ -6,7 +6,7 @@ const CONFIG = {
     SUPABASE: {
         ENABLED: true,
         URL: 'https://bkszmvfsfgvdwzacgmfz.supabase.co',
-        ANON_KEY: 'sb_publishable_4_-bf5hda3a5Bb9enUmA0Q_jrKJf1K_',
+        ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJrc3ptdmZzZmd2ZHd6YWNnbWZ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQzODI1NjMsImV4cCI6MjA3OTk1ODU2M30.BswusP1pfDUStzAU8k-VKPailISimApapNeJGlid8sI',
         PROJECT_REF: 'bkszmvfsfgvdwzacgmfz',
         REALTIME_ENABLED: true,
         CHANNEL: 'baby-shower-updates'

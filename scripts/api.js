@@ -1,168 +1,234 @@
-// Baby Shower App - API Client
-// Simplified API client that calls Vercel API Routes
-
 /**
- * Submit form data to Vercel API
- * @param {string} endpoint - API endpoint (guestbook, pool, quiz, advice, vote)
- * @param {Object} data - Form data to submit
- * @param {File} photoFile - Optional photo file
- * @returns {Promise<Object>} Response
+ * Baby Shower App - Supabase Edge Functions API Client
+ * Production-ready integration with comprehensive error handling
+ * 
+ * This script works as a regular JavaScript file (not ES6 module)
+ * All functions are attached to window.API for global access
  */
-async function submitToAPI(endpoint, data, photoFile) {
-  try {
-    let submissionData = { ...data };
+
+(function() {
+    'use strict';
+
+    // Configuration from config.js
+    const SUPABASE_URL = window.CONFIG?.SUPABASE?.URL || '';
+    const SUPABASE_ANON_KEY = window.CONFIG?.SUPABASE?.ANON_KEY || '';
     
-    // Handle photo upload first if present
-    if (photoFile) {
-      const uploadResult = await uploadPhotoToSupabase(photoFile);
-      submissionData.photoURL = uploadResult.url;
+    // Timeout settings
+    const API_TIMEOUT = 30000; // 30 seconds
+
+    /**
+     * Generic fetch wrapper with error handling
+     */
+    async function apiFetch(url, options = {}) {
+        const headers = {
+            'Content-Type': 'application/json',
+            ...options.headers,
+        };
+
+        // Add Supabase authorization header
+        if (SUPABASE_ANON_KEY) {
+            headers['Authorization'] = `Bearer ${SUPABASE_ANON_KEY}`;
+        }
+
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), API_TIMEOUT);
+
+        try {
+            const response = await fetch(url, {
+                ...options,
+                headers,
+                signal: controller.signal,
+            });
+
+            clearTimeout(timeoutId);
+
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`);
+            }
+
+            return await response.json();
+        } catch (err) {
+            clearTimeout(timeoutId);
+            
+            if (err.name === 'AbortError') {
+                throw new Error('Request timed out. Please try again.');
+            }
+            throw err;
+        }
     }
 
-    const apiUrl = `${CONFIG.API_BASE_URL}/${endpoint}`;
-    
-    const response = await fetch(apiUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(submissionData)
-    });
-
-    const result = await response.json();
-
-    if (!response.ok) {
-      throw new Error(result.error || 'API request failed');
+    /**
+     * Submit guestbook entry
+     */
+    async function submitGuestbook(data) {
+        const url = `${SUPABASE_URL}/functions/v1/guestbook`;
+        
+        return apiFetch(url, {
+            method: 'POST',
+            body: JSON.stringify({
+                name: data.name?.trim() || '',
+                message: data.message?.trim() || '',
+                relationship: data.relationship?.trim() || '',
+            }),
+        });
     }
 
-    return {
-      result: 'success',
-      message: result.message || 'Submission successful!',
-      data: result.data,
-      milestones: result.milestones || null
+    /**
+     * Submit baby name vote
+     */
+    async function submitVote(data) {
+        const url = `${SUPABASE_URL}/functions/vote`;
+        
+        return apiFetch(url, {
+            method: 'POST',
+            body: JSON.stringify({
+                names: Array.isArray(data.names) ? data.names : [],
+            }),
+        });
+    }
+
+    /**
+     * Submit due date prediction
+     */
+    async function submitPool(data) {
+        const url = `${SUPABASE_URL}/functions/pool`;
+        
+        return apiFetch(url, {
+            method: 'POST',
+            body: JSON.stringify({
+                name: data.name?.trim() || '',
+                prediction: data.prediction?.trim() || '',
+                dueDate: data.dueDate || '',
+            }),
+        });
+    }
+
+    /**
+     * Submit quiz answers
+     */
+    async function submitQuiz(data) {
+        const url = `${SUPABASE_URL}/functions/quiz`;
+        
+        return apiFetch(url, {
+            method: 'POST',
+            body: JSON.stringify({
+                answers: data.answers || {},
+                score: Number(data.score) || 0,
+                totalQuestions: Number(data.totalQuestions) || 0,
+            }),
+        });
+    }
+
+    /**
+     * Submit parenting advice
+     */
+    async function submitAdvice(data) {
+        const url = `${SUPABASE_URL}/functions/advice`;
+        
+        return apiFetch(url, {
+            method: 'POST',
+            body: JSON.stringify({
+                advice: data.advice?.trim() || '',
+                category: data.category?.trim() || 'general',
+            }),
+        });
+    }
+
+    /**
+     * Get submissions for realtime updates
+     */
+    async function getSubmissions(activityType) {
+        if (!SUPABASE_URL) {
+            throw new Error('Supabase URL not configured');
+        }
+
+        const url = `${SUPABASE_URL}/rest/v1/submissions?activity_type=eq.${activityType}&order=created_at.desc`;
+        
+        const headers = {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+            'apikey': SUPABASE_ANON_KEY,
+        };
+
+        const response = await fetch(url, { headers });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+
+        return await response.json();
+    }
+
+    /**
+     * Export configuration for debugging
+     */
+    function getApiConfig() {
+        return {
+            provider: 'supabase',
+            supabaseUrl: SUPABASE_URL ? '***configured***' : 'not configured',
+            status: SUPABASE_URL ? 'ready' : 'not configured'
+        };
+    }
+
+    /**
+     * Initialize API and verify connection
+     */
+    async function initializeAPI() {
+        console.log('API Client initializing...');
+        console.log('Supabase URL:', SUPABASE_URL ? '***configured***' : 'missing');
+        
+        if (!SUPABASE_URL) {
+            console.error('Supabase URL not configured in CONFIG');
+            return { success: false, error: 'Supabase URL not configured' };
+        }
+
+        try {
+            // Test health check
+            const healthUrl = `${SUPABASE_URL}/rest/v1/submissions?select=id&limit=1`;
+            await fetch(healthUrl, {
+                headers: {
+                    'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+                    'apikey': SUPABASE_ANON_KEY,
+                }
+            });
+            console.log('API Client ready');
+            return { success: true };
+        } catch (err) {
+            console.error('API Client initialization failed:', err.message);
+            return { success: false, error: err.message };
+        }
+    }
+
+    // Attach all functions to window.API for global access
+    window.API = {
+        submitGuestbook,
+        submitVote,
+        submitPool,
+        submitQuiz,
+        submitAdvice,
+        getSubmissions,
+        getApiConfig,
+        initializeAPI,
+        // Legacy function name for compatibility
+        submit: function(activityType, data) {
+            switch(activityType) {
+                case 'guestbook': return submitGuestbook(data);
+                case 'vote': return submitVote(data);
+                case 'pool': return submitPool(data);
+                case 'quiz': return submitQuiz(data);
+                case 'advice': return submitAdvice(data);
+                default: return Promise.reject(new Error(`Unknown activity type: ${activityType}`));
+            }
+        }
     };
-  } catch (error) {
-    console.error(`API Error (${endpoint}):`, error);
-    throw error;
-  }
-}
 
-/**
- * Upload photo to Supabase Storage
- * @param {File} photoFile - Photo file to upload
- * @returns {Promise<Object>} Upload result
- */
-async function uploadPhotoToSupabase(photoFile) {
-  try {
-    // Validate file
-    if (photoFile.size > CONFIG.STORAGE.MAX_FILE_SIZE) {
-      throw new Error('File too large. Maximum 5MB allowed.');
+    // Auto-initialize when DOM is ready
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initializeAPI);
+    } else {
+        initializeAPI();
     }
 
-    if (!CONFIG.STORAGE.ALLOWED_TYPES.includes(photoFile.type)) {
-      throw new Error('Invalid file type. Only JPEG, PNG, and WebP allowed.');
-    }
-
-    const fileExt = photoFile.name.split('.').pop();
-    const fileName = `guestbook_${Date.now()}_${Math.random().toString(36).substr(2, 9)}.${fileExt}`;
-    const filePath = `${fileName}`;
-
-    // Upload to Supabase Storage
-    const response = await fetch(`${CONFIG.SUPABASE.URL}/storage/v1/object/${CONFIG.STORAGE.BUCKET}/${filePath}`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${CONFIG.SUPABASE.ANON_KEY}`,
-        'Content-Type': photoFile.type,
-        'x-upsert': 'true'
-      },
-      body: photoFile
-    });
-
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.message || 'Upload failed');
-    }
-
-    // Return public URL
-    const publicUrl = `${CONFIG.SUPABASE.URL}/storage/v1/object/public/${CONFIG.STORAGE.BUCKET}/${filePath}`;
-    
-    return {
-      url: publicUrl,
-      path: filePath
-    };
-  } catch (error) {
-    console.error('Photo upload error:', error);
-    throw error;
-  }
-}
-
-// Convenience functions for each endpoint
-
-/**
- * Submit guestbook entry
- */
-async function submitGuestbook(data, photoFile) {
-  return submitToAPI('guestbook', {
-    name: data.name,
-    relationship: data.relationship,
-    message: data.message
-  }, photoFile);
-}
-
-/**
- * Submit baby pool prediction
- */
-async function submitPool(data) {
-  return submitToAPI('pool', {
-    name: data.name,
-    dateGuess: data.dateGuess,
-    timeGuess: data.timeGuess,
-    weightGuess: data.weightGuess,
-    lengthGuess: data.lengthGuess
-  });
-}
-
-/**
- * Submit quiz answers
- */
-async function submitQuiz(data) {
-  return submitToAPI('quiz', {
-    name: data.name,
-    puzzle1: data.puzzle1,
-    puzzle2: data.puzzle2,
-    puzzle3: data.puzzle3,
-    puzzle4: data.puzzle4,
-    puzzle5: data.puzzle5
-  });
-}
-
-/**
- * Submit advice
- */
-async function submitAdvice(data) {
-  return submitToAPI('advice', {
-    name: data.name,
-    adviceType: data.adviceType,
-    message: data.message
-  });
-}
-
-/**
- * Submit name votes
- */
-async function submitVote(data) {
-  return submitToAPI('vote', {
-    name: data.name,
-    selectedNames: data.selectedNames
-  });
-}
-
-/**
- * Check API health
- */
-async function checkAPIHealth() {
-  try {
-    const response = await fetch(CONFIG.API_BASE_URL);
-    return await response.json();
-  } catch (error) {
-    console.error('Health check failed:', error);
-    return { result: 'error', error: 'API not reachable' };
-  }
-}
+    console.log('API Client loaded successfully');
+})();

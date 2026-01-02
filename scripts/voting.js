@@ -101,19 +101,22 @@
         const name = prompt('Your name:');
         if (!name) return alert('Name required');
         
-        await fetch('/api/vote', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({name: name.trim(), selectedNames: votingState.selected})
-        });
-        
-        alert('Thanks ' + name + '!');
-        votingState.selected = [];
-        document.querySelectorAll('.heart-btn').forEach(btn => {
-            btn.textContent = '🤍';
-            btn.classList.remove('liked');
-        });
-        document.getElementById('vote-submit').disabled = true;
+        try {
+            await window.API.submitVote({
+                name: name.trim(),
+                names: votingState.selected
+            });
+            
+            alert('Thanks ' + name + '!');
+            votingState.selected = [];
+            document.querySelectorAll('.heart-btn').forEach(btn => {
+                btn.textContent = '🤍';
+                btn.classList.remove('liked');
+            });
+            document.getElementById('vote-submit').disabled = true;
+        } catch (error) {
+            alert('Error submitting vote: ' + error.message);
+        }
     }
     
     function showError() {

@@ -33,10 +33,10 @@ build/
 # Generated assets (can regenerate)
 QR_Code.png
 
-# Documentation (keep README.md only)
+# Documentation (keep README.md and testing docs)
+# docs/  # Uncommented to allow testing documentation
 DEPLOYMENT.md
 Details.md
 PROJECT-SUMMARY.md
 QUICKSTART.md
-docs/
 plans/
