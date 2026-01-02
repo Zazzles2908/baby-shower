@@ -113,8 +113,8 @@
         // Build comprehensive prediction string from all fields
         const dateGuess = data.dateGuess || '';
         const timeGuess = data.timeGuess || '';
-        const weightGuess = data.weightGuess || '';
-        const lengthGuess = data.lengthGuess || '';
+        const weightGuess = Number(data.weightGuess) || 3.5;
+        const lengthGuess = Number(data.lengthGuess) || 50;
         
         // Create prediction string: "Date: YYYY-MM-DD, Time: HH:mm, Weight: X.Xkg, Length: XXcm"
         const prediction = `Date: ${dateGuess}, Time: ${timeGuess}, Weight: ${weightGuess}kg, Length: ${lengthGuess}cm`;
@@ -125,6 +125,8 @@
                 name: data.name?.trim() || '',
                 prediction: prediction,
                 dueDate: dateGuess,
+                weight: weightGuess,
+                length: lengthGuess,
             }),
         });
     }

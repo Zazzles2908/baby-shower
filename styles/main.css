@@ -605,3 +605,50 @@ form {
         transform: translateY(0);
     }
 }
+
+/* AI Roast Display */
+#roast-container {
+    background: linear-gradient(135deg, #FFF3E0 0%, #FFE0B2 100%);
+    border: 2px dashed var(--color-accent);
+    border-radius: 15px;
+    padding: 20px;
+    margin: 20px 0;
+    text-align: center;
+    display: none;
+    animation: fadeInSlide 0.5s ease-out;
+}
+
+#roast-container.roast-visible {
+    display: block;
+}
+
+#roast-container.fade-out {
+    animation: fadeOut 0.5s ease-out forwards;
+}
+
+@keyframes fadeOut {
+    from {
+        opacity: 1;
+        transform: translateY(0);
+    }
+    to {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+}
+
+#roast-text {
+    font-size: 1.2rem;
+    color: var(--color-text);
+    font-style: italic;
+    font-weight: 500;
+    line-height: 1.5;
+}
+
+#roast-text::before {
+    content: '💬 ';
+}
+
+#roast-text::after {
+    content: ' ✨';
+}

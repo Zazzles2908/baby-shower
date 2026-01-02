@@ -129,19 +129,48 @@ function resetPoolForm(form) {
 }
 
 /**
- * Show pool success message
+ * Show pool success message with AI roast
  * @param {string} name - Guest name
+ * @param {string|null} roast - AI-generated roast (optional)
  * @returns {string} Success message
  */
-function getPoolSuccessMessage(name) {
-    const messages = [
+function getPoolSuccessMessage(name, roast = null) {
+    const baseMessages = [
         `Thanks ${name}! Your prediction has been saved!`,
         `Great prediction ${name}! Let's see if you're right!`,
         `${name}, your guess is in! Good luck!`,
         `Prediction saved ${name}! May the best guesser win!`
     ];
+    
+    const baseMessage = baseMessages[Math.floor(Math.random() * baseMessages.length)];
+    
+    // Return object with message and roast for frontend handling
+    return {
+        message: baseMessage,
+        roast: roast
+    };
+}
 
-    return messages[Math.floor(Math.random() * messages.length)];
+/**
+ * Display roast in success modal
+ * @param {string} roast - AI-generated roast
+ */
+function displayRoast(roast) {
+    if (!roast) return;
+    
+    const roastContainer = document.getElementById('roast-container');
+    const roastText = document.getElementById('roast-text');
+    
+    if (roastContainer && roastText) {
+        roastText.textContent = roast;
+        roastContainer.classList.add('fade-in', 'roast-visible');
+        
+        // Auto-hide after 4 seconds
+        setTimeout(() => {
+            roastContainer.classList.remove('roast-visible');
+            roastContainer.classList.add('fade-out');
+        }, 4000);
+    }
 }
 
 /**
@@ -190,6 +219,7 @@ if (typeof module !== 'undefined' && module.exports) {
         getPoolFormData,
         resetPoolForm,
         getPoolSuccessMessage,
+        displayRoast,
         getPoolProgress,
         checkPoolMilestone,
         getPoolMilestoneMessage

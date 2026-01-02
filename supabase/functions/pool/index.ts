@@ -5,6 +5,114 @@ interface PoolRequest {
   name: string
   prediction: string
   dueDate: string
+  weight: number
+  length: number
+}
+
+// Baby average statistics for roasts
+const AVERAGE_WEIGHT_KG = 3.5
+const AVERAGE_LENGTH_CM = 50
+
+/**
+ * Call LLM API to generate witty roast
+ */
+async function generateRoast(
+  weight: number,
+  length: number,
+  prediction: string,
+  avgWeight: number,
+  avgLength: number
+): Promise<string | null> {
+  const apiKey = Deno.env.get('MINIMAX_API_KEY')
+  if (!apiKey) {
+    console.warn('MINIMAX_API_KEY not configured')
+    return null
+  }
+
+  const prompt = `Write a witty 1-sentence roast about this baby prediction:
+- Predicted weight: ${weight}kg (average is ${avgWeight}kg)
+- Predicted length: ${length}cm (average is ${avgLength}cm)
+- Due date: ${prediction}
+
+Be clever, funny, and family-friendly. Keep it under 100 characters. Return only the roast text, no quotes.`
+
+  try {
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 3000) // 3 second timeout
+
+    const response = await fetch('https://api.minimax.chat/v1/text/chatcompletion_v2', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        model: 'abab6.5s-chat',
+        messages: [
+          {
+            role: 'user',
+            content: prompt,
+          },
+        ],
+        max_tokens: 100,
+        temperature: 0.8,
+      }),
+      signal: controller.signal,
+    })
+
+    clearTimeout(timeoutId)
+
+    if (!response.ok) {
+      console.error('MiniMax API error:', response.status)
+      return null
+    }
+
+    const data = await response.json()
+    const roast = data.choices?.[0]?.message?.content?.trim()
+    
+    // Clean up the roast - remove quotes if present
+    return roast?.replace(/^["']|["']$/g, '') || null
+  } catch (error) {
+    console.error('AI roast generation failed:', error instanceof Error ? error.message : 'Unknown error')
+    return null
+  }
+}
+
+/**
+ * Calculate average weight and length from submissions
+ */
+async function calculateAverages(supabase: ReturnType<typeof createClient>): Promise<{ avgWeight: number; avgLength: number }> {
+  const { data: submissions, error } = await supabase
+    .from('submissions')
+    .select('activity_data')
+    .eq('activity_type', 'pool')
+    .not('activity_data', 'is', null)
+
+  if (error || !submissions || submissions.length === 0) {
+    return { avgWeight: AVERAGE_WEIGHT_KG, avgLength: AVERAGE_LENGTH_CM }
+  }
+
+  let totalWeight = 0
+  let totalLength = 0
+  let count = 0
+
+  for (const sub of submissions) {
+    const activityData = sub.activity_data as Record<string, unknown>
+    if (activityData?.weight && activityData?.length) {
+      totalWeight += Number(activityData.weight)
+      totalLength += Number(activityData.length)
+      count++
+    }
+  }
+
+  if (count === 0) {
+    return { avgWeight: AVERAGE_WEIGHT_KG, avgLength: AVERAGE_LENGTH_CM }
+  }
+
+  return {
+    avgWeight: Math.round((totalWeight / count) * 100) / 100,
+    avgLength: Math.round((totalLength / count) * 100) / 100,
+  }
 }
 
 serve(async (req: Request) => {
@@ -44,12 +152,23 @@ serve(async (req: Request) => {
       errors.push('Due date must be in YYYY-MM-DD format')
     }
 
+    // Validate weight and length
+    if (typeof body.weight !== 'number' || body.weight < 1 || body.weight > 6) {
+      errors.push('Weight must be between 1 and 6 kg')
+    }
+    if (typeof body.length !== 'number' || body.length < 30 || body.length > 60) {
+      errors.push('Length must be between 30 and 60 cm')
+    }
+
     if (errors.length > 0) {
       return new Response(JSON.stringify({ error: 'Validation failed', details: errors }), { status: 400, headers })
     }
 
     const sanitizedName = body.name.trim().slice(0, 100)
     const sanitizedPrediction = body.prediction.trim().slice(0, 500)
+
+    // Calculate averages for AI roast
+    const { avgWeight, avgLength } = await calculateAverages(supabase)
 
     const { data, error } = await supabase
       .from('submissions')
@@ -59,6 +178,8 @@ serve(async (req: Request) => {
         activity_data: {
           prediction: sanitizedPrediction,
           due_date: body.dueDate,
+          weight: body.weight,
+          length: body.length,
           submitted_at: new Date().toISOString(),
         },
       })
@@ -67,10 +188,21 @@ serve(async (req: Request) => {
 
     if (error) throw new Error(`Database error: ${error.message}`)
 
+    // Generate AI roast (wrapped in try/catch - never block submission)
+    let roast: string | null = null
+    try {
+      roast = await generateRoast(body.weight, body.length, sanitizedPrediction, avgWeight, avgLength)
+    } catch (roastError) {
+      console.error('Roast generation error:', roastError)
+      // Silently continue without roast
+    }
+
     return new Response(
       JSON.stringify({
         success: true,
+        message: 'Prediction recorded!',
         data: { id: data.id, name: sanitizedName, prediction: sanitizedPrediction, due_date: body.dueDate },
+        roast: roast,
       }),
       { status: 201, headers }
     )

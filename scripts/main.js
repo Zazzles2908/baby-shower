@@ -570,8 +570,16 @@ async function handlePoolSubmit(event) {
 
         hideLoading();
         
+        // Get success message and roast from response
+        const successResult = getPoolSuccessMessage(data.name, response.roast);
+        
+        // Display the roast if available
+        if (response.roast) {
+            displayRoast(response.roast);
+        }
+        
         // Show inline success message
-        showFormSuccessMessage('Your prediction has been recorded!', form);
+        showFormSuccessMessage(successResult.message, form);
         triggerConfetti();
 
         // Update personal progress
