@@ -1,12 +1,29 @@
 # Testing & Validation Guide - Baby Shower API
 
-**Last Updated**: January 1, 2026  
+**Last Updated**: 2026-01-02  
 **API Status**: All bugs fixed, production ready  
 **Testing Method**: Collaborative - You do GUI actions, verify results
 
 ---
 
-## 📋 Pre-Deployment Checklist
+## Table of Contents
+
+1. [Pre-Deployment Checklist](#pre-deployment-checklist)
+2. [Deployment Phase](#deployment-phase)
+3. [Feature-by-Feature Testing](#feature-by-feature-testing)
+4. [Data Validation Across All Features](#data-validation-across-all-features)
+5. [Milestone System Testing](#milestone-system-testing)
+6. [Mobile Responsiveness](#mobile-responsiveness)
+7. [Security Checklist](#security-checklist)
+8. [Performance Metrics](#performance-metrics)
+9. [Final Sign-Off Checklist](#final-sign-off-checklist)
+10. [Event Day Confidence Check](#event-day-confidence-check)
+11. [Troubleshooting](#troubleshooting)
+12. [Success Criteria](#success-criteria)
+
+---
+
+## Pre-Deployment Checklist
 
 ### Your Tasks (5 minutes)
 
@@ -22,7 +39,7 @@
 
 ---
 
-## 🚀 Deployment Phase
+## Deployment Phase
 
 ### Step 1: Deploy to Vercel
 
@@ -55,7 +72,7 @@ Expected response:
 
 ---
 
-## 🧪 Feature-by-Feature Testing
+## Feature-by-Feature Testing
 
 ### Feature 1: Guestbook
 
@@ -207,7 +224,7 @@ ORDER BY vote_count DESC;
 
 ---
 
-## 📊 Data Validation Across All Features
+## Data Validation Across All Features
 
 ### Your action:
 After testing all 5 features, **take a screenshot** of your Supabase table data.
@@ -234,7 +251,7 @@ ORDER BY created_at DESC LIMIT 10;
 
 ---
 
-## 🎯 Milestone System Testing
+## Milestone System Testing
 
 ### Your action:
 Submit enough entries to trigger milestones:
@@ -265,7 +282,7 @@ echo "Compare counts to CONFIG.MILESTONES in scripts/config.js"
 
 ---
 
-## 📱 Mobile Responsiveness
+## Mobile Responsiveness
 
 ### Your action:
 1. Open app on your phone (iPhone or Android)
@@ -282,7 +299,7 @@ echo "Compare counts to CONFIG.MILESTONES in scripts/config.js"
 
 ---
 
-## 🔒 Security Checklist
+## Security Checklist
 
 ### Your action:
 Don't need to do anything - just be aware:
@@ -302,7 +319,7 @@ echo "All API endpoints validate input types and lengths"
 
 ---
 
-## 📈 Performance Metrics
+## Performance Metrics
 
 **I collect metrics after testing:**
 
@@ -319,7 +336,7 @@ echo "SELECT pg_size_pretty(pg_database_size(current_database()));"
 
 ---
 
-## ✅ Final Sign-Off Checklist
+## Final Sign-Off Checklist
 
 ### Your final checks:
 - [ ] All 5 features tested and working
@@ -351,7 +368,7 @@ echo "If no errors shown → ready for event!"
 
 ---
 
-## 🎉 Event Day Confidence Check
+## Event Day Confidence Check
 
 **24 hours before event:**
 
@@ -376,7 +393,7 @@ echo "All systems operational ✓"
 
 ---
 
-## 🆘 If Something Breaks
+## Troubleshooting
 
 ### Problem: API returns 404
 
@@ -400,7 +417,7 @@ echo "All systems operational ✓"
 
 ---
 
-## 📊 Success Criteria
+## Success Criteria
 
 The system is **production-ready** when:
 
@@ -425,5 +442,5 @@ The system is **production-ready** when:
 
 ---
 
-**Last Updated**: 2026-01-01
+**Last Updated**: 2026-01-02  
 **Bug Fixes Applied**: Vote counting (array), Pool stats (baby_pool), Photo upload (removed)

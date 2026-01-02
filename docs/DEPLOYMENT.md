@@ -1,4 +1,28 @@
-# Baby Shower App - Production Deployment Guide
+# Baby Shower App - Complete Deployment Guide
+
+**Last Updated**: 2026-01-02  
+**Version**: 3.0 (Consolidated)  
+**Status**: Production Ready
+
+---
+
+## Table of Contents
+
+1. [Quick Deploy Checklist](#quick-deploy-checklist)
+2. [Project Status](#project-status)
+3. [Phase 1: Supabase Setup](#phase-1-supabase-setup)
+4. [Phase 2: Deploy Edge Functions](#phase-2-deploy-edge-functions)
+5. [Phase 3: Google Sheets Integration](#phase-3-google-sheets-integration)
+6. [Phase 4: Environment Configuration](#phase-4-environment-configuration)
+7. [Phase 5: Vercel Deployment](#phase-5-vercel-deployment)
+8. [Automated Deployment Workflow](#automated-deployment-workflow)
+9. [Testing Checklist](#testing-checklist)
+10. [Rollback Procedures](#rollback-procedures)
+11. [Monitoring](#monitoring)
+12. [Troubleshooting](#troubleshooting)
+13. [Support](#support)
+
+---
 
 ## Quick Deploy Checklist
 
@@ -10,6 +34,27 @@
 - [ ] RLS policies verified
 - [ ] Storage bucket created
 - [ ] Testing complete
+
+---
+
+## Project Status
+
+### Current Status
+
+✅ **GitHub Connection**: Vercel project IS connected to GitHub  
+✅ **Auto-Deploy**: Vercel automatically deploys on every `git push`  
+✅ **Current Branch**: `main` (deploys to production)
+
+**This means**: You deploy by pushing code to GitHub, NOT by drag-and-drop!
+
+### Component Status
+
+| Component | Platform | URL/Endpoint | Status |
+|-----------|----------|--------------|--------|
+| Frontend | Vercel | https://baby-shower-qr-app.vercel.app | ✅ Active |
+| API | Supabase Edge Functions | https://bkszmvfsfgvdwzacgmfz.supabase.co/functions/v1/ | ✅ Active |
+| Database | Supabase PostgreSQL | Project: bkszmvfsfgvdwzacgmfz | ✅ Active |
+| Export | Google Sheets | Webhook Configured | ✅ Active |
 
 ---
 
@@ -157,40 +202,25 @@ VITE_VERCEL_API_URL=https://your-vercel-app.vercel.app/api
    - **Project URL** → `VITE_SUPABASE_URL`
    - **anon public** key → `VITE_SUPABASE_ANON_KEY`
 
----
+### 4.3 Verify Configuration
 
-## Phase 5: Supabase Storage (Optional)
+**Check Current Environment Variables**
 
-### 5.1 Create Storage Bucket
+In Vercel Dashboard:
+1. Go to project → Settings → Environment Variables
+2. Verify these are set:
 
-1. Go to Supabase Dashboard > Storage
-2. New Bucket:
-   - Name: `baby-shower-assets`
-   - Public bucket: Yes
-3. Upload theme assets (images, CSS)
-
-### 5.2 Storage Policies
-
-```sql
--- Allow public read access to assets
-CREATE POLICY "Public assets access" ON storage.objects
-  FOR SELECT
-  USING ( bucket_id = 'baby-shower-assets' );
-
--- Allow authenticated uploads (admin only)
-CREATE POLICY "Admin uploads" ON storage.objects
-  FOR INSERT
-  WITH CHECK (
-    bucket_id = 'baby-shower-assets' AND
-    auth.role() = 'authenticated'
-  );
+```bash
+NEXT_PUBLIC_SUPABASE_URL="https://bkszmvfsfgvdwzacgmfz.supabase.co"
+NEXT_PUBLIC_SUPABASE_ANON_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+SUPABASE_SERVICE_ROLE_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
 ```
 
 ---
 
-## Phase 6: Vercel Deployment (Frontend)
+## Phase 5: Vercel Deployment
 
-### 6.1 Deploy to Vercel
+### 5.1 Deploy to Vercel
 
 ```bash
 # Install Vercel CLI
@@ -200,7 +230,7 @@ npm i -g vercel
 vercel --prod
 ```
 
-### 6.2 Environment Variables in Vercel
+### 5.2 Environment Variables in Vercel
 
 In Vercel Dashboard > Settings > Environment Variables:
 
@@ -208,6 +238,92 @@ In Vercel Dashboard > Settings > Environment Variables:
 |------|-------|-------------|
 | `VITE_SUPABASE_URL` | Your Supabase URL | Production, Development |
 | `VITE_SUPABASE_ANON_KEY` | Your anon key | Production, Development |
+
+### 5.3 Verify Production URL
+
+Your app is available at:
+**https://baby-shower-qr-app.vercel.app**
+
+This URL:
+- Never changes
+- Always points to latest deployment
+- Global CDN (fast everywhere)
+- HTTPS included
+
+---
+
+## Automated Deployment Workflow
+
+### Using NPM Scripts
+
+The project includes npm scripts for common deployment operations:
+
+```bash
+# Check current git status
+npm run status
+
+# Stage all changes
+npm run add
+
+# Commit with automated conventional message
+npm run commit
+
+# Push to trigger Vercel deployment
+npm run push
+
+# Full deploy (commit + push)
+npm run deploy
+```
+
+### Manual Git Commands
+
+```bash
+# Stage changes
+git add .
+
+# Commit with message
+git commit -m "feat(scripts): add voting functionality"
+
+# Push to trigger deployment
+git push origin main
+```
+
+### Conventional Commit Format
+
+The automated commit script uses [Conventional Commits](https://www.conventionalcommits.org):
+
+- `feat(scope): description` - New features
+- `fix(scope): description` - Bug fixes
+- `docs(scope): description` - Documentation changes
+- `test(scope): description` - Test additions/modifications
+- `refactor(scope): description` - Code refactoring
+- `chore(scope): description` - Maintenance tasks
+
+### Quick Deploy (2 Steps)
+
+**Step 1: Commit All Changes**
+
+```bash
+cd /mnt/c/Project/Baby_Shower
+
+# Add all the new files
+git add .
+
+# Commit with descriptive message
+git commit -m "Update documentation and deployment configuration"
+```
+
+**Step 2: Push to GitHub**
+
+```bash
+git push origin main
+```
+
+**That's it!** Vercel will automatically:
+1. Detect the push
+2. Start building (30-60 seconds)
+3. Deploy to production
+4. Send you an email when complete
 
 ---
 
@@ -238,11 +354,57 @@ In Vercel Dashboard > Settings > Environment Variables:
 - [ ] Error messages show to user
 - [ ] Success confirmation appears
 
+### API Verification Commands
+
+**Test 1: Check API Health**
+
+```bash
+curl https://baby-shower-qr-app.vercel.app/api
+```
+
+Expected response:
+```json
+{
+  "result": "success",
+  "message": "Baby Shower API is running",
+  "endpoints": ["POST /api/guestbook", ...]
+}
+```
+
+**Test 2: Test Guestbook Endpoint**
+
+```bash
+curl -X POST https://baby-shower-qr-app.vercel.app/api/guestbook \
+  -H "Content-Type: application/json" \
+  -d '{"name":"Test","relationship":"Friend","message":"Hello from test!"}'
+```
+
+Expected response:
+```json
+{
+  "result": "success",
+  "message": "Wish saved successfully!",
+  "data": [...]
+}
+```
+
+**Test 3: Test Each Edge Function**
+
+```bash
+# Test guestbook function
+curl -X POST https://bkszmvfsfgvdwzacgmfz.supabase.co/functions/v1/guestbook \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_ANON_KEY" \
+  -H "apikey: YOUR_ANON_KEY" \
+  -d '{"name":"Health Check","message":"Test","relationship":"friend"}'
+```
+
 ---
 
 ## Rollback Procedures
 
 ### Supabase Functions
+
 ```bash
 # List previous deployments
 supabase functions list
@@ -252,6 +414,7 @@ supabase functions restore guestbook --version 1
 ```
 
 ### Database
+
 ```sql
 -- Disable trigger (stops data migration)
 DROP TRIGGER IF EXISTS on_submission_insert ON public.submissions;
@@ -264,23 +427,41 @@ CREATE TRIGGER on_submission_insert
 ```
 
 ### Google Sheets
+
 - Keep previous Apps Script version
 - Deploy previous version from Deployments list
+
+### Vercel Frontend
+
+1. Go to https://vercel.com/baby-shower-qr-app/deployments
+2. Find previous successful deployment
+3. Click "..." menu on that deployment
+4. Select "Promote to Production"
 
 ---
 
 ## Monitoring
 
 ### Supabase Dashboard
+
 - Monitor query performance
 - Check for RLS policy violations
 - Track API request counts
 
+### Vercel Analytics
+
+- Track page views and API calls
+- Monitor function execution time
+- Set up error alerting
+
 ### Google Sheet
+
 - Check for missing rows (indicates webhook failure)
 - Review submission timing
+- Monitor processing time column (< 100ms expected)
 
 ### Error Logs
+
 ```sql
 -- Check for recent errors
 SELECT * FROM internal.submission_stats
@@ -292,7 +473,29 @@ LIMIT 10;
 
 ## Troubleshooting
 
+### Git Push Fails
+
+```bash
+# If you get authentication error:
+# 1. Check git remote
+$ git remote -v
+# Should show: https://github.com/Zazzles2908/baby-shower.git
+
+# 2. Check credentials
+$ git config --global user.email  # Should be your GitHub email
+
+# 3. Try logging in to GitHub CLI
+$ gh auth login
+```
+
+### Vercel Not Deploying
+
+1. Check GitHub → Repository → Settings → Webhooks
+2. Verify Vercel webhook is active
+3. Check Vercel project settings → Git Integration
+
 ### Edge Function Errors
+
 ```
 Error: Missing environment variables
 → Check Supabase Settings > Edge Functions > Environment Variables
@@ -303,6 +506,7 @@ Error: Database error
 ```
 
 ### Google Sheets Not Receiving Data
+
 ```
 1. Check Apps Script executions log
 2. Verify webhook URL is correct in Supabase
@@ -311,10 +515,43 @@ Error: Database error
 ```
 
 ### Frontend 404 Errors
+
 ```
 → Verify VITE_SUPABASE_URL is correct
 → Check function names match exactly
 → Ensure functions are deployed
+```
+
+### Problem: Vote counts showing 0
+
+**Check**: Is this happening after the 2026-01-01 bug fix deployment?
+- If before fix: Expected (bug existed)
+- If after fix: Check that vote was submitted with array format
+
+```sql
+-- Verify activity_type is 'voting'
+SELECT activity_type, COUNT(*) 
+FROM public.submissions 
+WHERE activity_type = 'voting';
+
+-- Check vote data format
+SELECT activity_data->'names' 
+FROM public.submissions 
+WHERE activity_type = 'voting'
+LIMIT 1;
+```
+
+### Problem: Pool stats not updating
+
+**Check**: Is this happening after the 2026-01-01 bug fix deployment?
+- If before fix: Expected (bug existed - activity_type was 'pool' not 'baby_pool')
+- If after fix: Should work correctly now
+
+```sql
+-- Verify activity_type is 'baby_pool'
+SELECT DISTINCT activity_type 
+FROM public.submissions 
+WHERE activity_type LIKE '%pool%';
 ```
 
 ---
@@ -325,3 +562,10 @@ Error: Database error
 - **Edge Functions**: https://supabase.com/docs/guides/functions
 - **Database Webhooks**: https://supabase.com/docs/guides/database/webhooks
 - **Google Apps Script**: https://developers.google.com/apps-script
+- **Vercel Docs**: https://vercel.com/docs
+
+---
+
+**Document Version**: 3.0  
+**Last Updated**: 2026-01-02  
+**Maintained By**: Development Team

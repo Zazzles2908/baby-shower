@@ -6,15 +6,31 @@
 
 ---
 
-## 📐 System Overview
+## Table of Contents
+
+1. [System Overview](#system-overview)
+2. [Core Architecture](#core-architecture)
+3. [Database Architecture](#database-architecture)
+4. [Data Flow](#data-flow)
+5. [API Endpoints](#api-endpoints)
+6. [Security Implementation](#security-implementation)
+7. [Hosting & Deployment](#hosting--deployment)
+8. [Views and Aggregations](#views-and-aggregations)
+9. [Testing Verification](#testing-verification)
+10. [Deployment Status](#deployment-status)
+11. [Quick Reference](#quick-reference)
+
+---
+
+## System Overview
 
 This document describes the complete production architecture of the Baby Shower QR App, featuring a three-stage data pipeline with Supabase Edge Functions, dual-schema design, and Google Sheets integration.
 
 ---
 
-## 🎯 Core Architecture
+## Core Architecture
 
-### **Three-Stage Data Pipeline Design**
+### Three-Stage Data Pipeline Design
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
@@ -22,14 +38,14 @@ This document describes the complete production architecture of the Baby Shower 
 │  - HTML/CSS/JavaScript (Vanilla JS)                                │
 │  - API calls to Supabase Edge Functions                            │
 └─────────────────────────────┬───────────────────────────────────────┘
-                              │ HTTPS POST
+                               │ HTTPS POST
 ┌─────────────────────────────▼───────────────────────────────────────┐
 │                  Supabase Edge Functions (Deno)                     │
 │  - 5 endpoints: /functions/v1/{guestbook,vote,pool,quiz,advice}    │
 │  - Validation, sanitization, rate limiting                         │
 │  - Direct SQL insert to public.submissions                         │
 └─────────────────────────────┬───────────────────────────────────────┘
-                              │ INSERT
+                               │ INSERT
 ┌─────────────────────────────▼───────────────────────────────────────┐
 │                    Supabase PostgreSQL                              │
 │  ┌────────────────────┐     ┌────────────────────────────────────┐  │
@@ -37,8 +53,8 @@ This document describes the complete production architecture of the Baby Shower 
 │  │  (Hot - Realtime)  │     │  (Cold - Immutable Backup)         │  │
 │  └────────────────────┘     └────────────────────────────────────┘  │
 └─────────────────────────────┬───────────────────────────────────────┘
-                              │
-                              │ Database Webhook POST
+                               │
+                               │ Database Webhook POST
 ┌─────────────────────────────▼───────────────────────────────────────┐
 │                   Google Apps Script                               │
 │  - doPost(e) webhook handler                                       │
@@ -48,11 +64,11 @@ This document describes the complete production architecture of the Baby Shower 
 
 ---
 
-## 🗄️ Database Architecture
+## Database Architecture
 
-### **Dual-Schema Design**
+### Dual-Schema Design
 
-#### **Public Schema (Hot Layer)**
+#### Public Schema (Hot Layer)
 
 **Table**: `public.submissions`
 
@@ -69,12 +85,12 @@ This document describes the complete production architecture of the Baby Shower 
 | activity_type | Description | Example Data |
 |---------------|-------------|--------------|
 | `guestbook` | Wish messages | `{name, message, relationship}` |
-| `pool` | Birth predictions | `{name, guess}` |
+| `baby_pool` | Birth predictions | `{name, guess}` |
 | `quiz` | Emoji puzzle answers | `{answers}` |
 | `advice` | Parenting advice | `{message}` |
-| `vote` | Name votes | `{names}` |
+| `voting` | Name votes | `{names}` |
 
-#### **Internal Schema (Cold Layer)**
+#### Internal Schema (Cold Layer)
 
 **Table**: `internal.event_archive`
 
@@ -92,7 +108,7 @@ This document describes the complete production architecture of the Baby Shower 
 - `idx_internal_created_at` on `created_at DESC`
 - `idx_internal_guest_name` on `guest_name`
 
-### **Trigger Function**
+### Trigger Function
 
 ```sql
 CREATE OR REPLACE FUNCTION internal.handle_submission_migration()
@@ -113,9 +129,9 @@ CREATE TRIGGER on_submission_insert
 
 ---
 
-## 🔄 Data Flow
+## Data Flow
 
-### **Complete Submission Flow**
+### Complete Submission Flow
 
 ```
 1. User Interaction
@@ -156,9 +172,9 @@ Total Time: < 2 seconds end-to-end
 
 ---
 
-## 🎯 API Endpoints
+## API Endpoints
 
-### **Supabase Edge Functions**
+### Supabase Edge Functions
 
 | Endpoint | Method | Activity | Status |
 |----------|--------|----------|--------|
@@ -168,7 +184,7 @@ Total Time: < 2 seconds end-to-end
 | `/functions/v1/quiz` | POST | Emoji quiz answers | ✅ Production |
 | `/functions/v1/advice` | POST | Parenting advice | ✅ Production |
 
-### **Request/Response Format**
+### Request/Response Format
 
 **Request**:
 ```json
@@ -183,7 +199,7 @@ Total Time: < 2 seconds end-to-end
 }
 ```
 
-**Response** (Success):
+**Response (Success)**:
 ```json
 {
   "success": true,
@@ -195,7 +211,7 @@ Total Time: < 2 seconds end-to-end
 }
 ```
 
-**Response** (Error):
+**Response (Error)**:
 ```json
 {
   "success": false,
@@ -205,9 +221,9 @@ Total Time: < 2 seconds end-to-end
 
 ---
 
-## 🔒 Security Implementation
+## Security Implementation
 
-### **Row Level Security (RLS)**
+### Row Level Security (RLS)
 
 | Table | Operation | Policy | Conditions |
 |-------|-----------|--------|------------|
@@ -218,7 +234,7 @@ Total Time: < 2 seconds end-to-end
 | `internal.event_archive` | ALL | Allow | Service role only |
 | `internal.event_archive` | ALL | Deny | All other contexts |
 
-### **Input Validation**
+### Input Validation
 
 | Field | Validation |
 |-------|------------|
@@ -230,9 +246,9 @@ Total Time: < 2 seconds end-to-end
 
 ---
 
-## 🌐 Hosting & Deployment
+## Hosting & Deployment
 
-### **Platform Matrix**
+### Platform Matrix
 
 | Component | Platform | URL/Config |
 |-----------|----------|------------|
@@ -241,7 +257,7 @@ Total Time: < 2 seconds end-to-end
 | Database | Supabase Pro | Project: bkszmvfsfgvdwzacgmfz, Region: Sydney |
 | Export | Google Sheets | Webhook via Google Apps Script |
 
-### **Environment Variables**
+### Environment Variables
 
 ```env
 # Supabase Configuration (already configured in .env.local)
@@ -251,9 +267,9 @@ SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 
 ---
 
-## 📊 Views and Aggregations
+## Views and Aggregations
 
-### **Today's Submissions View**
+### Today's Submissions View
 
 ```sql
 CREATE OR REPLACE VIEW public.v_today_submissions AS
@@ -263,7 +279,7 @@ WHERE created_at >= CURRENT_DATE
 GROUP BY activity_type;
 ```
 
-### **Activity Breakdown View**
+### Activity Breakdown View
 
 ```sql
 CREATE OR REPLACE VIEW public.v_activity_breakdown AS
@@ -279,9 +295,9 @@ GROUP BY activity_type;
 
 ---
 
-## 🧪 Testing Verification (2026-01-02)
+## Testing Verification (2026-01-02)
 
-### **E2E Test Results**
+### E2E Test Results
 
 | Activity | Test ID | Status | Propagation |
 |----------|---------|--------|-------------|
@@ -295,9 +311,9 @@ GROUP BY activity_type;
 
 ---
 
-## 🚀 Deployment Status
+## Deployment Status
 
-### **Overall: PRODUCTION READY** ✅
+### Overall: PRODUCTION READY ✅
 
 | Component | Status | Notes |
 |-----------|--------|-------|
@@ -310,9 +326,9 @@ GROUP BY activity_type;
 
 ---
 
-## 📚 Quick Reference
+## Quick Reference
 
-### **Supabase MCP Queries**
+### Supabase MCP Queries
 
 ```sql
 -- Get all guestbook messages

@@ -1,8 +1,57 @@
 # Baby Shower Interactive Web App
 
-A fun, interactive QR-code based web app for baby showers with multiple activities and milestone surprises.
+A fun, interactive QR-code-based web app for baby showers with multiple activities and milestone surprises.
 
 **Live Site**: https://baby-shower-qr-app.vercel.app
+
+---
+
+## 📚 Documentation Navigation
+
+### 🎯 Primary Documents (Start Here)
+
+| Document | Description |
+|----------|-------------|
+| **[PRODUCTION_CHECKLIST.md](PRODUCTION_CHECKLIST.md)** | ✅ **Start here** - Pre-event verification checklist |
+| **[README.md](README.md)** | This file - Executive summary and quick start |
+
+### 🚀 Deployment & Setup
+
+| Document | Description |
+|----------|-------------|
+| **[docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)** | Complete deployment guide |
+| **[docs/technical/SETUP.md](docs/technical/SETUP.md)** | Initial setup instructions |
+| **[docs/technical/ARCHITECTURE.md](docs/technical/ARCHITECTURE.md)** | System architecture and data flow |
+
+### 🧪 Testing & Validation
+
+| Document | Description |
+|----------|-------------|
+| **[docs/technical/TESTING.md](docs/technical/TESTING.md)** | Testing guide with feature-by-feature instructions |
+| **[PRODUCTION_CHECKLIST.md](PRODUCTION_CHECKLIST.md)** | Pre-event verification checklist |
+
+### 🔧 Reference Documentation
+
+| Document | Description |
+|----------|-------------|
+| **[docs/reference/SCHEMA.md](docs/reference/SCHEMA.md)** | Database schema details |
+| **[docs/reference/EDGE_FUNCTIONS.md](docs/reference/EDGE_FUNCTIONS.md)** | Edge Function specifications |
+| **[docs/reference/API.md](docs/reference/API.md)** | Complete API documentation |
+| **[docs/reference/ENVIRONMENT.md](docs/reference/ENVIRONMENT.md)** | Environment variables |
+
+### 📋 Troubleshooting
+
+| Document | Description |
+|----------|-------------|
+| **[docs/technical/TROUBLESHOOTING.md](docs/technical/TROUBLESHOOTING.md)** | Common issues and solutions |
+
+### 📊 Documentation Index
+
+| Document | Description |
+|----------|-------------|
+| **[docs/SUMMARY.md](docs/SUMMARY.md)** | Master index with all documentation links |
+
+---
 
 ## Features
 
@@ -16,10 +65,58 @@ A fun, interactive QR-code based web app for baby showers with multiple activiti
 ## Technology Stack
 
 - **Frontend**: Plain HTML/CSS/JavaScript (responsive, mobile-first)
-- **Backend**: Vercel API Routes + Supabase
-  - Supabase PostgreSQL (primary database)
-  - Supabase Realtime (live updates)
+- **Backend**: Supabase Edge Functions (Deno)
+- **Database**: Supabase PostgreSQL with Row Level Security
+- **Integration**: Google Sheets webhook for data export
 - **Hosting**: Vercel (global edge network, including Sydney for Australian guests)
+
+## Quick Start
+
+### For Event Hosts
+
+1. **Review Checklist**: Open [PRODUCTION_CHECKLIST.md](PRODUCTION_CHECKLIST.md)
+2. **Verify Setup**: Follow the pre-event verification steps
+3. **Generate QR Codes**: Create QR codes pointing to your Vercel URL
+
+### For Developers
+
+1. **Architecture**: Read [docs/technical/ARCHITECTURE.md](docs/technical/ARCHITECTURE.md)
+2. **Setup**: Follow [docs/technical/SETUP.md](docs/technical/SETUP.md)
+3. **Deploy**: Use [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)
+4. **Test**: Reference [docs/technical/TESTING.md](docs/technical/TESTING.md)
+
+---
+
+## Documentation Structure
+
+```mermaid
+graph TD
+    Root[Root Level] --> Primary[Primary Docs]
+    Root --> Docs[docs/ Directory]
+    
+    Primary --> README[README.md - Executive Summary]
+    Primary --> Checklist[PRODUCTION_CHECKLIST.md - Pre-event Checklist]
+    
+    Docs --> Technical[docs/technical/]
+    Docs --> Reference[docs/reference/]
+    Docs --> Historical[docs/historical/]
+    
+    Technical --> ARCH[ARCHITECTURE.md]
+    Technical --> SETUP[SETUP.md]
+    Technical --> TESTING[TESTING.md]
+    Technical --> TROUBLESHOOTING[TROUBLESHOOTING.md]
+    
+    Reference --> SCHEMA[SCHEMA.md]
+    Reference --> EDGE[EDGE_FUNCTIONS.md]
+    Reference --> API[API.md]
+    Reference --> ENV[ENVIRONMENT.md]
+    
+    Historical --> OldAnalysis[Archived Analysis Files]
+    
+    Docs --> SUMMARY[docs/SUMMARY.md - Master Index]
+```
+
+---
 
 ## Project Structure
 
@@ -31,160 +128,42 @@ Baby_Shower/
 │   └── animations.css     # Confetti, milestone animations
 ├── scripts/
 │   ├── config.js          # App configuration (milestones, baby names)
-│   ├── api.js             # API client for Vercel API routes
+│   ├── api.js             # API client for Edge Functions
 │   ├── main.js            # Core navigation and utilities
 │   ├── guestbook.js       # Guestbook functionality
 │   ├── pool.js            # Baby pool predictions
 │   ├── quiz.js            # Emoji pictionary game
 │   ├── advice.js          # Advice capsule
-│   ├── voting.js          # Name voting system
-│   ├── supabase-client.js # Supabase client with realtime
-│   └── supabase.js        # Supabase utilities
-├── api/                   # Vercel API routes (serverless)
-│   ├── index.js          # Health check endpoint
-│   ├── guestbook.js      # POST /api/guestbook
-│   ├── pool.js           # POST /api/pool
-│   ├── quiz.js           # POST /api/quiz
-│   ├── advice.js         # POST /api/advice
-│   └── vote.js           # POST /api/vote
+│   ├── surprises.js       # Milestone unlock system
+│   └── commit.js          # Git commit utilities
 ├── backend/
-│   ├── supabase-schema.sql     # Database schema for setup
-│   ├── supabase-integration.md # Dual-write guide
-│   └── supabase-check.sql      # Database validation queries
-├── vercel.json            # Vercel deployment configuration
+│   ├── Code.gs            # Google Apps Script for Sheets integration
+│   ├── supabase-production-schema.sql  # Database schema
+│   └── supabase-check.sql # Database validation queries
+├── supabase/              # Supabase configuration
+├── tests/                 # E2E test files
+├── docs/                  # Documentation
+│   ├── SUMMARY.md         # Master documentation index
+│   ├── DEPLOYMENT.md      # Deployment guide
+│   ├── technical/         # Technical documentation
+│   ├── reference/         # Reference materials
+│   └── historical/        # Archived analysis files
 └── README.md              # This file
 ```
 
-## Quick Start Guide
-
-### 1. Verify Supabase Configuration
-
-The app uses Supabase as the primary backend. Ensure your Supabase project is configured:
-
-1. Project URL and anon key in environment variables
-2. Tables created from `backend/supabase-schema.sql`
-3. Row Level Security (RLS) policies configured
-
-### 2. Deploy to Vercel
-
-```bash
-# Install Vercel CLI (if not already installed)
-npm i -g vercel
-
-# Login to Vercel
-vercel login
-
-# Deploy (from project root)
-vercel --prod
-```
-
-### 3. Set Environment Variables in Vercel
-
-In your Vercel project dashboard, add these environment variables:
-
-```
-NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
-SUPABASE_SERVICE_ROLE_KEY=your_service_role_key  # Server-side only
-```
-
-### 4. Customize Configuration
-
-Edit `scripts/config.js`:
-
-```javascript
-// Baby names for voting
-CONFIG.BABY_NAMES = ['Emma', 'Olivia', 'Ava', 'Sophia', 'Isabella'];
-
-// Milestone thresholds
-CONFIG.MILESTONES = {
-    GUESTBOOK_5: 5,
-    GUESTBOOK_10: 10,
-    // ... etc
-};
-```
-
-### 5. Generate QR Codes
-
-1. Go to a QR code generator (e.g., https://www.qrcode-monkey.com)
-2. Enter your Vercel deployment URL
-3. Customize colors to match the farm theme (earthy tones)
-4. Download and print for tables at the event
-
-## Testing
-
-### Local Testing
-
-Open `index.html` directly in a browser. Note: API calls will only work if Supabase is configured.
-
-### Full Test
-
-1. Submit a guestbook entry
-2. Submit a baby pool prediction
-3. Complete the emoji quiz
-4. Submit advice
-5. Vote on names (test 3-vote limit)
-6. Check Supabase dashboard for data
+---
 
 ## Troubleshooting
 
-### "Supabase URL is required"
-- Ensure Supabase URL and anon key are in environment variables
-- Check that the Supabase project is active
+Having issues? Check these resources:
 
-### Data Not Appearing
-- Check browser console for JavaScript errors
-- Verify Supabase project is active
-- Review Vercel deployment logs
+1. **[docs/technical/TROUBLESHOOTING.md](docs/technical/TROUBLESHOOTING.md)** - Common issues and solutions
+2. **[docs/technical/SETUP.md](docs/technical/SETUP.md)** - Setup instructions
+3. **Browser Console** - Check for JavaScript errors
+4. **Vercel Logs** - Review deployment logs in Vercel dashboard
+5. **Supabase Dashboard** - Verify database is active
 
-### Milestones Not Unlocking
-- Check milestone thresholds in `scripts/config.js`
-- Verify data is being saved to Supabase
-- Check browser console for JavaScript errors
-
-## Architecture Notes
-
-### Why This Architecture?
-
-**Supabase Primary:**
-- Modern PostgreSQL database with real-time capabilities
-- Built-in authentication and row-level security
-- Excellent for learning modern backend development
-- Handles data storage efficiently
-
-**Vercel Hosting:**
-- Global edge network for fast load times
-- Automatic HTTPS and SSL
-- Git-based deployments
-- Free tier adequate for event-scale traffic
-
-### Data Flow
-
-```
-Guest submits form
-    ↓
-Frontend JavaScript (scripts/api.js)
-    ↓
-Vercel Edge Network (global CDN)
-    ↓
-Supabase PostgreSQL (primary storage)
-    ↓
-Supabase Realtime (live updates)
-    ↓
-All connected clients update automatically
-```
-
-## Performance
-
-- **Load Time**: ~2-3 seconds on first visit
-- **Database**: Indexes on timestamp columns for fast queries
-- **Rate Limiting**: Supabase free tier handles 50+ concurrent guests easily
-
-## Browser Support
-
-- Chrome 70+, Safari 12+, Firefox 65+, Edge 79+
-- iOS Safari 12+, Android Chrome 70+
-- No JavaScript frameworks required
+---
 
 ## Cost
 
@@ -192,33 +171,15 @@ All connected clients update automatically
 - **Vercel**: Free tier (100GB bandwidth/month)
 - **Total**: $0/month for typical usage
 
+---
+
 ## Security
 
 - No sensitive data stored (no emails, phone numbers, addresses)
 - Supabase RLS policies prevent unauthorized access
 - Public URL but not indexed by search engines
 
-## Maintenance
-
-Post-event, the app can be:
-1. Left as-is for viewing memories
-2. Exported to PDF (use browser print function)
-3. Archived (download Supabase data)
-4. Disabled (remove from Vercel)
-
-## Support
-
-For issues:
-1. Check browser console for errors
-2. Verify Supabase project is active
-3. Review Vercel deployment logs
-4. Test on multiple devices/browsers
-
-## License
-
-Personal use only. Not for redistribution or commercial use.
-
 ---
 
-**Last Updated**: 2026-01-01
-**Version**: 2.1 - Bug fixes applied, photo upload removed
+**Last Updated**: 2026-01-02  
+**Version**: 3.0 - Documentation reorganized and consolidated

@@ -107,7 +107,9 @@
                 names: votingState.selected
             });
             
-            alert('Thanks ' + name + '!');
+            // Show inline success message
+            showVotingSuccessMessage();
+            
             votingState.selected = [];
             document.querySelectorAll('.heart-btn').forEach(btn => {
                 btn.textContent = '🤍';
@@ -117,6 +119,32 @@
         } catch (error) {
             alert('Error submitting vote: ' + error.message);
         }
+    }
+    
+    function showVotingSuccessMessage() {
+        // Remove any existing success messages
+        const existingMsg = document.querySelector('.form-success-message');
+        if (existingMsg) {
+            existingMsg.remove();
+        }
+        
+        // Find the name-list container
+        const nameList = document.getElementById('name-list');
+        if (!nameList) return;
+        
+        // Create success message element
+        const msgEl = document.createElement('div');
+        msgEl.className = 'form-success-message';
+        msgEl.textContent = 'Your votes have been recorded!';
+        
+        // Insert after the name list
+        nameList.parentNode.insertBefore(msgEl, nameList.nextSibling);
+        
+        // Auto-hide after 4 seconds
+        setTimeout(() => {
+            msgEl.style.animation = 'fadeInSlide 0.3s ease-out reverse';
+            setTimeout(() => msgEl.remove(), 300);
+        }, 4000);
     }
     
     function showError() {

@@ -415,7 +415,9 @@ async function handleGuestbookSubmit(event) {
         const processedResponse = handleResponse(response);
 
         hideLoading();
-        showSuccessModal(processedResponse.data.message);
+        
+        // Show inline success message
+        showFormSuccessMessage('Thank you for your message!', form);
         triggerConfetti();
 
         // Update personal progress
@@ -456,7 +458,9 @@ async function handlePoolSubmit(event) {
         const processedResponse = handleResponse(response);
 
         hideLoading();
-        showSuccessModal(processedResponse.data.message);
+        
+        // Show inline success message
+        showFormSuccessMessage('Your prediction has been recorded!', form);
         triggerConfetti();
 
         // Update personal progress
@@ -500,7 +504,17 @@ async function handleQuizSubmit(event) {
         const processedResponse = handleResponse(response);
 
         hideLoading();
-        showSuccessModal(processedResponse.data.message);
+        
+        // Calculate and show score in success message
+        const answers = {
+            puzzle1: data.puzzle1,
+            puzzle2: data.puzzle2,
+            puzzle3: data.puzzle3,
+            puzzle4: data.puzzle4,
+            puzzle5: data.puzzle5
+        };
+        const score = calculateQuizScore(answers);
+        showFormSuccessMessage(`Quiz submitted! Your score: ${score}/5`, form);
         triggerConfetti();
 
         // Update personal progress
@@ -538,7 +552,9 @@ async function handleAdviceSubmit(event) {
         const processedResponse = handleResponse(response);
 
         hideLoading();
-        showSuccessModal(processedResponse.data.message);
+        
+        // Show inline success message
+        showFormSuccessMessage('Thank you for your advice!', form);
         triggerConfetti();
 
         // Update personal progress
@@ -730,6 +746,37 @@ window.closeMilestoneModal = closeMilestoneModal;
 function showError(error) {
     const message = typeof error === 'object' ? (error.message || JSON.stringify(error)) : error;
     alert('Error: ' + message);
+}
+
+/**
+ * Show inline form success message
+ * @param {string} message - Success message to display
+ * @param {HTMLFormElement|string} form - Form element or form ID
+ */
+function showFormSuccessMessage(message, form) {
+    // Remove any existing success messages in the form
+    const existingMsg = document.querySelector('.form-success-message');
+    if (existingMsg) {
+        existingMsg.remove();
+    }
+
+    // Get form element if form ID was passed
+    const formEl = typeof form === 'string' ? document.getElementById(form) : form;
+    if (!formEl) return;
+
+    // Create success message element
+    const msgEl = document.createElement('div');
+    msgEl.className = 'form-success-message';
+    msgEl.textContent = message;
+
+    // Insert after the form
+    formEl.parentNode.insertBefore(msgEl, formEl.nextSibling);
+
+    // Auto-hide after 4 seconds
+    setTimeout(() => {
+        msgEl.style.animation = 'fadeInSlide 0.3s ease-out reverse';
+        setTimeout(() => msgEl.remove(), 300);
+    }, 4000);
 }
 
 /**

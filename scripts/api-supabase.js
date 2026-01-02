@@ -2,24 +2,26 @@
  * Baby Shower App - Supabase Edge Functions API Client
  * Production-ready integration with comprehensive error handling
  * 
- * Works as both ES6 module and regular script (IIFE)
- * Attaches to window.API for global access
+ * Works as regular script (IIFE) attached to window.API
  */
 
 (function(root) {
     'use strict';
 
     // Configuration from CONFIG or environment variables
-    const SUPABASE_URL = root.CONFIG?.SUPABASE?.URL || 
-                        (typeof import.meta !== 'undefined' && import.meta.env?.VITE_SUPABASE_URL) ||
-                        (typeof import.meta !== 'undefined' && import.meta.env?.NEXT_PUBLIC_SUPABASE_URL) || '';
-    
-    const SUPABASE_ANON_KEY = root.CONFIG?.SUPABASE?.ANON_KEY || 
-                              (typeof import.meta !== 'undefined' && import.meta.env?.VITE_SUPABASE_ANON_KEY) ||
-                              (typeof import.meta !== 'undefined' && import.meta.env?.NEXT_PUBLIC_SUPABASE_ANON_KEY) || '';
-    
+    // Note: import.meta.env only works in ES modules, not regular scripts
+    const SUPABASE_URL = root.CONFIG?.SUPABASE?.URL ||
+                        root.ENV?.VITE_SUPABASE_URL ||
+                        root.ENV?.NEXT_PUBLIC_SUPABASE_URL ||
+                        '';
+
+    const SUPABASE_ANON_KEY = root.CONFIG?.SUPABASE?.ANON_KEY ||
+                              root.ENV?.VITE_SUPABASE_ANON_KEY ||
+                              root.ENV?.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
+                              '';
+
     const USE_SUPABASE = SUPABASE_URL && SUPABASE_ANON_KEY;
-    
+
     // Timeout settings
     const API_TIMEOUT = 30000; // 30 seconds
 
@@ -64,7 +66,7 @@
             return await response.json();
         } catch (err) {
             clearTimeout(timeoutId);
-            
+
             if (err.name === 'AbortError') {
                 throw new Error('Request timed out. Please try again.');
             }
@@ -77,7 +79,7 @@
      */
     async function submitGuestbook(data) {
         const url = getSupabaseFunctionUrl('guestbook');
-        
+
         return apiFetch(url, {
             method: 'POST',
             body: JSON.stringify({
@@ -93,7 +95,7 @@
      */
     async function submitVote(data) {
         const url = getSupabaseFunctionUrl('vote');
-        
+
         return apiFetch(url, {
             method: 'POST',
             body: JSON.stringify({
@@ -107,7 +109,7 @@
      */
     async function submitPool(data) {
         const url = getSupabaseFunctionUrl('pool');
-        
+
         return apiFetch(url, {
             method: 'POST',
             body: JSON.stringify({
@@ -125,7 +127,7 @@
      */
     async function submitQuiz(data) {
         const url = getSupabaseFunctionUrl('quiz');
-        
+
         return apiFetch(url, {
             method: 'POST',
             body: JSON.stringify({
@@ -146,7 +148,7 @@
      */
     async function submitAdvice(data) {
         const url = getSupabaseFunctionUrl('advice');
-        
+
         return apiFetch(url, {
             method: 'POST',
             body: JSON.stringify({
@@ -166,7 +168,7 @@
         }
 
         const url = `${SUPABASE_URL}/rest/v1/submissions?activity_type=eq.${activityType}&order=created_at.desc`;
-        
+
         const headers = {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
@@ -174,7 +176,7 @@
         };
 
         const response = await fetch(url, { headers });
-        
+
         if (!response.ok) {
             throw new Error(`HTTP ${response.status}: ${response.statusText}`);
         }
@@ -199,7 +201,7 @@
     async function initializeAPI() {
         console.log('API Client initializing...');
         console.log('Supabase URL:', SUPABASE_URL ? '***configured***' : 'missing');
-        
+
         if (!SUPABASE_URL) {
             console.error('Supabase URL not configured in CONFIG');
             return { success: false, error: 'Supabase URL not configured' };
@@ -245,7 +247,7 @@
         }
     };
 
-    // Attach to global scope (works in both browser and module contexts)
+    // Attach to global scope
     if (typeof root !== 'undefined') {
         root.API = API;
     }
@@ -261,8 +263,4 @@
 
     console.log('API Client (api-supabase.js) loaded successfully');
 
-    // Export for module usage if available
-    if (typeof module !== 'undefined' && module.exports) {
-        module.exports = API;
-    }
 })(typeof window !== 'undefined' ? window : this);
