@@ -12,6 +12,18 @@ function initializePool() {
  */
 async function loadPoolStats() {
     try {
+        // Wait for API to be available (handles script loading race conditions)
+        let retries = 10;
+        while (!window.API && retries > 0) {
+            await new Promise(resolve => setTimeout(resolve, 50));
+            retries--;
+        }
+        
+        if (!window.API) {
+            console.warn('API client not available, pool stats will not be displayed');
+            return;
+        }
+        
         const submissions = await window.API.getSubmissions('pool');
         
         if (submissions && submissions.length > 0) {
