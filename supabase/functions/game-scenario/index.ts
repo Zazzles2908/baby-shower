@@ -340,10 +340,10 @@ serve(async (req: Request) => {
       intensity: number
     }>(
       `INSERT INTO baby_shower.game_scenarios 
-        (session_id, scenario_text, mom_option, dad_option, intensity)
-       VALUES ($1, $2, $3, $4, $5)
+        (session_id, round_number, scenario_text, mom_option, dad_option, intensity)
+       VALUES ($1, $2, $3, $4, $5, $6)
        RETURNING id, scenario_text, mom_option, dad_option, intensity`,
-      [body.session_id, scenarioText, momOption, dadOption, intensity]
+      [body.session_id, 1, scenarioText, momOption, dadOption, intensity]
     )
 
     if (insertResult.rows.length === 0) {
