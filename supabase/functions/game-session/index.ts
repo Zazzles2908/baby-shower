@@ -110,6 +110,7 @@ serve(async (req: Request) => {
         JSON.stringify({
           success: true,
           data: {
+            session_id: session.id,
             session_code: session.session_code,
             mom_name: session.mom_name,
             dad_name: session.dad_name,

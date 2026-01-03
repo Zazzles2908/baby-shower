@@ -173,25 +173,29 @@ try {
 ```
 
 ### TypeScript Edge Functions
+
+#### 🛡️ Security-First Pattern (Recommended)
 ```typescript
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { 
+  validateEnvironmentVariables, 
+  createErrorResponse, 
+  createSuccessResponse,
+  validateInput,
+  CORS_HEADERS,
+  SECURITY_HEADERS
+} from '../_shared/security.ts'
 
 interface RequestData {
   // Define your request structure
 }
 
-interface ErrorResponse {
-  error: string
-  details?: unknown
-}
-
 serve(async (req: Request) => {
-  // CORS headers always first
+  // Combine CORS and security headers
   const headers = new Headers({
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    ...CORS_HEADERS,
+    ...SECURITY_HEADERS,
     'Content-Type': 'application/json',
   })
 
@@ -199,14 +203,189 @@ serve(async (req: Request) => {
     return new Response(null, { status: 204, headers })
   }
 
-  try {
-    // Implementation here
-  } catch (error) {
-    return new Response(
-      JSON.stringify({ error: error.message } as ErrorResponse),
-      { status: 500, headers }
-    )
+  if (req.method !== 'POST') {
+    return createErrorResponse('Method not allowed', 405)
   }
+
+  try {
+    // 1. Validate environment variables first
+    const envValidation = validateEnvironmentVariables([
+      'SUPABASE_URL',
+      'SUPABASE_SERVICE_ROLE_KEY'
+    ])
+
+    if (!envValidation.isValid) {
+      console.error('Environment validation failed:', envValidation.errors)
+      return createErrorResponse('Server configuration error', 500)
+    }
+
+    if (envValidation.warnings.length > 0) {
+      console.warn('Environment warnings:', envValidation.warnings)
+    }
+
+    // 2. Initialize Supabase client
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+
+    const supabase = createClient(supabaseUrl, supabaseServiceKey, {
+      auth: { autoRefreshToken: false, persistSession: false },
+    })
+
+    // 3. Parse and validate request body
+    let body: RequestData
+    try {
+      body = await req.json()
+    } catch {
+      return createErrorResponse('Invalid JSON in request body', 400)
+    }
+
+    // 4. Input validation using standardized function
+    const validation = validateInput(body, {
+      // Define your validation rules here
+      fieldName: { 
+        type: 'string', 
+        required: true, 
+        minLength: 1, 
+        maxLength: 100 
+      }
+    })
+
+    if (!validation.isValid) {
+      return createErrorResponse('Validation failed', 400, validation.errors)
+    }
+
+    // 5. Your business logic here
+    const result = await yourBusinessLogic(supabase, validation.sanitized)
+
+    // 6. Return standardized success response
+    return createSuccessResponse(result, 201)
+
+  } catch (error) {
+    console.error('Edge Function error:', error)
+    return createErrorResponse('Internal server error', 500)
+  }
+})
+
+async function yourBusinessLogic(supabase: any, data: any) {
+  // Your implementation here
+  return { message: 'Success', data }
+}
+```
+
+#### 🤖 AI Integration Pattern
+```typescript
+// AI integration with timeout and error handling
+async function handleAIRequest(prompt: string, apiKey: string) {
+  try {
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 10000) // 10 second timeout
+
+    const response = await fetch('https://api.ai-provider.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        model: 'ai-model-name',
+        messages: [{ role: 'user', content: prompt }],
+        temperature: 0.7,
+        max_tokens: 200,
+      }),
+      signal: controller.signal,
+    })
+
+    clearTimeout(timeoutId)
+
+    if (!response.ok) {
+      console.error('AI API error:', response.status)
+      throw new Error(`AI service returned status ${response.status}`)
+    }
+
+    const aiData = await response.json()
+    return aiData.choices?.[0]?.message?.content || 'AI response unavailable'
+
+  } catch (error) {
+    console.error('AI request failed:', error)
+    throw new Error('Failed to generate AI response')
+  }
+}
+```
+
+---
+
+## 🛡️ Shared Security Utilities
+
+Our Edge Functions use standardized security utilities located in `supabase/functions/_shared/security.ts`. Always import and use these functions for consistency and security.
+
+### Environment Validation
+```typescript
+import { validateEnvironmentVariables } from '../_shared/security.ts'
+
+// Validate required environment variables
+const envValidation = validateEnvironmentVariables([
+  'SUPABASE_URL',
+  'SUPABASE_SERVICE_ROLE_KEY'
+], ['MINIMAX_API_KEY']) // optional vars
+
+if (!envValidation.isValid) {
+  console.error('Environment validation failed:', envValidation.errors)
+  return createErrorResponse('Server configuration error', 500)
+}
+```
+
+### Standardized Response Functions
+```typescript
+import { createErrorResponse, createSuccessResponse } from '../_shared/security.ts'
+
+// Error response with security headers
+return createErrorResponse('Validation failed', 400, validationErrors)
+
+// Success response with security headers  
+return createSuccessResponse(data, 201)
+```
+
+### Input Validation
+```typescript
+import { validateInput } from '../_shared/security.ts'
+
+const validation = validateInput(requestBody, {
+  name: { 
+    type: 'string', 
+    required: true, 
+    minLength: 1, 
+    maxLength: 100 
+  },
+  age: {
+    type: 'number',
+    required: false,
+    min: 0,
+    max: 120
+  },
+  email: {
+    type: 'string',
+    required: true,
+    pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+  }
+})
+
+if (!validation.isValid) {
+  return createErrorResponse('Validation failed', 400, validation.errors)
+}
+
+// Use sanitized data
+const sanitizedData = validation.sanitized
+```
+
+### Security & CORS Headers
+```typescript
+import { CORS_HEADERS, SECURITY_HEADERS } from '../_shared/security.ts'
+
+// Combine headers for all responses
+const headers = new Headers({
+  ...CORS_HEADERS,
+  ...SECURITY_HEADERS,
+  'Content-Type': 'application/json',
 })
 ```
 
@@ -243,12 +422,136 @@ serve(async (req: Request) => {
 
 ## 🚨 Common Pitfalls to Avoid
 
+### Frontend Development
 1. **Don't use ES6 modules in frontend scripts** - Use IIFE pattern instead
-2. **Don't forget CORS headers** in Edge Functions - Always include them
-3. **Don't hardcode the baby's name** - Use environment variables
-4. **Don't skip error handling** - Every async operation needs try-catch
-5. **Don't forget mobile testing** - Mobile-first is required
-6. **Don't commit sensitive data** - Use .env.local and never commit it
+2. **Don't hardcode the baby's name** - Use environment variables
+3. **Don't skip error handling** - Every async operation needs try-catch
+4. **Don't forget mobile testing** - Mobile-first is required
+5. **Don't commit sensitive data** - Use .env.local and never commit it
+
+### Edge Function Development
+
+#### ❌ **BEFORE: Manual Error Handling (Inconsistent)**
+```typescript
+// ❌ Don't do this - inconsistent error responses
+if (!response.ok) {
+  return new Response(
+    JSON.stringify({ error: 'Something went wrong' }),
+    { status: 500, headers: { 'Content-Type': 'application/json' } }
+  )
+}
+```
+
+#### ✅ **AFTER: Standardized Error Responses**
+```typescript
+// ✅ Do this - consistent, secure error handling
+if (!response.ok) {
+  return createErrorResponse('Database operation failed', 500)
+}
+```
+
+#### ❌ **BEFORE: Missing Security Headers**
+```typescript
+// ❌ Don't do this - missing security headers
+const headers = new Headers({
+  'Content-Type': 'application/json',
+  'Access-Control-Allow-Origin': '*'
+})
+```
+
+#### ✅ **AFTER: Complete Security Headers**
+```typescript
+// ✅ Do this - comprehensive security headers
+const headers = new Headers({
+  ...CORS_HEADERS,
+  ...SECURITY_HEADERS,
+  'Content-Type': 'application/json',
+})
+```
+
+#### ❌ **BEFORE: Manual Environment Validation**
+```typescript
+// ❌ Don't do this - incomplete validation
+if (!Deno.env.get('SUPABASE_URL')) {
+  throw new Error('Missing SUPABASE_URL')
+}
+```
+
+#### ✅ **AFTER: Standardized Environment Validation**
+```typescript
+// ✅ Do this - comprehensive environment validation
+const envValidation = validateEnvironmentVariables([
+  'SUPABASE_URL',
+  'SUPABASE_SERVICE_ROLE_KEY'
+], ['MINIMAX_API_KEY'])
+
+if (!envValidation.isValid) {
+  console.error('Environment validation failed:', envValidation.errors)
+  return createErrorResponse('Server configuration error', 500)
+}
+```
+
+#### ❌ **BEFORE: Manual Input Validation**
+```typescript
+// ❌ Don't do this - incomplete validation
+if (!body.name || body.name.length > 100) {
+  return new Response(
+    JSON.stringify({ error: 'Invalid name' }),
+    { status: 400, headers }
+  )
+}
+```
+
+#### ✅ **AFTER: Standardized Input Validation**
+```typescript
+// ✅ Do this - comprehensive input validation
+const validation = validateInput(body, {
+  name: { type: 'string', required: true, minLength: 1, maxLength: 100 },
+  email: { type: 'string', required: true, pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/ }
+})
+
+if (!validation.isValid) {
+  return createErrorResponse('Validation failed', 400, validation.errors)
+}
+```
+
+#### ❌ **BEFORE: AI Integration Without Timeout**
+```typescript
+// ❌ Don't do this - no timeout protection
+const response = await fetch('https://api.ai-provider.com/v1/chat', {
+  method: 'POST',
+  headers: { 'Authorization': `Bearer ${apiKey}` },
+  body: JSON.stringify({ messages: [{ role: 'user', content: prompt }] })
+})
+```
+
+#### ✅ **AFTER: AI Integration with Timeout**
+```typescript
+// ✅ Do this - timeout protection for AI calls
+const controller = new AbortController()
+const timeoutId = setTimeout(() => controller.abort(), 10000) // 10 second timeout
+
+const response = await fetch('https://api.ai-provider.com/v1/chat', {
+  method: 'POST',
+  headers: { 'Authorization': `Bearer ${apiKey}` },
+  body: JSON.stringify({ messages: [{ role: 'user', content: prompt }] }),
+  signal: controller.signal,
+})
+
+clearTimeout(timeoutId)
+```
+
+### Edge Function Checklist
+Before deploying any Edge Function, verify:
+- [ ] Import all security utilities from `../_shared/security.ts`
+- [ ] Use `validateEnvironmentVariables()` for all env vars
+- [ ] Use `validateInput()` for all user input
+- [ ] Use `createErrorResponse()` and `createSuccessResponse()`
+- [ ] Include both `CORS_HEADERS` and `SECURITY_HEADERS`
+- [ ] Add timeout protection for external API calls
+- [ ] Log errors with `console.error()` for monitoring
+- [ ] Test with invalid inputs and missing environment variables
+- [ ] Verify CORS works from frontend origin
 
 ---
 

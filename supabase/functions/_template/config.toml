@@ -1,0 +1,27 @@
+# Edge Function Configuration
+# This file configures the Edge Function deployment
+
+[functions.your-function-name]
+# Enable the function
+enabled = true
+
+# Function entry point
+entrypoint = "index.ts"
+
+# Environment variables (configure in Supabase dashboard)
+# SUPABASE_URL = "your-project-url"
+# SUPABASE_SERVICE_ROLE_KEY = "your-service-role-key"
+# MINIMAX_API_KEY = "optional-ai-key"
+# Z_AI_API_KEY = "optional-ai-key"
+# KIMI_API_KEY = "optional-ai-key"
+
+# Import map (if needed)
+# import_map = "./import_map.json"
+
+# Deno configuration
+[functions.your-function-name.deno]
+version = "1.37.0"
+
+# Build configuration
+[functions.your-function-name.build]
+# Additional build settings if needed

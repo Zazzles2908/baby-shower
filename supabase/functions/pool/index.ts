@@ -217,6 +217,7 @@ serve(async (req: Request) => {
         predictor_name: sanitizedName,
         gender: body.gender?.toLowerCase() || 'surprise',
         birth_date: body.dueDate,
+        prediction: sanitizedPrediction,
         weight_kg: body.weight,
         length_cm: body.length,
         hair_color: body.hairColor?.trim().slice(0, 50) || null,

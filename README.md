@@ -36,6 +36,8 @@ A fun, interactive QR-code-based web app for baby showers with multiple activiti
 |----------|-------------|
 | **[docs/reference/SCHEMA.md](docs/reference/SCHEMA.md)** | Database schema details |
 | **[docs/reference/EDGE_FUNCTIONS.md](docs/reference/EDGE_FUNCTIONS.md)** | Edge Function specifications |
+| **[EDGE_FUNCTION_GUIDE.md](EDGE_FUNCTION_GUIDE.md)** | 🆕 Complete Edge Function development guide |
+| **[AGENTS.md](AGENTS.md)** | 🆕 Development patterns and best practices |
 | **[docs/reference/API.md](docs/reference/API.md)** | Complete API documentation |
 | **[docs/reference/ENVIRONMENT.md](docs/reference/ENVIRONMENT.md)** | Environment variables |
 

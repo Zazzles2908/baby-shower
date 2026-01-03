@@ -1,0 +1,142 @@
+{
+  "timestamp": "2026-01-03T12:56:32.492Z",
+  "config": {
+    "provider": "supabase",
+    "supabaseConfigured": false,
+    "vercelConfigured": false
+  },
+  "tests": [
+    {
+      "name": "Valid guestbook submission",
+      "passed": false,
+      "timestamp": "2026-01-03T12:56:32.508Z",
+      "details": null,
+      "error": "Failed to parse URL from /functions/v1/guestbook"
+    },
+    {
+      "name": "Reject missing name",
+      "passed": false,
+      "timestamp": "2026-01-03T12:56:32.508Z",
+      "details": null,
+      "error": "Failed to parse URL from /functions/v1/guestbook"
+    },
+    {
+      "name": "Reject empty message",
+      "passed": false,
+      "timestamp": "2026-01-03T12:56:32.508Z",
+      "details": null,
+      "error": "Failed to parse URL from /functions/v1/guestbook"
+    },
+    {
+      "name": "Sanitize long input",
+      "passed": false,
+      "timestamp": "2026-01-03T12:56:32.509Z",
+      "details": null,
+      "error": "Failed to parse URL from /functions/v1/guestbook"
+    },
+    {
+      "name": "Valid single-name vote",
+      "passed": false,
+      "timestamp": "2026-01-03T12:56:32.509Z",
+      "details": null,
+      "error": "Failed to parse URL from /functions/v1/vote"
+    },
+    {
+      "name": "Valid max-name vote",
+      "passed": false,
+      "timestamp": "2026-01-03T12:56:32.509Z",
+      "details": null,
+      "error": "Failed to parse URL from /functions/v1/vote"
+    },
+    {
+      "name": "Reject too many names",
+      "passed": false,
+      "timestamp": "2026-01-03T12:56:32.509Z",
+      "details": null,
+      "error": "Failed to parse URL from /functions/v1/vote"
+    },
+    {
+      "name": "Reject empty names",
+      "passed": false,
+      "timestamp": "2026-01-03T12:56:32.509Z",
+      "details": null,
+      "error": "Failed to parse URL from /functions/v1/vote"
+    },
+    {
+      "name": "Valid due date prediction",
+      "passed": false,
+      "timestamp": "2026-01-03T12:56:32.509Z",
+      "details": null,
+      "error": "Failed to parse URL from /functions/v1/pool"
+    },
+    {
+      "name": "Reject invalid date format",
+      "passed": false,
+      "timestamp": "2026-01-03T12:56:32.509Z",
+      "details": null,
+      "error": "Failed to parse URL from /functions/v1/pool"
+    },
+    {
+      "name": "Valid quiz submission",
+      "passed": false,
+      "timestamp": "2026-01-03T12:56:32.510Z",
+      "details": null,
+      "error": "Failed to parse URL from /functions/v1/quiz"
+    },
+    {
+      "name": "Reject score > total",
+      "passed": false,
+      "timestamp": "2026-01-03T12:56:32.510Z",
+      "details": null,
+      "error": "Failed to parse URL from /functions/v1/quiz"
+    },
+    {
+      "name": "Valid advice submission",
+      "passed": false,
+      "timestamp": "2026-01-03T12:56:32.510Z",
+      "details": null,
+      "error": "Failed to parse URL from /functions/v1/advice"
+    },
+    {
+      "name": "Reject invalid category",
+      "passed": false,
+      "timestamp": "2026-01-03T12:56:32.510Z",
+      "details": null,
+      "error": "Failed to parse URL from /functions/v1/advice"
+    },
+    {
+      "name": "Supabase URL configured",
+      "passed": false,
+      "timestamp": "2026-01-03T12:56:32.510Z",
+      "details": null,
+      "error": "Missing configuration"
+    },
+    {
+      "name": "Handle invalid JSON",
+      "passed": true,
+      "timestamp": "2026-01-03T12:56:32.510Z",
+      "details": null,
+      "error": null
+    },
+    {
+      "name": "Reject non-POST methods",
+      "passed": false,
+      "timestamp": "2026-01-03T12:56:32.510Z",
+      "details": null,
+      "error": "Failed to parse URL from /functions/v1/guestbook"
+    },
+    {
+      "name": "Timeout handling works",
+      "passed": true,
+      "timestamp": "2026-01-03T12:56:32.510Z",
+      "details": null,
+      "error": null
+    }
+  ],
+  "summary": {
+    "total": 18,
+    "passed": 2,
+    "failed": 16,
+    "skipped": 0
+  }
+}
