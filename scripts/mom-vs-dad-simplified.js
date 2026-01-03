@@ -174,68 +174,6 @@
             return null;
         }
     }
-                    // Check if window.supabaseClient was created by other scripts
-                    if (window.supabaseClient) {
-                        supabase = window.supabaseClient;
-                        break;
-                    }
-                    
-                    await new Promise(resolve => setTimeout(resolve, 100));
-                    attempts++;
-                }
-                
-                // If still no client, try to create one using window.supabase
-                if (!supabase) {
-                    const supabaseUrl = root.CONFIG?.SUPABASE?.URL || '';
-                    const supabaseKey = root.CONFIG?.SUPABASE?.ANON_KEY || '';
-                    
-                    if (typeof window.supabase !== 'undefined' && supabaseUrl && supabaseKey) {
-                        supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
-                        window.supabaseClient = supabase;
-                    }
-                }
-            }
-            
-            if (!supabase) {
-                console.warn('[MomVsDadSimplified] No Supabase client available after waiting');
-                return null;
-            }
-
-            // Use direct Supabase query as workaround for Edge Function issue
-            // Note: Use schema.table format for baby_shower schema
-            const { data, error } = await supabase
-                .from('baby_shower.mom_dad_lobbies')
-                .select('*')
-                .eq('lobby_key', lobbyKey)
-                .single();
-
-            if (error) {
-                console.warn('[MomVsDadSimplified] Supabase query error:', error.message);
-                return null;
-            }
-
-            if (data) {
-                return {
-                    success: true,
-                    data: {
-                        lobby: data,
-                        players: [],
-                        game_status: {
-                            state: data.status,
-                            rounds_completed: 0,
-                            current_round: null,
-                            can_start: data.status === 'waiting'
-                        }
-                    }
-                };
-            }
-
-            return null;
-        } catch (error) {
-            console.warn('[MomVsDadSimplified] Failed to fetch lobby status:', error.message);
-            return null;
-        }
-    }
 
     /**
      * Join lobby - with proper error handling (FIXES ISSUE #12)
