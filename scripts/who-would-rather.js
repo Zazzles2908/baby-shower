@@ -1,41 +1,48 @@
 /**
- * Baby Shower App - Who Would Rather Game (SIMPLE VERSION)
- * Question in middle, Michelle on left, Jazeel on right
- * Tap PNG avatar to vote
+ * Baby Shower App - The Shoe Game
+ * Traditional wedding shoe game adapted for baby shower!
+ * Guests predict: "Who would do this?" - Michelle or Jazeel?
+ * Tap the avatar you think is correct, then auto-advance to next question
  */
 
 (function() {
     'use strict';
 
-    console.log('[WhoWouldRatherSimple] loading...');
+    console.log('[ShoeGame] loading...');
 
     // Avatar URLs from Supabase Storage
     const AVATAR_URLS = {
-        mom: 'https://bkszmvfsfgvdwzacgmfz.supabase.co/storage/v1/object/public/baby-shower-pictures/Pictures/Michelle_Icon/asset_chibi_avatar_f.png',
-        dad: 'https://bkszmvfsfgvdwzacgmfz.supabase.co/storage/v1/object/public/baby-shower-pictures/Pictures/Jazeel_Icon/asset_chibi_avatar_m.png'
+        michelle: 'https://bkszmvfsfgvdwzacgmfz.supabase.co/storage/v1/object/public/baby-shower-pictures/Pictures/Michelle_Icon/asset_chibi_avatar_f.png',
+        jazeel: 'https://bkszmvfsfgvdwzacgmfz.supabase.co/storage/v1/object/public/baby-shower-pictures/Pictures/Jazeel_Icon/asset_chibi_avatar_m.png'
     };
 
-    // Questions about Michelle vs Jazeel
+    // Questions in Shoe Game format - "Who is more likely to...?"
     const QUESTIONS = [
-        "Who would rather wake up at 3 AM for a feeding?",
-        "Who would rather change the first dirty diaper?",
-        "Who would rather handle a crying baby in public?",
-        "Who would rather give baby a bath?",
-        "Who would rather cook dinner while holding baby?",
-        "Who would rather do the 2 AM diaper explosion?",
-        "Who would rather read bedtime stories every night?",
-        "Who would rather plan baby's first birthday party?",
-        "Who would rather take baby to doctor appointments?",
-        "Who would rather do baby's laundry (explosions included)?",
-        "Who would rather handle baby's first fever?",
-        "Who would rather pack the diaper bag for outings?",
-        "Who would rather deal with baby's first temper tantrum?",
-        "Who would rather do baby's first food feeding?",
-        "Who would rather manage baby's sleep training?"
+        "Who wakes up first when baby cries at night?",
+        "Who changes the most diapers?",
+        "Who handles baby vomit like a pro?",
+        "Who sings the best lullabies?",
+        "Who reads the most books to baby?",
+        "Who loses their temper first?",
+        "Who is better at packing the diaper bag?",
+        "Who handles doctor visits better?",
+        "Who does most of the baby bath time?",
+        "Who cooks dinner while holding baby?",
+        "Who does the 2 AM feeding without complaining?",
+        "Who handles baby laundry (even with explosions)?",
+        "Who plans the best birthday parties?",
+        "Who is more emotional about baby's milestones?",
+        "Who takes better baby photos?",
+        "Who is better at calming a fussy baby?",
+        "Who does more research on parenting?",
+        "Who is more likely to cry at baby's first steps?",
+        "Who handles teething episodes better?",
+        "Who is the better baby whisperer?"
     ];
 
     let currentQuestionIndex = 0;
     let userName = '';
+    let votes = []; // Store all votes
 
     /**
      * Get guest name
@@ -47,7 +54,6 @@
             return name;
         }
         
-        // Fallback to prompt
         const nameInput = prompt("What's your name?");
         if (nameInput && nameInput.trim()) {
             userName = nameInput.trim();
@@ -57,127 +63,192 @@
     }
 
     /**
-     * Create simple voting screen HTML
+     * Create main game screen HTML
      */
-    function createVotingScreen() {
+    function createGameScreen() {
         const question = QUESTIONS[currentQuestionIndex];
         
         return `
-            <div id="wwr-simple-voting" class="wwr-simple-container fade-in">
+            <div id="shoe-game-container" class="shoe-game-container fade-in">
                 <!-- Progress -->
-                <div class="wwr-simple-progress">
-                    Question ${currentQuestionIndex + 1} of ${QUESTIONS.length}
+                <div class="shoe-game-progress">
+                    <div class="progress-text">${currentQuestionIndex + 1} / ${QUESTIONS.length}</div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: ${((currentQuestionIndex + 1) / QUESTIONS.length) * 100}%"></div>
+                    </div>
                 </div>
 
                 <!-- Question -->
-                <div class="wwr-simple-question fade-in-up">
-                    <h2>${question}</h2>
+                <div class="shoe-game-question fade-in-up">
+                    <div class="question-label">Who would do this?</div>
+                    <h2 class="question-text">${question}</h2>
                 </div>
 
-                <!-- Avatars - Left/Right Selection -->
-                <div class="wwr-simple-avatars">
+                <!-- Avatars - Tap to Vote -->
+                <div class="shoe-game-avatars">
                     <!-- Michelle (Left) -->
                     <button 
                         type="button"
-                        id="btn-wwr-mom"
-                        class="wwr-avatar-btn wwr-avatar-btn-left"
-                        onclick="window.WhoWouldRatherSimple.vote('mom')"
+                        id="btn-michelle"
+                        class="shoe-avatar-btn shoe-avatar-left"
+                        onclick="window.ShoeGame.vote('michelle')"
                     >
-                        <img src="${AVATAR_URLS.mom}" alt="Michelle" class="wwr-avatar-img">
-                        <span class="wwr-avatar-name">Michelle</span>
+                        <img src="${AVATAR_URLS.michelle}" alt="Michelle" class="shoe-avatar-img">
+                        <span class="shoe-avatar-name">Michelle</span>
+                        <span class="shoe-tap-hint">Tap if you!</span>
                     </button>
 
                     <!-- VS Badge -->
-                    <div class="wwr-vs-badge">VS</div>
+                    <div class="shoe-vs-badge">?</div>
 
                     <!-- Jazeel (Right) -->
                     <button 
                         type="button"
-                        id="btn-wwr-dad"
-                        class="wwr-avatar-btn wwr-avatar-btn-right"
-                        onclick="window.WhoWouldRatherSimple.vote('dad')"
+                        id="btn-jazeel"
+                        class="shoe-avatar-btn shoe-avatar-right"
+                        onclick="window.ShoeGame.vote('jazeel')"
                     >
-                        <img src="${AVATAR_URLS.dad}" alt="Jazeel" class="wwr-avatar-img">
-                        <span class="wwr-avatar-name">Jazeel</span>
+                        <img src="${AVATAR_URLS.jazeel}" alt="Jazeel" class="shoe-avatar-img">
+                        <span class="shoe-avatar-name">Jazeel</span>
+                        <span class="shoe-tap-hint">Tap if you!</span>
                     </button>
                 </div>
 
-                <!-- Feedback Message -->
-                <div id="wwr-feedback" class="wwr-feedback hidden"></div>
-
-                <!-- Navigation -->
-                <div class="wwr-simple-nav">
-                    <button 
-                        type="button"
-                        id="btn-wwr-previous"
-                        class="btn btn-nav"
-                        ${currentQuestionIndex === 0 ? 'disabled' : ''}
-                        onclick="window.WhoWouldRatherSimple.previousQuestion()"
-                    >
-                        ← Previous
-                    </button>
-                    <button 
-                        type="button"
-                        id="btn-wwr-next"
-                        class="btn btn-nav"
-                        onclick="window.WhoWouldRatherSimple.nextQuestion()"
-                    >
-                        Next →
-                    </button>
+                <!-- Vote Feedback (shows briefly after voting) -->
+                <div id="shoe-feedback" class="shoe-feedback hidden">
+                    <span class="feedback-icon">✓</span>
+                    <span class="feedback-text">Recorded!</span>
                 </div>
             </div>
         `;
     }
 
     /**
-     * Handle vote
+     * Create results screen HTML
+     */
+    function createResultsScreen() {
+        const michelleVotes = votes.filter(v => v === 'michelle').length;
+        const jazeelVotes = votes.filter(v => 'jazeel').length;
+        const total = votes.length;
+        const michellePercent = total > 0 ? Math.round((michelleVotes / total) * 100) : 0;
+        const jazeelPercent = total > 0 ? Math.round((jazeelVotes / total) * 100) : 0;
+
+        // Determine majority
+        let winner = '';
+        if (michellePercent > jazeelPercent) {
+            winner = 'Michelle';
+        } else if (jazeelPercent > michellePercent) {
+            winner = 'Jazeel';
+        } else {
+            winner = 'Tie';
+        }
+
+        return `
+            <div id="shoe-results" class="shoe-results fade-in-up">
+                <div class="results-header">
+                    <div class="results-icon">🎉</div>
+                    <h2>All Done!</h2>
+                    <p class="results-subtitle">Thanks for playing, ${userName}!</p>
+                </div>
+
+                <!-- Winner Banner -->
+                <div class="winner-banner ${winner.toLowerCase()}">
+                    <div class="winner-avatar">
+                        <img src="${winner === 'Michelle' ? AVATAR_URLS.michelle : AVATAR_URLS.jazeel}" alt="${winner}" class="winner-img">
+                    </div>
+                    <div class="winner-text">
+                        <div class="winner-label">Predicted Winner</div>
+                        <div class="winner-name">${winner}</div>
+                        <div class="winner-percent">${Math.max(michellePercent, jazeelPercent)}%</div>
+                    </div>
+                </div>
+
+                <!-- Results Breakdown -->
+                <div class="results-breakdown">
+                    <div class="breakdown-item michelle">
+                        <div class="breakdown-name">Michelle</div>
+                        <div class="breakdown-bar">
+                            <div class="breakdown-fill" style="width: ${michellePercent}%"></div>
+                        </div>
+                        <div class="breakdown-percent">${michellePercent}%</div>
+                    </div>
+                    <div class="breakdown-item jazeel">
+                        <div class="breakdown-name">Jazeel</div>
+                        <div class="breakdown-bar">
+                            <div class="breakdown-fill" style="width: ${jazeelPercent}%"></div>
+                        </div>
+                        <div class="breakdown-percent">${jazeelPercent}%</div>
+                    </div>
+                </div>
+
+                <!-- Play Again Button -->
+                <button 
+                    type="button"
+                    class="shoe-btn shoe-btn-primary"
+                    onclick="window.ShoeGame.restart()"
+                >
+                    Play Again ↺
+                </button>
+
+                <!-- Back to Activities -->
+                <button 
+                    type="button"
+                    class="shoe-btn shoe-btn-secondary"
+                    onclick="window.location.reload()"
+                >
+                    Back to Activities
+                </button>
+            </div>
+        `;
+    }
+
+    /**
+     * Handle vote - auto advance to next question
      */
     function vote(choice) {
-        console.log('[WhoWouldRatherSimple] Vote:', choice);
+        console.log('[ShoeGame] Vote:', choice);
         
-        // Add feedback
-        const feedback = document.getElementById('wwr-feedback');
-        const choiceName = choice === 'mom' ? 'Michelle' : 'Jazeel';
+        // Store vote
+        votes.push(choice);
         
-        feedback.textContent = `You voted for ${choiceName}! 🎉`;
-        feedback.classList.remove('hidden');
-        feedback.classList.add('fade-in-up');
+        // Visual feedback
+        const btnMichelle = document.getElementById('btn-michelle');
+        const btnJazeel = document.getElementById('btn-jazeel');
+        const feedback = document.getElementById('shoe-feedback');
         
-        // Disable buttons temporarily
-        const btnMom = document.getElementById('btn-wwr-mom');
-        const btnDad = document.getElementById('btn-wwr-dad');
-        
-        btnMom.disabled = true;
-        btnDad.disabled = true;
-
-        // Re-enable after delay
-        setTimeout(() => {
-            btnMom.disabled = false;
-            btnDad.disabled = false;
-        }, 1000);
-    }
-
-    /**
-     * Previous question
-     */
-    function previousQuestion() {
-        if (currentQuestionIndex > 0) {
-            currentQuestionIndex--;
-            renderScreen();
-        }
-    }
-
-    /**
-     * Next question
-     */
-    function nextQuestion() {
-        if (currentQuestionIndex < QUESTIONS.length - 1) {
-            currentQuestionIndex++;
-            renderScreen();
+        // Highlight selected button
+        if (choice === 'michelle') {
+            btnMichelle.classList.add('voted');
+            btnJazeel.classList.add('disabled');
         } else {
-            // Game complete
-            showCompletion();
+            btnJazeel.classList.add('voted');
+            btnMichelle.classList.add('disabled');
         }
+        
+        // Show feedback
+        feedback.classList.remove('hidden');
+        
+        // Auto-advance after short delay
+        setTimeout(() => {
+            if (currentQuestionIndex < QUESTIONS.length - 1) {
+                // Next question
+                currentQuestionIndex++;
+                renderScreen();
+            } else {
+                // Show results
+                showResults();
+            }
+        }, 600); // Short delay for better UX
+    }
+
+    /**
+     * Show results screen
+     */
+    function showResults() {
+        const container = document.getElementById('who-would-rather-container');
+        if (!container) return;
+
+        container.innerHTML = createResultsScreen();
     }
 
     /**
@@ -187,30 +258,7 @@
         const container = document.getElementById('who-would-rather-container');
         if (!container) return;
 
-        container.innerHTML = createVotingScreen();
-    }
-
-    /**
-     * Show completion screen
-     */
-    function showCompletion() {
-        const container = document.getElementById('who-would-rather-container');
-        if (!container) return;
-
-        container.innerHTML = `
-            <div class="wwr-simple-complete fade-in-up">
-                <div class="wwr-complete-icon">🎉</div>
-                <h2>All Done!</h2>
-                <p>Thanks for playing, ${userName}!</p>
-                <button 
-                    type="button"
-                    class="btn btn-primary"
-                    onclick="window.WhoWouldRatherSimple.restart()"
-                >
-                    Play Again
-                </button>
-            </div>
-        `;
+        container.innerHTML = createGameScreen();
     }
 
     /**
@@ -218,29 +266,28 @@
      */
     function restart() {
         currentQuestionIndex = 0;
+        votes = [];
         renderScreen();
     }
 
     // Public API
-    window.WhoWouldRatherSimple = {
+    window.ShoeGame = {
         init: function() {
-            console.log('[WhoWouldRatherSimple] initializing...');
+            console.log('[ShoeGame] initializing...');
             getGuestName();
             renderScreen();
-            console.log('[WhoWouldRatherSimple] initialized');
+            console.log('[ShoeGame] initialized');
         },
         vote: vote,
-        previousQuestion: previousQuestion,
-        nextQuestion: nextQuestion,
         restart: restart
     };
 
     // Auto-initialize when DOM is ready
     if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', () => window.WhoWouldRatherSimple.init());
+        document.addEventListener('DOMContentLoaded', () => window.ShoeGame.init());
     } else {
-        window.WhoWouldRatherSimple.init();
+        window.ShoeGame.init();
     }
 
-    console.log('[WhoWouldRatherSimple] loaded!');
+    console.log('[ShoeGame] loaded!');
 })();
