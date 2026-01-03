@@ -95,7 +95,7 @@
         return {
             key: lobbyKey,
             playerCount: Math.floor(Math.random() * 6),
-            maxPlayers: 8,
+            maxPlayers: 6,
             status: 'available'
         };
     }
