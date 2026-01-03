@@ -269,10 +269,6 @@ export const SECURITY_HEADERS = {
 }
 
 /**
- * CORS headers for cross-origin requests
+ * Note: CORS_HEADERS is already exported at line 65
+ * This is the end of the file
  */
-export const CORS_HEADERS = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS'
-}

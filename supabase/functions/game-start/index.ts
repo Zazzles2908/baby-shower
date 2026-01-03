@@ -94,7 +94,7 @@ serve(async (req: Request) => {
 
     // Fetch and validate lobby
     const { data: lobby, error: lobbyError } = await supabase
-      .from('mom_dad_lobbies')
+      .from('baby_shower.mom_dad_lobbies')
       .select('*')
       .eq('lobby_key', lobby_key)
       .single()
@@ -116,7 +116,7 @@ serve(async (req: Request) => {
 
     // Get current players
     const { data: players, error: playersError } = await supabase
-      .from('mom_dad_players')
+      .from('baby_shower.mom_dad_players')
       .select('*')
       .eq('lobby_id', lobby.id)
       .is('disconnected_at', null)
@@ -153,7 +153,7 @@ serve(async (req: Request) => {
       }
 
       const { error: aiError } = await supabase
-        .from('mom_dad_players')
+        .from('baby_shower.mom_dad_players')
         .insert(aiPlayers)
 
       if (aiError) {
@@ -165,7 +165,7 @@ serve(async (req: Request) => {
 
       // Update AI count
       await supabase
-        .from('mom_dad_lobbies')
+        .from('baby_shower.mom_dad_lobbies')
         .update({ 
           current_ai_count: lobby.current_ai_count + aiSlotsNeeded,
           current_players: lobby.current_players + aiSlotsNeeded,
@@ -194,7 +194,7 @@ serve(async (req: Request) => {
     }))
 
     const { error: sessionsError } = await supabase
-      .from('mom_dad_game_sessions')
+      .from('baby_shower.mom_dad_game_sessions')
       .insert(gameSessions)
 
     if (sessionsError) {
@@ -204,7 +204,7 @@ serve(async (req: Request) => {
 
     // Update lobby status to active
     const { error: updateError } = await supabase
-      .from('mom_dad_lobbies')
+      .from('baby_shower.mom_dad_lobbies')
       .update({ 
         status: 'active',
         total_rounds,
@@ -236,7 +236,7 @@ serve(async (req: Request) => {
 
     // Get first round to broadcast
     const { data: firstRound, error: roundError } = await supabase
-      .from('mom_dad_game_sessions')
+      .from('baby_shower.mom_dad_game_sessions')
       .select('*')
       .eq('lobby_id', lobby.id)
       .eq('round_number', 1)

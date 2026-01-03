@@ -208,25 +208,25 @@
                     <button class="lobby-card" data-lobby="A" data-players="0" data-max="8">
                         <div class="lobby-status">🟢 OPEN</div>
                         <div class="lobby-title">Lobby A</div>
-                        <div class="lobby-count">0/8 players</div>
+                        <div class="lobby-count">0/6 players</div>
                     </button>
 
                     <button class="lobby-card" data-lobby="B" data-players="0" data-max="8">
                         <div class="lobby-status">🟢 OPEN</div>
                         <div class="lobby-title">Lobby B</div>
-                        <div class="lobby-count">0/8 players</div>
+                        <div class="lobby-count">0/6 players</div>
                     </button>
 
                     <button class="lobby-card" data-lobby="C" data-players="0" data-max="8">
                         <div class="lobby-status">🟢 OPEN</div>
                         <div class="lobby-title">Lobby C</div>
-                        <div class="lobby-count">0/8 players</div>
+                        <div class="lobby-count">0/6 players</div>
                     </button>
 
                     <button class="lobby-card" data-lobby="D" data-players="0" data-max="8">
                         <div class="lobby-status">🟢 OPEN</div>
                         <div class="lobby-title">Lobby D</div>
-                        <div class="lobby-count">0/8 players</div>
+                        <div class="lobby-count">0/6 players</div>
                     </button>
                 </div>
 

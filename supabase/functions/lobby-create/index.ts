@@ -105,7 +105,7 @@ serve(async (req: Request) => {
 
     // Fetch lobby and check capacity
     const { data: lobby, error: lobbyError } = await supabase
-      .from('mom_dad_lobbies')
+      .from('baby_shower.mom_dad_lobbies')
       .select('*')
       .eq('lobby_key', lobby_key)
       .single()
@@ -136,7 +136,7 @@ serve(async (req: Request) => {
         
         if (userId) {
           const { data: player } = await supabase
-            .from('mom_dad_players')
+            .from('baby_shower.mom_dad_players')
             .select('*')
             .eq('lobby_id', lobby.id)
             .eq('user_id', userId)
@@ -161,7 +161,7 @@ serve(async (req: Request) => {
       console.log('Lobby Create - Reactivating existing player:', existingPlayer.id)
       
       const { error: updateError } = await supabase
-        .from('mom_dad_players')
+        .from('baby_shower.mom_dad_players')
         .update({ 
           disconnected_at: null, 
           is_ready: false,
@@ -178,7 +178,7 @@ serve(async (req: Request) => {
       console.log('Lobby Create - Creating new player:', playerId)
       
       const { error: insertError } = await supabase
-        .from('mom_dad_players')
+        .from('baby_shower.mom_dad_players')
         .insert({
           id: playerId,
           lobby_id: lobby.id,
@@ -213,7 +213,7 @@ serve(async (req: Request) => {
     updateData.current_players = lobby.current_players + 1
 
     const { error: updateLobbyError } = await supabase
-      .from('mom_dad_lobbies')
+      .from('baby_shower.mom_dad_lobbies')
       .update(updateData)
       .eq('id', lobby.id)
 
@@ -224,7 +224,7 @@ serve(async (req: Request) => {
 
     // Fetch updated lobby state
     const { data: updatedLobby } = await supabase
-      .from('mom_dad_lobbies')
+      .from('baby_shower.mom_dad_lobbies')
       .select('*')
       .eq('id', lobby.id)
       .single()
@@ -236,7 +236,7 @@ serve(async (req: Request) => {
 
     // Fetch all active players in lobby
     const { data: players, error: playersError } = await supabase
-      .from('mom_dad_players')
+      .from('baby_shower.mom_dad_players')
       .select('*')
       .eq('lobby_id', lobby.id)
       .is('disconnected_at', null)

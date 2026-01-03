@@ -87,7 +87,7 @@ serve(async (req: Request) => {
 
     // Fetch lobby
     const { data: lobby, error: lobbyError } = await supabase
-      .from('mom_dad_lobbies')
+      .from('baby_shower.mom_dad_lobbies')
       .select('*')
       .eq('lobby_key', lobby_key)
       .single()
@@ -99,7 +99,7 @@ serve(async (req: Request) => {
 
     // Fetch active players
     const { data: players, error: playersError } = await supabase
-      .from('mom_dad_players')
+      .from('baby_shower.mom_dad_players')
       .select('*')
       .eq('lobby_id', lobby.id)
       .is('disconnected_at', null)
@@ -139,7 +139,7 @@ serve(async (req: Request) => {
     if (lobby.status === 'active' || lobby.status === 'completed') {
       // Get the current or latest round
       const { data: currentRound } = await supabase
-        .from('mom_dad_game_sessions')
+        .from('baby_shower.mom_dad_game_sessions')
         .select('*')
         .eq('lobby_id', lobby.id)
         .in('status', ['voting', 'revealed'])
@@ -149,7 +149,7 @@ serve(async (req: Request) => {
 
       // Get all rounds for this game
       const { data: allRounds } = await supabase
-        .from('mom_dad_game_sessions')
+        .from('baby_shower.mom_dad_game_sessions')
         .select('round_number, status')
         .eq('lobby_id', lobby.id)
         .order('round_number', { ascending: true })

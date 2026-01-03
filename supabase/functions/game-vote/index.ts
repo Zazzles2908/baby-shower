@@ -94,7 +94,7 @@ serve(async (req: Request) => {
 
     // Fetch lobby
     const { data: lobby, error: lobbyError } = await supabase
-      .from('mom_dad_lobbies')
+      .from('baby_shower.mom_dad_lobbies')
       .select('*')
       .eq('lobby_key', lobby_key)
       .single()
@@ -111,7 +111,7 @@ serve(async (req: Request) => {
 
     // Fetch player
     const { data: player, error: playerError } = await supabase
-      .from('mom_dad_players')
+      .from('baby_shower.mom_dad_players')
       .select('*')
       .eq('id', player_id)
       .eq('lobby_id', lobby.id)
@@ -125,7 +125,7 @@ serve(async (req: Request) => {
 
     // Fetch game session (round)
     const { data: round, error: roundError } = await supabase
-      .from('mom_dad_game_sessions')
+      .from('baby_shower.mom_dad_game_sessions')
       .select('*')
       .eq('id', round_id)
       .eq('lobby_id', lobby.id)
@@ -149,7 +149,7 @@ serve(async (req: Request) => {
 
     // Update player with vote
     const { error: updatePlayerError } = await supabase
-      .from('mom_dad_players')
+      .from('baby_shower.mom_dad_players')
       .update({
         current_vote: vote,
         is_ready: true
@@ -171,7 +171,7 @@ serve(async (req: Request) => {
     const dadPercentage = totalVotes > 0 ? (newDadVotes / totalVotes) * 100 : 0
 
     const { error: updateRoundError } = await supabase
-      .from('mom_dad_game_sessions')
+      .from('baby_shower.mom_dad_game_sessions')
       .update({
         mom_votes: newMomVotes,
         dad_votes: newDadVotes,
@@ -187,7 +187,7 @@ serve(async (req: Request) => {
 
     // Get all active players to check if everyone voted
     const { data: allPlayers, error: playersError } = await supabase
-      .from('mom_dad_players')
+      .from('baby_shower.mom_dad_players')
       .select('id, current_vote, player_type')
       .eq('lobby_id', lobby.id)
       .is('disconnected_at', null)
@@ -203,7 +203,7 @@ serve(async (req: Request) => {
 
     // Fetch updated round data
     const { data: updatedRound } = await supabase
-      .from('mom_dad_game_sessions')
+      .from('baby_shower.mom_dad_game_sessions')
       .select('*')
       .eq('id', round_id)
       .single()

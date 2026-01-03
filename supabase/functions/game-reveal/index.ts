@@ -92,7 +92,7 @@ serve(async (req: Request) => {
 
     // Fetch lobby
     const { data: lobby, error: lobbyError } = await supabase
-      .from('mom_dad_lobbies')
+      .from('baby_shower.mom_dad_lobbies')
       .select('*')
       .eq('lobby_key', lobby_key)
       .single()
@@ -113,7 +113,7 @@ serve(async (req: Request) => {
 
     // Fetch round
     const { data: round, error: roundError } = await supabase
-      .from('mom_dad_game_sessions')
+      .from('baby_shower.mom_dad_game_sessions')
       .select('*')
       .eq('id', round_id)
       .eq('lobby_id', lobby.id)
@@ -157,7 +157,7 @@ serve(async (req: Request) => {
 
     // Update round to revealed status
     const { error: updateRoundError } = await supabase
-      .from('mom_dad_game_sessions')
+      .from('baby_shower.mom_dad_game_sessions')
       .update({
         status: 'revealed',
         crowd_choice: crowdChoice,
@@ -177,14 +177,14 @@ serve(async (req: Request) => {
 
     // Fetch updated round
     const { data: updatedRound } = await supabase
-      .from('mom_dad_game_sessions')
+      .from('baby_shower.mom_dad_game_sessions')
       .select('*')
       .eq('id', round_id)
       .single()
 
     // Check if this was the last round
     const { data: allRounds } = await supabase
-      .from('mom_dad_game_sessions')
+      .from('baby_shower.mom_dad_game_sessions')
       .select('id, status')
       .eq('lobby_id', lobby.id)
       .order('round_number', { ascending: true })
@@ -195,7 +195,7 @@ serve(async (req: Request) => {
     // If game is complete, update lobby status
     if (isGameComplete) {
       await supabase
-        .from('mom_dad_lobbies')
+        .from('baby_shower.mom_dad_lobbies')
         .update({ 
           status: 'completed',
           updated_at: new Date().toISOString()
