@@ -27,6 +27,17 @@
         console.log('[ENV] Supabase URL configured:', window.ENV.NEXT_PUBLIC_SUPABASE_URL ? '***configured***' : 'missing');
         console.log('[ENV] Supabase Anon Key configured:', window.ENV.NEXT_PUBLIC_SUPABASE_ANON_KEY ? '***configured***' : 'missing');
     </script>
+
+    <script>
+        // Environment variables injected at build time
+        window.ENV = window.ENV || {};
+        window.ENV.NEXT_PUBLIC_SUPABASE_URL = '"https://bkszmvfsfgvdwzacgmfz.supabase.co"';
+        window.ENV.NEXT_PUBLIC_SUPABASE_ANON_KEY = '"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJrc3ptdmZzZmd2ZHd6YWNnbWZ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQzODI1NjMsImV4cCI6MjA3OTk1ODU2M30.BswusP1pfDUStzAU8k-VKPailISimApapNeJGlid8sI"';
+        window.ENV.SUPABASE_SERVICE_ROLE_KEY = '"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJrc3ptdmZzZmd2ZHd6YWNnbWZ6Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NDM4MjU2MywiZXhwIjoyMDc5OTU4NTYzfQ.96o8NDg5cM8H8PRX3dVU9onPJJFGPnGGVlejcdQrNuU"';
+        
+        console.log('[ENV] Supabase URL configured:', window.ENV.NEXT_PUBLIC_SUPABASE_URL ? '***configured***' : 'missing');
+        console.log('[ENV] Supabase Anon Key configured:', window.ENV.NEXT_PUBLIC_SUPABASE_ANON_KEY ? '***configured***' : 'missing');
+    </script>
 </head>
 <body>
     <div id="app">
