@@ -81,16 +81,16 @@
 
     /**
      * Activity card background images
-     * Updated with better images showing clear character faces
-     * Fixing white/blank face issues and transparency problems
+     * Updated with new chibi character images showing clear character faces
+     * Using new high-quality images from New Images folder
      */
     const ACTIVITY_BACKGROUNDS = {
-        guestbook: 'Pictures/Michelle_Jazeel/app_hero_chibi.png',
-        pool: 'Pictures/Theme/chibi_farm_animals.png',
-        quiz: 'Pictures/Michelle_Icon/img2_chibi.png',
-        advice: 'Pictures/Jazeel&Michelle_Icon/asset_chibi_win.png',
-        voting: 'Pictures/Michelle_Icon/img3_chibi.png',
-        'mom-vs-dad': 'Pictures/Michelle_Jazeel/asset_anime_portrait.png'
+        guestbook: 'Pictures/New Images/Michelle/chibi_michelle_excited_red.png',
+        pool: 'Pictures/New Images/Jazeel/chibi_jazeel_eating.png',
+        quiz: 'Pictures/New Images/Jazeel/chibi_jazeel_confused.png',
+        advice: 'Pictures/New Images/Michelle/chibi_michelle_sweet_smile.png',
+        voting: 'Pictures/New Images/Duo/chibi_duo_highfive.png',
+        'mom-vs-dad': 'Pictures/New Images/Duo/chibi_duo_highfive.png'
     };
 
     /**
@@ -121,20 +121,29 @@
     }
 
     /**
-     * Load hero image with lazy loading
+     * Load hero image with enhanced error handling and fallback support
      */
     function loadHeroImage() {
         const heroContainer = document.getElementById('hero-image-container');
-        if (!heroContainer) return;
+        if (!heroContainer) {
+            console.warn('[Gallery] Hero container not found');
+            return;
+        }
 
-        // Use a specific hero image for better presentation
-        const heroImageUrl = ImageService.getImageUrl('Pictures/Michelle_Jazeel/chibi_couple_expecting.png', 'hero');
+        console.log('[Gallery] Loading hero image...');
+
+        // Use the new Duo high-five image for better presentation
+        const heroImageUrl = ImageService.getImageUrl('Pictures/New Images/Duo/chibi_duo_highfive.png', 'hero');
         
         if (heroImageUrl) {
+            // Set loading state immediately
+            heroContainer.classList.add('loading');
+            heroContainer.classList.remove('loaded', 'error');
+            
             heroContainer.innerHTML = `
                 <img 
                     src="${heroImageUrl}" 
-                    alt="Jazeel and Michelle expecting their baby girl"
+                    alt="Jazeel and Michelle expecting their baby girl - High Five"
                     class="hero-img"
                     loading="eager"
                 >
@@ -142,21 +151,25 @@
             
             // Add image wrapper styling after image loads
             const img = heroContainer.querySelector('img');
+            
             img.addEventListener('load', () => {
                 heroContainer.classList.remove('loading');
                 heroContainer.classList.add('loaded');
-                console.log('[Gallery] Hero image loaded');
+                console.log('[Gallery] Hero image loaded successfully');
             });
             
             img.addEventListener('error', () => {
+                console.warn('[Gallery] Hero image failed to load, using fallback');
                 heroContainer.classList.remove('loading');
                 heroContainer.classList.add('error');
-                console.warn('[Gallery] Hero image failed to load');
+                
+                // Fallback to emoji if image fails
+                heroContainer.innerHTML = '<span class="hero-placeholder">👨‍👩‍👧 🍊</span>';
+                console.log('[Gallery] Fallback emoji displayed');
             });
-            
-            heroContainer.classList.add('loading');
         } else {
             // Fallback to emoji if image service not available
+            console.warn('[Gallery] Image service not available, using fallback emoji');
             heroContainer.innerHTML = '<span class="hero-placeholder">👨‍👩‍👧 🍊</span>';
         }
     }

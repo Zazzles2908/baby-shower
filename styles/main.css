@@ -299,12 +299,13 @@ h2 {
     margin-top: 25px;
 }
 
+/* Activity Card - Touch Targets (44x44px minimum) */
 .activity-card {
     background: var(--color-white);
     color: var(--color-text);
     border: 2px solid var(--color-beige);
     border-radius: 20px;
-    padding: 30px 20px;
+    padding: 35px 25px;
     font-size: 1rem;
     cursor: pointer;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -317,7 +318,9 @@ h2 {
     position: relative;
     overflow: hidden;
     text-align: center;
-    min-height: 240px;
+    min-height: 280px;
+    min-width: 44px;
+    min-height: 44px;
     justify-content: center;
 }
 

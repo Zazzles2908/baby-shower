@@ -10,10 +10,34 @@
 
     console.log('[ShoeGame] loading...');
 
-    // Avatar URLs from Supabase Storage
+    // Emotion-based avatar URLs from new Supabase images
+    const AVATAR_EMOTIONS = {
+        happy: {
+            michelle: 'https://bkszmvfsfgvdwzacgmfz.supabase.co/storage/v1/object/public/baby-shower-pictures/Pictures/New Images/Michelle/chibi_michelle_happy_jump.png',
+            jazeel: 'https://bkszmvfsfgvdwzacgmfz.supabase.co/storage/v1/object/public/baby-shower-pictures/Pictures/New Images/Jazeel/chibi_jazeel_boy_action.png'
+        },
+        think: {
+            michelle: 'https://bkszmvfsfgvdwzacgmfz.supabase.co/storage/v1/object/public/baby-shower-pictures/Pictures/New Images/Michelle/chibi_michelle_sweet_smile.png',
+            jazeel: 'https://bkszmvfsfgvdwzacgmfz.supabase.co/storage/v1/object/public/baby-shower-pictures/Pictures/New Images/Jazeel/chibi_jazeel_think.png'
+        },
+        surprise: {
+            michelle: 'https://bkszmvfsfgvdwzacgmfz.supabase.co/storage/v1/object/public/baby-shower-pictures/Pictures/New Images/Michelle/chibi_michelle_surprised.png',
+            jazeel: 'https://bkszmvfsfgvdwzacgmfz.supabase.co/storage/v1/object/public/baby-shower-pictures/Pictures/New Images/Jazeel/chibi_jazeel_confused.png'
+        },
+        love: {
+            michelle: 'https://bkszmvfsfgvdwzacgmfz.supabase.co/storage/v1/object/public/baby-shower-pictures/Pictures/New Images/Michelle/chibi_michelle_cheer.png',
+            jazeel: 'https://bkszmvfsfgvdwzacgmfz.supabase.co/storage/v1/object/public/baby-shower-pictures/Pictures/New Images/Jazeel/chibi_jazeel_love.png'
+        },
+        neutral: {
+            michelle: 'https://bkszmvfsfgvdwzacgmfz.supabase.co/storage/v1/object/public/baby-shower-pictures/Pictures/New Images/Michelle/chibi_mix_icon_1.png',
+            jazeel: 'https://bkszmvfsfgvdwzacgmfz.supabase.co/storage/v1/object/public/baby-shower-pictures/Pictures/New Images/Jazeel/chibi_jazeel_boy_icon.png'
+        }
+    };
+
+    // Keep backward compatibility with old code
     const AVATAR_URLS = {
-        michelle: 'https://bkszmvfsfgvdwzacgmfz.supabase.co/storage/v1/object/public/baby-shower-pictures/Pictures/Michelle_Icon/asset_chibi_avatar_f.png',
-        jazeel: 'https://bkszmvfsfgvdwzacgmfz.supabase.co/storage/v1/object/public/baby-shower-pictures/Pictures/Jazeel_Icon/asset_chibi_avatar_m.png'
+        michelle: AVATAR_EMOTIONS.neutral.michelle,
+        jazeel: AVATAR_EMOTIONS.neutral.jazeel
     };
 
     // Questions in Shoe Game format - "Who is more likely to...?"

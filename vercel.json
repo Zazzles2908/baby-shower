@@ -1,4 +1,5 @@
 {
+  "name": "baby-shower-app",
   "buildCommand": "node inject-env.js",
   "outputDirectory": ".",
   "framework": null,

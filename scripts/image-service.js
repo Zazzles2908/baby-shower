@@ -70,7 +70,38 @@
       'theme/': 'Pictures/Theme/',
       
       // Map subdirectory (for event location)
-      'map/': 'Pictures/Map/'
+      'map/': 'Pictures/Map/',
+
+      // New Images - Michelle (11 images)
+      'new_images/michelle/': 'Pictures/New Images/Michelle/',
+      'new_images/michelle/chibi_china_031.png': 'Pictures/New Images/Michelle/chibi_china_031.png',
+      'new_images/michelle/chibi_girl_blue_ivy.png': 'Pictures/New Images/Michelle/chibi_girl_blue_ivy.png',
+      'new_images/michelle/chibi_girl_red_008.png': 'Pictures/New Images/Michelle/chibi_girl_red_008.png',
+      'new_images/michelle/chibi_michelle_cheer.png': 'Pictures/New Images/Michelle/chibi_michelle_cheer.png',
+      'new_images/michelle/chibi_michelle_excited_red.png': 'Pictures/New Images/Michelle/chibi_michelle_excited_red.png',
+      'new_images/michelle/chibi_michelle_happy_jump.png': 'Pictures/New Images/Michelle/chibi_michelle_happy_jump.png',
+      'new_images/michelle/chibi_michelle_surprised.png': 'Pictures/New Images/Michelle/chibi_michelle_surprised.png',
+      'new_images/michelle/chibi_michelle_sweet_smile.png': 'Pictures/New Images/Michelle/chibi_michelle_sweet_smile.png',
+      'new_images/michelle/chibi_mix_icon_1.png': 'Pictures/New Images/Michelle/chibi_mix_icon_1.png',
+      'new_images/michelle/chibi_mix_icon_2.png': 'Pictures/New Images/Michelle/chibi_mix_icon_2.png',
+      'new_images/michelle/chibi_mix_icon_3.png': 'Pictures/New Images/Michelle/chibi_mix_icon_3.png',
+
+      // New Images - Jazeel (10 images)
+      'new_images/jazeel/': 'Pictures/New Images/Jazeel/',
+      'new_images/jazeel/chibi_boy_mix_icon_1.png': 'Pictures/New Images/Jazeel/chibi_boy_mix_icon_1.png',
+      'new_images/jazeel/chibi_boy_mix_icon_2.png': 'Pictures/New Images/Jazeel/chibi_boy_mix_icon_2.png',
+      'new_images/jazeel/chibi_boy_mix_icon_3.png': 'Pictures/New Images/Jazeel/chibi_boy_mix_icon_3.png',
+      'new_images/jazeel/chibi_jazeel_boy_action.png': 'Pictures/New Images/Jazeel/chibi_jazeel_boy_action.png',
+      'new_images/jazeel/chibi_jazeel_boy_icon.png': 'Pictures/New Images/Jazeel/chibi_jazeel_boy_icon.png',
+      'new_images/jazeel/chibi_jazeel_confused.png': 'Pictures/New Images/Jazeel/chibi_jazeel_confused.png',
+      'new_images/jazeel/chibi_jazeel_eating.png': 'Pictures/New Images/Jazeel/chibi_jazeel_eating.png',
+      'new_images/jazeel/chibi_jazeel_love.png': 'Pictures/New Images/Jazeel/chibi_jazeel_love.png',
+      'new_images/jazeel/chibi_jazeel_sad.png': 'Pictures/New Images/Jazeel/chibi_jazeel_sad.png',
+      'new_images/jazeel/chibi_jazeel_think.png': 'Pictures/New Images/Jazeel/chibi_jazeel_think.png',
+
+      // New Images - Duo (1 image)
+      'new_images/duo/': 'Pictures/New Images/Duo/',
+      'new_images/duo/chibi_duo_highfive.png': 'Pictures/New Images/Duo/chibi_duo_highfive.png'
     };
 
     // Check for exact matches first, then prefix matches
