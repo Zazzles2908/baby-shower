@@ -118,19 +118,47 @@
     }
 
     /**
-     * Fetch lobby status - NOW REAL (FIXES ISSUE #5)
+     * Fetch lobby status - WORKAROUND: Use direct Supabase query instead of Edge Function
      */
     async function fetchLobbyStatus(lobbyKey) {
         try {
-            const url = getEdgeFunctionUrl('lobby-status');
-            const response = await apiFetch(url, {
-                method: 'POST',
-                body: JSON.stringify({ lobby_key: lobbyKey }),
-            });
-            return response;
+            const supabase = getSupabase();
+            if (!supabase) {
+                console.warn('[MomVsDadSimplified] No Supabase client available');
+                return null;
+            }
+
+            // Use direct Supabase query as workaround for Edge Function issue
+            const { data, error } = await supabase
+                .from('baby_shower.mom_dad_lobbies')
+                .select('*')
+                .eq('lobby_key', lobbyKey)
+                .single();
+
+            if (error) {
+                console.warn('[MomVsDadSimplified] Supabase query error:', error.message);
+                return null;
+            }
+
+            if (data) {
+                return {
+                    success: true,
+                    data: {
+                        lobby: data,
+                        players: [],
+                        game_status: {
+                            state: data.status,
+                            rounds_completed: 0,
+                            current_round: null,
+                            can_start: data.status === 'waiting'
+                        }
+                    }
+                };
+            }
+
+            return null;
         } catch (error) {
             console.warn('[MomVsDadSimplified] Failed to fetch lobby status:', error.message);
-            // Return null to indicate unavailable
             return null;
         }
     }
