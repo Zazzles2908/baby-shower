@@ -293,20 +293,16 @@ serve(async (req: Request) => {
 
       console.log(`[game-reveal] GET: Fetching reveal status for scenario ${scenarioId}`)
 
-      // Get scenario details using direct SQL
+      // Get scenario details using direct SQL (simple two-query approach)
       const scenarioResult = await client.queryObject<{
+        id: string
         session_id: string
         scenario_text: string
         mom_option: string
         dad_option: string
-        baby_shower: { game_sessions: { status: string; mom_name: string; dad_name: string }[] }
       }>(
-        `SELECT s.session_id, s.scenario_text, s.mom_option, s.dad_option,
-                (SELECT json_agg(json_build_object('status', gs.status, 'mom_name', gs.mom_name, 'dad_name', gs.dad_name))
-                 FROM baby_shower.game_sessions gs
-                 WHERE gs.id = s.session_id) as baby_shower
-         FROM baby_shower.game_scenarios s
-         WHERE s.id = $1`,
+        `SELECT id, session_id, scenario_text, mom_option, dad_option 
+         FROM baby_shower.game_scenarios WHERE id = $1`,
         [scenarioId]
       )
 
@@ -319,7 +315,27 @@ serve(async (req: Request) => {
       }
 
       const scenario = scenarioResult.rows[0]
-      const sessionData = scenario.baby_shower?.game_sessions?.[0]
+
+      // Then get session data using session_id
+      const sessionResult = await client.queryObject<{
+        status: string
+        mom_name: string
+        dad_name: string
+      }>(
+        `SELECT status, mom_name, dad_name 
+         FROM baby_shower.game_sessions WHERE id = $1`,
+        [scenario.session_id]
+      )
+
+      if (sessionResult.rows.length === 0) {
+        console.error('[game-reveal] Session not found')
+        return new Response(
+          JSON.stringify({ error: 'Session not found' } as ErrorResponse),
+          { status: 404, headers }
+        )
+      }
+
+      const sessionData = sessionResult.rows[0]
       if (!sessionData) {
         console.error('[game-reveal] Failed to get session data')
         return new Response(
@@ -438,31 +454,17 @@ serve(async (req: Request) => {
 
     console.log(`[game-reveal] POST: Triggering reveal for scenario ${body.scenario_id}`)
 
-    // Get scenario and session details using direct SQL
+    // Get scenario details using direct SQL (simple two-query approach)
     const scenarioResult = await client.queryObject<{
+      id: string
       session_id: string
       scenario_text: string
       mom_option: string
       dad_option: string
       round_number: number
-      baby_shower: { game_sessions: { 
-        id: string
-        status: string
-        admin_code: string
-        mom_name: string
-        dad_name: string
-        current_round: number
-        total_rounds: number
-      }[] }
     }>(
-      `SELECT s.session_id, s.scenario_text, s.mom_option, s.dad_option, s.round_number,
-              (SELECT json_agg(json_build_object('id', gs.id, 'status', gs.status, 'admin_code', gs.admin_code,
-                       'mom_name', gs.mom_name, 'dad_name', gs.dad_name, 'current_round', gs.current_round,
-                       'total_rounds', gs.total_rounds))
-               FROM baby_shower.game_sessions gs
-               WHERE gs.id = s.session_id) as baby_shower
-       FROM baby_shower.game_scenarios s
-       WHERE s.id = $1`,
+      `SELECT id, session_id, scenario_text, mom_option, dad_option, round_number 
+       FROM baby_shower.game_scenarios WHERE id = $1`,
       [body.scenario_id]
     )
 
@@ -475,7 +477,31 @@ serve(async (req: Request) => {
     }
 
     const scenario = scenarioResult.rows[0]
-    const sessionData = scenario.baby_shower?.game_sessions?.[0]
+
+    // Then get session data using session_id
+    const sessionResult = await client.queryObject<{
+      id: string
+      status: string
+      admin_code: string
+      mom_name: string
+      dad_name: string
+      current_round: number
+      total_rounds: number
+    }>(
+      `SELECT id, status, admin_code, mom_name, dad_name, current_round, total_rounds 
+       FROM baby_shower.game_sessions WHERE id = $1`,
+      [scenario.session_id]
+    )
+
+    if (sessionResult.rows.length === 0) {
+      console.error('[game-reveal] Session not found')
+      return new Response(
+        JSON.stringify({ error: 'Session not found' } as ErrorResponse),
+        { status: 404, headers }
+      )
+    }
+
+    const sessionData = sessionResult.rows[0]
     if (!sessionData) {
       console.error('[game-reveal] Failed to get session data')
       return new Response(

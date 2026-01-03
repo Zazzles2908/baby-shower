@@ -1,0 +1,315 @@
+{
+  "timestamp": "2026-01-03T10:30:36.297Z",
+  "baseUrl": "https://bkszmvfsfgvdwzacgmfz.supabase.co/functions/v1/",
+  "sessionCode": "XCWFHJ",
+  "adminPin": "1438",
+  "tests": [
+    {
+      "name": "Create new game session",
+      "passed": true,
+      "timestamp": "2026-01-03T10:30:38.901Z",
+      "details": {
+        "session_id": "6e6f3b3b-b1e1-4709-af0b-ca846b0d7d59",
+        "session_code": "Z2K5M3",
+        "admin_code": "5281",
+        "mom_name": "Test Mom",
+        "dad_name": "Test Dad",
+        "status": "setup",
+        "current_round": 0,
+        "total_rounds": 3,
+        "created_at": "2026-01-03T10:30:38.724Z"
+      },
+      "error": null
+    },
+    {
+      "name": "Get existing session by code",
+      "passed": true,
+      "timestamp": "2026-01-03T10:30:41.247Z",
+      "details": {
+        "session_code": "XCWFHJ",
+        "mom_name": "Emma",
+        "dad_name": "Oliver",
+        "status": "voting",
+        "current_round": 0,
+        "total_rounds": 3,
+        "created_at": "2026-01-03T10:04:14.834Z"
+      },
+      "error": null
+    },
+    {
+      "name": "Join session as guest",
+      "passed": true,
+      "timestamp": "2026-01-03T10:30:43.557Z",
+      "details": {
+        "session_code": "XCWFHJ",
+        "mom_name": "Emma",
+        "dad_name": "Oliver",
+        "status": "voting",
+        "current_round": 0,
+        "total_rounds": 3
+      },
+      "error": null
+    },
+    {
+      "name": "Update session status to voting",
+      "passed": true,
+      "timestamp": "2026-01-03T10:30:46.124Z",
+      "details": {
+        "session_code": "XCWFHJ",
+        "status": "voting",
+        "current_round": 0,
+        "total_rounds": 3
+      },
+      "error": null
+    },
+    {
+      "name": "Reject missing mom name",
+      "passed": true,
+      "timestamp": "2026-01-03T10:30:48.569Z",
+      "details": [
+        "Mom name is required"
+      ],
+      "error": null
+    },
+    {
+      "name": "Reject invalid session code",
+      "passed": true,
+      "timestamp": "2026-01-03T10:30:50.655Z",
+      "details": [
+        "Session code must be 6 characters"
+      ],
+      "error": null
+    },
+    {
+      "name": "Generate new scenario",
+      "passed": true,
+      "timestamp": "2026-01-03T10:30:55.791Z",
+      "details": {
+        "scenario_id": "d5a1b1c0-296b-4239-aa78-d0b97643e123",
+        "scenario_text": "It's 3 AM and the baby has a dirty diaper that requires immediate attention.",
+        "mom_option": "Emma would handle it with grace",
+        "dad_option": "Oliver would figure it out",
+        "intensity": "0.50"
+      },
+      "error": null
+    },
+    {
+      "name": "Get current scenario",
+      "passed": true,
+      "timestamp": "2026-01-03T10:30:58.076Z",
+      "details": {
+        "scenario_id": "d5a1b1c0-296b-4239-aa78-d0b97643e123",
+        "scenario_text": "It's 3 AM and the baby has a dirty diaper that requires immediate attention.",
+        "mom_option": "Emma would handle it with grace",
+        "dad_option": "Oliver would figure it out",
+        "intensity": "0.50",
+        "created_at": "2026-01-03T10:30:55.612Z"
+      },
+      "error": null
+    },
+    {
+      "name": "Reject missing session_id",
+      "passed": true,
+      "timestamp": "2026-01-03T10:31:00.157Z",
+      "details": [
+        "session_id is required"
+      ],
+      "error": null
+    },
+    {
+      "name": "Reject invalid theme",
+      "passed": true,
+      "timestamp": "2026-01-03T10:31:02.294Z",
+      "details": [
+        "theme must be one of: general, farm, funny, sleep, feeding, messy, emotional"
+      ],
+      "error": null
+    },
+    {
+      "name": "Submit vote for mom",
+      "passed": false,
+      "timestamp": "2026-01-03T10:31:08.428Z",
+      "details": null,
+      "error": "Voting is not currently active for this scenario"
+    },
+    {
+      "name": "Submit vote for dad",
+      "passed": false,
+      "timestamp": "2026-01-03T10:31:10.975Z",
+      "details": null,
+      "error": "Voting is not currently active for this scenario"
+    },
+    {
+      "name": "Submit additional vote for mom",
+      "passed": false,
+      "timestamp": "2026-01-03T10:31:13.473Z",
+      "details": null,
+      "error": "Voting is not currently active for this scenario"
+    },
+    {
+      "name": "Get vote counts",
+      "passed": true,
+      "timestamp": "2026-01-03T10:31:15.978Z",
+      "details": {
+        "mom_votes": 0,
+        "dad_votes": 0,
+        "mom_pct": 0,
+        "dad_pct": 0,
+        "total_votes": 0
+      },
+      "error": null
+    },
+    {
+      "name": "Update existing vote",
+      "passed": false,
+      "timestamp": "2026-01-03T10:31:18.492Z",
+      "details": null,
+      "error": "Voting is not currently active for this scenario"
+    },
+    {
+      "name": "Reject invalid vote choice",
+      "passed": true,
+      "timestamp": "2026-01-03T10:31:20.608Z",
+      "details": [
+        "vote_choice must be \"mom\" or \"dad\""
+      ],
+      "error": null
+    },
+    {
+      "name": "Reject missing scenario_id",
+      "passed": true,
+      "timestamp": "2026-01-03T10:31:22.756Z",
+      "details": "Provide either vote data (scenario_id, guest_name, vote_choice) or lock data (scenario_id, parent, answer, admin_code)",
+      "error": null
+    },
+    {
+      "name": "Lock mom's answer",
+      "passed": false,
+      "timestamp": "2026-01-03T10:31:25.818Z",
+      "details": null,
+      "error": "Invalid admin PIN"
+    },
+    {
+      "name": "Lock dad's answer",
+      "passed": false,
+      "timestamp": "2026-01-03T10:31:28.211Z",
+      "details": null,
+      "error": "Invalid admin PIN"
+    },
+    {
+      "name": "Reject invalid admin PIN",
+      "passed": true,
+      "timestamp": "2026-01-03T10:31:30.711Z",
+      "details": "Invalid admin PIN",
+      "error": null
+    },
+    {
+      "name": "Reject invalid parent",
+      "passed": true,
+      "timestamp": "2026-01-03T10:31:32.822Z",
+      "details": [
+        "parent must be \"mom\" or \"dad\""
+      ],
+      "error": null
+    },
+    {
+      "name": "Get reveal status",
+      "passed": true,
+      "timestamp": "2026-01-03T10:31:39.775Z",
+      "details": {
+        "scenario_id": "d5a1b1c0-296b-4239-aa78-d0b97643e123",
+        "is_revealed": false,
+        "session_status": "setup",
+        "scenario": {
+          "text": "It's 3 AM and the baby has a dirty diaper that requires immediate attention.",
+          "mom_option": "Emma would handle it with grace",
+          "dad_option": "Oliver would figure it out"
+        },
+        "parents": {
+          "mom_name": "Test Mom",
+          "dad_name": "Test Dad"
+        },
+        "result": null
+      },
+      "error": null
+    },
+    {
+      "name": "Trigger reveal",
+      "passed": false,
+      "timestamp": "2026-01-03T10:31:42.301Z",
+      "details": null,
+      "error": "Invalid admin PIN"
+    },
+    {
+      "name": "Reject double reveal",
+      "passed": true,
+      "timestamp": "2026-01-03T10:31:44.839Z",
+      "details": "Invalid admin PIN",
+      "error": null
+    },
+    {
+      "name": "Reject missing scenario_id",
+      "passed": true,
+      "timestamp": "2026-01-03T10:31:46.942Z",
+      "details": [
+        "scenario_id is required"
+      ],
+      "error": null
+    },
+    {
+      "name": "Reject invalid admin PIN for reveal",
+      "passed": true,
+      "timestamp": "2026-01-03T10:31:49.433Z",
+      "details": "Invalid admin PIN",
+      "error": null
+    },
+    {
+      "name": "Handle invalid JSON",
+      "passed": true,
+      "timestamp": "2026-01-03T10:31:52.085Z",
+      "details": 500,
+      "error": null
+    },
+    {
+      "name": "Reject GET on POST-only endpoint",
+      "passed": false,
+      "timestamp": "2026-01-03T10:31:54.082Z",
+      "details": 400,
+      "error": null
+    },
+    {
+      "name": "Handle missing content type",
+      "passed": true,
+      "timestamp": "2026-01-03T10:31:56.153Z",
+      "details": 400,
+      "error": null
+    },
+    {
+      "name": "Timeout handling works",
+      "passed": true,
+      "timestamp": "2026-01-03T10:31:57.158Z",
+      "details": null,
+      "error": null
+    }
+  ],
+  "summary": {
+    "total": 30,
+    "passed": 22,
+    "failed": 8,
+    "skipped": 0
+  },
+  "sessionData": {
+    "sessionId": "6e6f3b3b-b1e1-4709-af0b-ca846b0d7d59",
+    "momName": "Emma",
+    "dadName": "Oliver",
+    "scenarios": [
+      {
+        "scenario_id": "d5a1b1c0-296b-4239-aa78-d0b97643e123",
+        "scenario_text": "It's 3 AM and the baby has a dirty diaper that requires immediate attention.",
+        "mom_option": "Emma would handle it with grace",
+        "dad_option": "Oliver would figure it out",
+        "intensity": "0.50"
+      }
+    ]
+  }
+}

@@ -19,6 +19,7 @@
     let userName = '';
     let voted = false;
     let realtimeSubscription = null;
+    let votePollingInterval = null;
     let chibiMom = null;
     let chibiDad = null;
     let tugOfWarBar = null;
@@ -213,6 +214,103 @@
             realtimeSubscription = null;
             console.log('[MomVsDad] Unsubscribed from game updates');
         }
+    }
+
+    /**
+     * Poll for vote count updates (only when on voting screen)
+     */
+    function startVotePolling() {
+        console.log('[MomVsDad] Starting vote count polling...');
+
+        // Clear any existing vote polling
+        if (votePollingInterval) {
+            clearInterval(votePollingInterval);
+        }
+
+        const config = getSupabaseConfig();
+        if (!config.url || !currentScenario) {
+            console.log('[MomVsDad] Cannot start vote polling - no config or scenario');
+            return;
+        }
+
+        // Poll every 2 seconds for updated vote counts
+        votePollingInterval = setInterval(async () => {
+            try {
+                // Call game-vote function to get current vote counts
+                // Using GET request with query parameters
+                const url = new URL(`${config.url}/functions/v1/game-vote`);
+                url.searchParams.append('scenario_id', currentScenario.id);
+
+                const response = await fetch(url.toString(), {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${config.anonKey}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+
+                    // Update UI with new vote counts
+                    if (data && (data.mom_pct !== undefined || data.mom_votes !== undefined)) {
+                        // Calculate percentages if not provided
+                        const momPct = data.mom_pct !== undefined
+                            ? data.mom_pct
+                            : calculatePercentage(data.mom_votes, data.dad_votes);
+                        const dadPct = data.dad_pct !== undefined
+                            ? data.dad_pct
+                            : 100 - momPct;
+
+                        // Update tug-of-war bar
+                        updateTugOfWar(momPct, dadPct);
+
+                        // Update percentage text displays
+                        const momPctText = document.querySelector('.mom-pct');
+                        const dadPctText = document.querySelector('.dad-pct');
+
+                        if (momPctText) {
+                            momPctText.textContent = `${Math.round(momPct)}%`;
+                        }
+                        if (dadPctText) {
+                            dadPctText.textContent = `${Math.round(dadPct)}%`;
+                        }
+
+                        console.log('[MomVsDad] Vote counts updated:', {
+                            mom: momPct,
+                            dad: dadPct,
+                            votes: data
+                        });
+                    }
+                }
+            } catch (error) {
+                console.error('[MomVsDad] Vote polling error:', error.message);
+                // Don't stop polling on error, just log it
+            }
+        }, 2000); // Poll every 2 seconds
+
+        console.log('[MomVsDad] Vote polling started');
+    }
+
+    /**
+     * Stop vote count polling
+     */
+    function stopVotePolling() {
+        if (votePollingInterval) {
+            clearInterval(votePollingInterval);
+            votePollingInterval = null;
+            console.log('[MomVsDad] Vote polling stopped');
+        }
+    }
+
+    /**
+     * Calculate percentage from vote counts
+     */
+    function calculatePercentage(momVotes, dadVotes) {
+        if (!momVotes && !dadVotes) return 50; // Default to 50-50 if no votes
+        const total = (momVotes || 0) + (dadVotes || 0);
+        if (total === 0) return 50;
+        return ((momVotes || 0) / total) * 100;
     }
 
     /**
@@ -784,6 +882,9 @@
      * Display session join UI
      */
     function showJoinScreen() {
+        // Stop vote polling when leaving voting screen
+        stopVotePolling();
+
         const gameContainer = document.getElementById('mom-vs-dad-game');
         if (!gameContainer) return;
 
@@ -871,6 +972,9 @@
      * Display admin login UI
      */
     function showAdminLoginScreen() {
+        // Stop vote polling when leaving voting screen
+        stopVotePolling();
+
         const gameContainer = document.getElementById('mom-vs-dad-game');
         if (!gameContainer) return;
 
@@ -958,6 +1062,9 @@
         const gameContainer = document.getElementById('mom-vs-dad-game');
         if (!gameContainer) return;
 
+        // Stop any existing vote polling
+        stopVotePolling();
+
         gameContainer.innerHTML = createVotingScreen();
 
         // Initialize chibi avatars
@@ -1015,6 +1122,9 @@
 
         // Update vote buttons
         updateVoteButtons();
+
+        // Start polling for vote counts
+        startVotePolling();
 
         console.log('[MomVsDad] Voting screen displayed');
     }
@@ -1172,6 +1282,9 @@
      */
     function showResults(result) {
         console.log('[MomVsDad] Showing results:', result);
+
+        // Stop vote polling when showing results
+        stopVotePolling();
 
         const gameContainer = document.getElementById('mom-vs-dad-game');
         if (!gameContainer) return;

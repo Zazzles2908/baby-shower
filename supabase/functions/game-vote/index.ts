@@ -155,36 +155,46 @@ serve(async (req: Request) => {
     let action: 'vote' | 'lock' | 'unknown' = 'unknown'
 
     if (contentType?.includes('application/json')) {
-      // Read body only once
-      const body = await req.json()
+      // Read body as text first to prevent multiple consumption issues
+      let bodyText: string
+      try {
+        bodyText = await req.text()
+      } catch (textError) {
+        console.error('[game-vote] Failed to read request body:', textError)
+        return new Response(
+          JSON.stringify({ error: 'Failed to read request body' } as ErrorResponse),
+          { status: 400, headers }
+        )
+      }
+      
+      // Parse JSON manually to avoid body consumption issues
+      let bodyData: unknown
+      try {
+        bodyData = JSON.parse(bodyText)
+      } catch (jsonError) {
+        console.error('[game-vote] Failed to parse JSON:', jsonError)
+        return new Response(
+          JSON.stringify({ error: 'Invalid JSON in request body' } as ErrorResponse),
+          { status: 400, headers }
+        )
+      }
       
       // Check if this is a lock answer request (has admin_code)
-      if (body.admin_code && body.parent && body.answer) {
-        action = 'lock'
-        // Handle lock request
-        return await handleLockAnswer(client, body, headers)
+      if (bodyData && typeof bodyData === 'object' && 'admin_code' in bodyData && 'parent' in bodyData && 'answer' in bodyData) {
+        return await handleLockAnswer(client, bodyData as LockAnswerRequest, headers)
       }
       // Otherwise treat as vote submission
-      else if (body.scenario_id && body.guest_name && body.vote_choice) {
-        action = 'vote'
-        // Handle vote request
-        return await handleSubmitVote(client, body, headers)
+      else if (bodyData && typeof bodyData === 'object' && 'scenario_id' in bodyData && 'guest_name' in bodyData && 'vote_choice' in bodyData) {
+        return await handleSubmitVote(client, bodyData as SubmitVoteRequest, headers)
       }
     }
 
-    if (action === 'unknown') {
-      return new Response(
-        JSON.stringify({ 
-          error: 'Invalid request format',
-          details: 'Provide either vote data (scenario_id, guest_name, vote_choice) or lock data (scenario_id, parent, answer, admin_code)'
-        } as ErrorResponse),
-        { status: 400, headers }
-      )
-    }
-
-    // Fallback for unknown action
+    // If we get here, action is unknown
     return new Response(
-      JSON.stringify({ error: 'Unknown action' } as ErrorResponse),
+      JSON.stringify({ 
+        error: 'Invalid request format',
+        details: 'Provide either vote data (scenario_id, guest_name, vote_choice) or lock data (scenario_id, parent, answer, admin_code)'
+      } as ErrorResponse),
       { status: 400, headers }
     )
 
@@ -240,293 +250,276 @@ async function handleSubmitVote(
 
   console.log(`[game-vote] POST: Guest ${body.guest_name} voting ${body.vote_choice} for scenario ${body.scenario_id}`)
 
-  // ... rest of vote handling code ...
+  // Get scenario and verify session status using direct SQL
+  // First, get the scenario
+  const scenarioResult = await client.queryObject<{
+    session_id: string
+  }>(
+    `SELECT session_id FROM baby_shower.game_scenarios WHERE id = $1`,
+    [body.scenario_id]
+  )
 
-      // Get scenario and verify session status using direct SQL
-      const scenarioResult = await client.queryObject<{
-        session_id: string
-        baby_shower: { game_sessions: { status: string; admin_code: string }[] }
-      }>(
-        `SELECT s.session_id, 
-                (SELECT json_agg(json_build_object('status', gs.status, 'admin_code', gs.admin_code))
-                 FROM baby_shower.game_sessions gs
-                 WHERE gs.id = s.session_id) as baby_shower
-         FROM baby_shower.game_scenarios s
-         WHERE s.id = $1`,
-        [body.scenario_id]
-      )
-
-      if (scenarioResult.rows.length === 0) {
-        console.error('[game-vote] Scenario not found')
-        return new Response(
-          JSON.stringify({ error: 'Scenario not found' } as ErrorResponse),
-          { status: 404, headers }
-        )
-      }
-
-      const scenario = scenarioResult.rows[0]
-      const sessionData = scenario.baby_shower?.game_sessions?.[0]
-      if (!sessionData) {
-        console.error('[game-vote] Failed to get session data')
-        return new Response(
-          JSON.stringify({ error: 'Session data not found' } as ErrorResponse),
-          { status: 404, headers }
-        )
-      }
-
-      // Check if session is in voting status
-      if (sessionData.status !== 'voting') {
-        console.error(`[game-vote] Session not in voting status. Current status: ${sessionData.status}`)
-        return new Response(
-          JSON.stringify({ 
-            error: 'Voting is not currently active for this scenario',
-            details: { current_status: sessionData.status }
-          } as ErrorResponse),
-          { status: 400, headers }
-        )
-      }
-
-      // Check if guest already voted for this scenario
-      const existingVoteResult = await client.queryObject<{ id: string }>(
-        `SELECT id FROM baby_shower.game_votes 
-         WHERE scenario_id = $1 AND guest_name = $2`,
-        [body.scenario_id, body.guest_name.trim()]
-      )
-
-      if (existingVoteResult.rows.length > 0) {
-        console.log(`[game-vote] Guest ${body.guest_name} already voted, updating instead`)
-        
-        // Update existing vote
-        await client.queryObject(
-          `UPDATE baby_shower.game_votes 
-           SET vote_choice = $1 
-           WHERE scenario_id = $2 AND guest_name = $3`,
-          [body.vote_choice, body.scenario_id, body.guest_name.trim()]
-        )
-      } else {
-        // Insert new vote
-        await client.queryObject(
-          `INSERT INTO baby_shower.game_votes (scenario_id, guest_name, vote_choice)
-           VALUES ($1, $2, $3)`,
-          [body.scenario_id, body.guest_name.trim(), body.vote_choice]
-        )
-      }
-
-      console.log(`[game-vote] Vote recorded successfully for ${body.guest_name}`)
-
-      // Get updated vote counts
-      const allVotesResult = await client.queryObject<{ vote_choice: string }>(
-        `SELECT vote_choice FROM baby_shower.game_votes WHERE scenario_id = $1`,
-        [body.scenario_id]
-      )
-
-      const momVotes = allVotesResult.rows.filter(v => v.vote_choice === 'mom').length
-      const dadVotes = allVotesResult.rows.filter(v => v.vote_choice === 'dad').length
-      const voteCounts = calculatePercentages(momVotes, dadVotes)
-
-      // Note: Realtime broadcast would need to be implemented differently with direct Postgres
-      // This is a limitation of bypassing PostgREST
-
-      return new Response(
-        JSON.stringify({
-          success: true,
-          data: {
-            vote_counts: voteCounts,
-            your_vote: {
-              scenario_id: body.scenario_id,
-              guest_name: body.guest_name.trim(),
-              choice: body.vote_choice,
-            },
-          },
-        }),
-        { status: 200, headers }
-      )
-    }
-
-    // Handle lock parent answer
-    if (action === 'lock') {
-      const body: LockAnswerRequest = await req.json()
-
-      // Validate required fields
-      const errors: string[] = []
-      
-      if (!body.scenario_id) {
-        errors.push('scenario_id is required')
-      }
-      if (!body.parent || !['mom', 'dad'].includes(body.parent)) {
-        errors.push('parent must be "mom" or "dad"')
-      }
-      if (!body.answer || !['mom', 'dad'].includes(body.answer)) {
-        errors.push('answer must be "mom" or "dad"')
-      }
-      if (!body.admin_code || body.admin_code.length !== 4) {
-        errors.push('admin_code must be a 4-digit PIN')
-      }
-
-      if (errors.length > 0) {
-        return new Response(
-          JSON.stringify({ error: 'Validation failed', details: errors } as ErrorResponse),
-          { status: 400, headers }
-        )
-      }
-
-      console.log(`[game-vote] POST: ${body.parent} locking answer for scenario ${body.scenario_id}`)
-
-      // Get scenario and verify admin code using direct SQL
-      const scenarioResult = await client.queryObject<{
-        session_id: string
-        baby_shower: { game_sessions: { admin_code: string; status: string; mom_name: string; dad_name: string }[] }
-      }>(
-        `SELECT s.session_id, 
-                (SELECT json_agg(json_build_object('admin_code', gs.admin_code, 'status', gs.status, 
-                         'mom_name', gs.mom_name, 'dad_name', gs.dad_name))
-                 FROM baby_shower.game_sessions gs
-                 WHERE gs.id = s.session_id) as baby_shower
-         FROM baby_shower.game_scenarios s
-         WHERE s.id = $1`,
-        [body.scenario_id]
-      )
-
-      if (scenarioResult.rows.length === 0) {
-        console.error('[game-vote] Scenario not found')
-        return new Response(
-          JSON.stringify({ error: 'Scenario not found' } as ErrorResponse),
-          { status: 404, headers }
-        )
-      }
-
-      const scenario = scenarioResult.rows[0]
-      const sessionData = scenario.baby_shower?.game_sessions?.[0]
-      if (!sessionData) {
-        console.error('[game-vote] Failed to get session data')
-        return new Response(
-          JSON.stringify({ error: 'Session data not found' } as ErrorResponse),
-          { status: 404, headers }
-        )
-      }
-
-      // Verify admin code
-      if (sessionData.admin_code !== body.admin_code) {
-        console.error('[game-vote] Invalid admin code')
-        return new Response(
-          JSON.stringify({ error: 'Invalid admin PIN' } as ErrorResponse),
-          { status: 401, headers }
-        )
-      }
-
-      // Check if session is in voting status
-      if (sessionData.status !== 'voting') {
-        console.error(`[game-vote] Session not in voting status. Current status: ${sessionData.status}`)
-        return new Response(
-          JSON.stringify({ 
-            error: 'Cannot lock answers - voting is not active',
-            details: { current_status: sessionData.status }
-          } as ErrorResponse),
-          { status: 400, headers }
-        )
-      }
-
-      // Check if game_answers record exists for this scenario
-      const gameAnswerResult = await client.queryObject<{
-        id: string
-        mom_locked: boolean
-        dad_locked: boolean
-        mom_answer: string
-        dad_answer: string
-      }>(
-        `SELECT id, mom_locked, dad_locked, mom_answer, dad_answer 
-         FROM baby_shower.game_answers WHERE scenario_id = $1`,
-        [body.scenario_id]
-      )
-
-      let gameAnswer = gameAnswerResult.rows[0]
-
-      // Prepare update data
-      let momLocked = gameAnswer?.mom_locked ?? false
-      let dadLocked = gameAnswer?.dad_locked ?? false
-      let momAnswer = gameAnswer?.mom_answer
-      let dadAnswer = gameAnswer?.dad_answer
-
-      if (body.parent === 'mom') {
-        momLocked = true
-        momAnswer = body.answer
-      } else {
-        dadLocked = true
-        dadAnswer = body.answer
-      }
-
-      let lockStatus: LockStatus
-
-      if (gameAnswer) {
-        // Update existing record
-        await client.queryObject(
-          `UPDATE baby_shower.game_answers 
-           SET mom_locked = $1, dad_locked = $2, mom_answer = $3, dad_answer = $4
-           WHERE scenario_id = $5`,
-          [momLocked, dadLocked, momAnswer, dadAnswer, body.scenario_id]
-        )
-
-        lockStatus = {
-          locked: true,
-          both_locked: momLocked && dadLocked,
-          mom_locked: momLocked,
-          dad_locked: dadLocked,
-          mom_answer: momAnswer ?? null,
-          dad_answer: dadAnswer ?? null,
-        }
-      } else {
-        // Create new record
-        await client.queryObject(
-          `INSERT INTO baby_shower.game_answers 
-           (scenario_id, mom_locked, dad_locked, mom_answer, dad_answer)
-           VALUES ($1, $2, $3, $4, $5)`,
-          [body.scenario_id, momLocked, dadLocked, momAnswer, dadAnswer]
-        )
-
-        lockStatus = {
-          locked: true,
-          both_locked: false,
-          mom_locked: body.parent === 'mom',
-          dad_locked: body.parent === 'dad',
-          mom_answer: body.parent === 'mom' ? body.answer : null,
-          dad_answer: body.parent === 'dad' ? body.answer : null,
-        }
-      }
-
-      console.log(`[game-vote] ${body.parent} successfully locked answer: ${body.answer}`)
-
-      // Note: Realtime broadcast would need to be implemented differently with direct Postgres
-
-      return new Response(
-        JSON.stringify({
-          success: true,
-          data: lockStatus,
-        }),
-        { status: 200, headers }
-      )
-    }
-
-    // Fallback for unknown action
+  if (scenarioResult.rows.length === 0) {
+    console.error('[game-vote] Scenario not found')
     return new Response(
-      JSON.stringify({ error: 'Unknown action' } as ErrorResponse),
+      JSON.stringify({ error: 'Scenario not found' } as ErrorResponse),
+      { status: 404, headers }
+    )
+  }
+
+  const scenario = scenarioResult.rows[0]
+
+  // Then, get the session status
+  const sessionResult = await client.queryObject<{
+    status: string
+    admin_code: string
+  }>(
+    `SELECT status, admin_code FROM baby_shower.game_sessions WHERE id = $1`,
+    [scenario.session_id]
+  )
+
+  if (sessionResult.rows.length === 0) {
+    console.error('[game-vote] Session not found')
+    return new Response(
+      JSON.stringify({ error: 'Session not found' } as ErrorResponse),
+      { status: 404, headers }
+    )
+  }
+
+  const sessionData = sessionResult.rows[0]
+  console.log(`[game-vote] Session status: ${sessionData.status}`)
+
+  // Check if session is in voting status
+  if (sessionData.status !== 'voting') {
+    console.error(`[game-vote] Session not in voting status. Current status: ${sessionData.status}`)
+    return new Response(
+      JSON.stringify({ 
+        error: 'Voting is not currently active for this scenario',
+        details: { current_status: sessionData.status }
+      } as ErrorResponse),
       { status: 400, headers }
     )
+  }
 
-  } catch (err) {
-    console.error('[game-vote] Edge Function error:', err)
-    const errorMessage = err instanceof Error ? err.message : 'Internal server error'
+  // Check if guest already voted for this scenario
+  const existingVoteResult = await client.queryObject<{ id: string }>(
+    `SELECT id FROM baby_shower.game_votes 
+     WHERE scenario_id = $1 AND guest_name = $2`,
+    [body.scenario_id, body.guest_name.trim()]
+  )
+
+  if (existingVoteResult.rows.length > 0) {
+    console.log(`[game-vote] Guest ${body.guest_name} already voted, updating instead`)
     
-    return new Response(
-      JSON.stringify({ error: errorMessage } as ErrorResponse),
-      { status: 500, headers }
+    // Update existing vote
+    await client.queryObject(
+      `UPDATE baby_shower.game_votes 
+       SET vote_choice = $1 
+       WHERE scenario_id = $2 AND guest_name = $3`,
+      [body.vote_choice, body.scenario_id, body.guest_name.trim()]
     )
-  } finally {
-    if (client) {
-      try {
-        await client.end()
-      } catch (e) {
-        console.error('[game-vote] Error closing database connection:', e)
-      }
+  } else {
+    // Insert new vote
+    await client.queryObject(
+      `INSERT INTO baby_shower.game_votes (scenario_id, guest_name, vote_choice)
+       VALUES ($1, $2, $3)`,
+      [body.scenario_id, body.guest_name.trim(), body.vote_choice]
+    )
+  }
+
+  console.log(`[game-vote] Vote recorded successfully for ${body.guest_name}`)
+
+  // Get updated vote counts
+  const allVotesResult = await client.queryObject<{ vote_choice: string }>(
+    `SELECT vote_choice FROM baby_shower.game_votes WHERE scenario_id = $1`,
+    [body.scenario_id]
+  )
+
+  const momVotes = allVotesResult.rows.filter(v => v.vote_choice === 'mom').length
+  const dadVotes = allVotesResult.rows.filter(v => v.vote_choice === 'dad').length
+  const voteCounts = calculatePercentages(momVotes, dadVotes)
+
+  return new Response(
+    JSON.stringify({
+      success: true,
+      data: {
+        vote_counts: voteCounts,
+        your_vote: {
+          scenario_id: body.scenario_id,
+          guest_name: body.guest_name.trim(),
+          choice: body.vote_choice,
+        },
+      },
+    }),
+    { status: 200, headers }
+  )
+}
+
+/**
+ * Handle locking parent answer
+ */
+async function handleLockAnswer(
+  client: Client,
+  body: LockAnswerRequest,
+  headers: Headers
+): Promise<Response> {
+  // Validate required fields
+  const errors: string[] = []
+  
+  if (!body.scenario_id) {
+    errors.push('scenario_id is required')
+  }
+  if (!body.parent || !['mom', 'dad'].includes(body.parent)) {
+    errors.push('parent must be "mom" or "dad"')
+  }
+  if (!body.answer || !['mom', 'dad'].includes(body.answer)) {
+    errors.push('answer must be "mom" or "dad"')
+  }
+  if (!body.admin_code || body.admin_code.length !== 4) {
+    errors.push('admin_code must be a 4-digit PIN')
+  }
+
+  if (errors.length > 0) {
+    return new Response(
+      JSON.stringify({ error: 'Validation failed', details: errors } as ErrorResponse),
+      { status: 400, headers }
+    )
+  }
+
+  console.log(`[game-vote] POST: ${body.parent} locking answer for scenario ${body.scenario_id}`)
+
+  // Get scenario first to find session_id
+  const scenarioResult = await client.queryObject<{
+    session_id: string
+  }>(
+    `SELECT session_id FROM baby_shower.game_scenarios WHERE id = $1`,
+    [body.scenario_id]
+  )
+
+  if (scenarioResult.rows.length === 0) {
+    console.error('[game-vote] Scenario not found')
+    return new Response(
+      JSON.stringify({ error: 'Scenario not found' } as ErrorResponse),
+      { status: 404, headers }
+    )
+  }
+
+  const scenario = scenarioResult.rows[0]
+
+  // Then, get session data (status and admin_code)
+  const sessionResult = await client.queryObject<{
+    status: string
+    admin_code: string
+  }>(
+    `SELECT status, admin_code FROM baby_shower.game_sessions WHERE id = $1`,
+    [scenario.session_id]
+  )
+
+  if (sessionResult.rows.length === 0) {
+    console.error('[game-vote] Session not found')
+    return new Response(
+      JSON.stringify({ error: 'Session not found' } as ErrorResponse),
+      { status: 404, headers }
+    )
+  }
+
+  const sessionData = sessionResult.rows[0]
+
+  // Verify admin code
+  if (sessionData.admin_code !== body.admin_code) {
+    console.error('[game-vote] Invalid admin code')
+    return new Response(
+      JSON.stringify({ error: 'Invalid admin PIN' } as ErrorResponse),
+      { status: 401, headers }
+    )
+  }
+
+  // Check if session is in voting status
+  if (sessionData.status !== 'voting') {
+    console.error(`[game-vote] Session not in voting status. Current status: ${sessionData.status}`)
+    return new Response(
+      JSON.stringify({ 
+        error: 'Cannot lock answers - voting is not active',
+        details: { current_status: sessionData.status }
+      } as ErrorResponse),
+      { status: 400, headers }
+    )
+  }
+
+  // Check if game_answers record exists for this scenario
+  const gameAnswerResult = await client.queryObject<{
+    id: string
+    mom_locked: boolean
+    dad_locked: boolean
+    mom_answer: string
+    dad_answer: string
+  }>(
+    `SELECT id, mom_locked, dad_locked, mom_answer, dad_answer 
+     FROM baby_shower.game_answers WHERE scenario_id = $1`,
+    [body.scenario_id]
+  )
+
+  let gameAnswer = gameAnswerResult.rows[0]
+
+  // Prepare update data
+  let momLocked = gameAnswer?.mom_locked ?? false
+  let dadLocked = gameAnswer?.dad_locked ?? false
+  let momAnswer = gameAnswer?.mom_answer
+  let dadAnswer = gameAnswer?.dad_answer
+
+  if (body.parent === 'mom') {
+    momLocked = true
+    momAnswer = body.answer
+  } else {
+    dadLocked = true
+    dadAnswer = body.answer
+  }
+
+  let lockStatus: LockStatus
+
+  if (gameAnswer) {
+    // Update existing record
+    await client.queryObject(
+      `UPDATE baby_shower.game_answers 
+       SET mom_locked = $1, dad_locked = $2, mom_answer = $3, dad_answer = $4
+       WHERE scenario_id = $5`,
+      [momLocked, dadLocked, momAnswer, dadAnswer, body.scenario_id]
+    )
+
+    lockStatus = {
+      locked: true,
+      both_locked: momLocked && dadLocked,
+      mom_locked: momLocked,
+      dad_locked: dadLocked,
+      mom_answer: momAnswer ?? null,
+      dad_answer: dadAnswer ?? null,
+    }
+  } else {
+    // Create new record
+    await client.queryObject(
+      `INSERT INTO baby_shower.game_answers 
+       (scenario_id, mom_locked, dad_locked, mom_answer, dad_answer)
+       VALUES ($1, $2, $3, $4, $5)`,
+      [body.scenario_id, momLocked, dadLocked, momAnswer, dadAnswer]
+    )
+
+    lockStatus = {
+      locked: true,
+      both_locked: false,
+      mom_locked: body.parent === 'mom',
+      dad_locked: body.parent === 'dad',
+      mom_answer: body.parent === 'mom' ? body.answer : null,
+      dad_answer: body.parent === 'dad' ? body.answer : null,
     }
   }
-})
+
+  console.log(`[game-vote] ${body.parent} successfully locked answer: ${body.answer}`)
+
+  return new Response(
+    JSON.stringify({
+      success: true,
+      data: lockStatus,
+    }),
+    { status: 200, headers }
+  )
+}
