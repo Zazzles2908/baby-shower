@@ -22,6 +22,8 @@
     async function apiFetch(url, options = {}) {
         const headers = {
             'Content-Type': 'application/json',
+            // Add security headers
+            ...(window.SECURITY ? window.SECURITY.getSecurityHeaders() : {}),
             ...options.headers,
         };
 
@@ -64,13 +66,16 @@
     async function submitGuestbook(data) {
         const url = `${SUPABASE_URL}/functions/v1/guestbook`;
         
+        // Sanitize inputs using security utilities
+        const sanitizedData = {
+            name: window.SECURITY ? window.SECURITY.sanitizeName(data.name || '') : (data.name || '').trim(),
+            message: window.SECURITY ? window.SECURITY.sanitizeText(data.message || '', { maxLength: 1000, allowNewlines: true }) : (data.message || '').trim(),
+            relationship: window.SECURITY ? window.SECURITY.sanitizeText(data.relationship || '', { maxLength: 50 }) : (data.relationship || '').trim(),
+        };
+        
         return apiFetch(url, {
             method: 'POST',
-            body: JSON.stringify({
-                name: data.name?.trim() || '',
-                message: data.message?.trim() || '',
-                relationship: data.relationship?.trim() || '',
-            }),
+            body: JSON.stringify(sanitizedData),
         });
     }
 
@@ -80,10 +85,15 @@
     async function submitVote(data) {
         const url = `${SUPABASE_URL}/functions/vote`;
         
+        // Sanitize name array
+        const sanitizedNames = Array.isArray(data.names) ? data.names.map(name => {
+            return window.SECURITY ? window.SECURITY.sanitizeName(name) : name.trim();
+        }) : [];
+        
         return apiFetch(url, {
             method: 'POST',
             body: JSON.stringify({
-                names: Array.isArray(data.names) ? data.names : [],
+                names: sanitizedNames,
             }),
         });
     }
@@ -94,13 +104,16 @@
     async function submitPool(data) {
         const url = `${SUPABASE_URL}/functions/pool`;
         
+        // Sanitize inputs
+        const sanitizedData = {
+            name: window.SECURITY ? window.SECURITY.sanitizeName(data.name || '') : (data.name || '').trim(),
+            prediction: window.SECURITY ? window.SECURITY.sanitizeText(data.prediction || '', { maxLength: 200 }) : (data.prediction || '').trim(),
+            dueDate: window.SECURITY ? window.SECURITY.sanitizeText(data.dueDate || '', { maxLength: 50 }) : (data.dueDate || '').trim(),
+        };
+        
         return apiFetch(url, {
             method: 'POST',
-            body: JSON.stringify({
-                name: data.name?.trim() || '',
-                prediction: data.prediction?.trim() || '',
-                dueDate: data.dueDate || '',
-            }),
+            body: JSON.stringify(sanitizedData),
         });
     }
 
@@ -110,10 +123,20 @@
     async function submitQuiz(data) {
         const url = `${SUPABASE_URL}/functions/quiz`;
         
+        // Sanitize quiz data
+        const sanitizedAnswers = {};
+        if (data.answers && typeof data.answers === 'object') {
+            Object.entries(data.answers).forEach(([key, value]) => {
+                sanitizedAnswers[key] = window.SECURITY ? 
+                    window.SECURITY.sanitizeText(value.toString(), { maxLength: 100 }) : 
+                    value.toString().trim();
+            });
+        }
+        
         return apiFetch(url, {
             method: 'POST',
             body: JSON.stringify({
-                answers: data.answers || {},
+                answers: sanitizedAnswers,
                 score: Number(data.score) || 0,
                 totalQuestions: Number(data.totalQuestions) || 0,
             }),
@@ -126,12 +149,19 @@
     async function submitAdvice(data) {
         const url = `${SUPABASE_URL}/functions/advice`;
         
+        // Sanitize advice data
+        const sanitizedData = {
+            advice: window.SECURITY ? 
+                window.SECURITY.sanitizeText(data.advice || '', { maxLength: 1000, allowNewlines: true }) : 
+                (data.advice || '').trim(),
+            category: window.SECURITY ? 
+                window.SECURITY.sanitizeText(data.category || 'general', { maxLength: 50 }) : 
+                (data.category || 'general').trim(),
+        };
+        
         return apiFetch(url, {
             method: 'POST',
-            body: JSON.stringify({
-                advice: data.advice?.trim() || '',
-                category: data.category?.trim() || 'general',
-            }),
+            body: JSON.stringify(sanitizedData),
         });
     }
 

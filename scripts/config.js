@@ -17,9 +17,58 @@
                                     window.ENV?.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
                                     '';
 
-    // Fallback to .env.local values if environment variables not available
-    const SUPABASE_URL = ENV_SUPABASE_URL || 'https://bkszmvfsfgvdwzacgmfz.supabase.co';
-    const SUPABASE_ANON_KEY = ENV_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJrc3ptdmZzZmd2ZHd6YWNnbWZ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQzODI1NjMsImV4cCI6MjA3OTk1ODU2M30.BswusP1pfDUStzAU8k-VKPailISimApapNeJGlid8sI';
+    // Validate environment variables - no hardcoded fallbacks for security
+    if (!ENV_SUPABASE_URL || !ENV_SUPABASE_ANON_KEY) {
+        console.error('CRITICAL: Supabase environment variables not configured. Please set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in your environment.');
+        // Set empty values to prevent runtime errors
+        window.ENV_CONFIG_ERROR = 'Missing required environment variables';
+    }
+
+    const SUPABASE_URL = ENV_SUPABASE_URL;
+    const SUPABASE_ANON_KEY = ENV_SUPABASE_ANON_KEY;
+
+    /**
+     * Security validation function
+     * @returns {Object} Validation results
+     */
+    function validateSecurityConfig() {
+        const errors = [];
+        const warnings = [];
+
+        // Check for required environment variables
+        if (!SUPABASE_URL) {
+            errors.push('SUPABASE_URL is required');
+        }
+        if (!SUPABASE_ANON_KEY) {
+            errors.push('SUPABASE_ANON_KEY is required');
+        }
+
+        // Security checks
+        if (SUPABASE_URL && SUPABASE_URL.includes('localhost')) {
+            warnings.push('Using localhost Supabase URL - ensure this is intentional');
+        }
+
+        // Check for potential hardcoded secrets (basic patterns)
+        const suspiciousPatterns = [
+            /eyJ[A-Za-z0-9_-]*\.[A-Za-z0-9_-]*\.[A-Za-z0-9_-]*/, // JWT tokens
+            /sk_[a-zA-Z0-9]{24,}/, // Stripe-like keys
+            /pk_[a-zA-Z0-9]{24,}/, // Public keys
+        ];
+
+        suspiciousPatterns.forEach(pattern => {
+            if (pattern.test(SUPABASE_ANON_KEY || '')) {
+                // This is expected for JWT tokens, but log for awareness
+                console.log('Security: JWT token detected in configuration');
+            }
+        });
+
+        return {
+            isValid: errors.length === 0,
+            errors,
+            warnings,
+            timestamp: new Date().toISOString()
+        };
+    }
 
     const CONFIG = {
         API_BASE_URL: window.location.origin + '/api',
@@ -71,6 +120,21 @@
 
     // Make CONFIG globally accessible
     window.CONFIG = CONFIG;
+
+    // Add security validation function
+    window.CONFIG.validateSecurity = validateSecurityConfig;
+
+    // Run security validation
+    const securityCheck = validateSecurityConfig();
+    if (!securityCheck.isValid) {
+        console.error('Security validation failed:', securityCheck.errors);
+        window.ENV_CONFIG_ERROR = securityCheck.errors.join(', ');
+    } else {
+        console.log('Security validation passed');
+        if (securityCheck.warnings.length > 0) {
+            console.warn('Security warnings:', securityCheck.warnings);
+        }
+    }
 
     console.log("CONFIG ready!", CONFIG.BABY_NAMES.length, "names loaded");
 })();

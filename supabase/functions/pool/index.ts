@@ -1,5 +1,13 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { 
+  validateEnvironmentVariables, 
+  createErrorResponse, 
+  createSuccessResponse,
+  validateInput,
+  CORS_HEADERS,
+  SECURITY_HEADERS
+} from '../_shared/security.ts'
 
 interface PoolRequest {
   name: string
@@ -120,100 +128,75 @@ async function calculateAverages(supabase: ReturnType<typeof createClient>): Pro
 
 serve(async (req: Request) => {
   const headers = new Headers({
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    ...CORS_HEADERS,
+    ...SECURITY_HEADERS,
     'Content-Type': 'application/json',
   })
 
   if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers })
   if (req.method !== 'POST') {
-    return new Response(JSON.stringify({ error: 'Method not allowed' }), { status: 405, headers })
+    return createErrorResponse('Method not allowed', 405)
   }
 
   try {
-    const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? ''
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    if (!supabaseUrl || !supabaseServiceKey) throw new Error('Missing env vars')
+    // Validate environment variables
+    const envValidation = validateEnvironmentVariables([
+      'SUPABASE_URL',
+      'SUPABASE_SERVICE_ROLE_KEY'
+    ], ['MINIMAX_API_KEY']) // Optional for AI roasts
+
+    if (!envValidation.isValid) {
+      console.error('Environment validation failed:', envValidation.errors)
+      return createErrorResponse('Server configuration error', 500)
+    }
+
+    if (envValidation.warnings.length > 0) {
+      console.warn('Environment warnings:', envValidation.warnings)
+    }
+
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey, {
       auth: { autoRefreshToken: false, persistSession: false },
     })
 
-    const body: PoolRequest = await req.json()
-
-    // Validation - Enhanced error messages for user-friendly feedback
-    const errors: string[] = []
-    
-    // Name validation
-    if (!body.name || body.name.trim().length === 0) {
-      errors.push('Please enter your name')
-    } else if (body.name.length > 100) {
-      errors.push('Name must be 100 characters or less')
-    }
-    
-    // Prediction validation
-    if (!body.prediction || body.prediction.trim().length === 0) {
-      errors.push('Please provide your prediction details')
-    } else if (body.prediction.length > 500) {
-      errors.push('Prediction must be 500 characters or less')
-    }
-    
-    // Due date validation - YYYY-MM-DD format
-    if (!body.dueDate) {
-      errors.push('Please select a predicted birth date')
-    } else {
-      const dateRegex = /^\d{4}-\d{2}-\d{2}$/
-      if (!dateRegex.test(body.dueDate)) {
-        errors.push('Birth date must be in YYYY-MM-DD format (e.g., 2026-02-15)')
-      } else {
-        // Validate date is reasonable (not in the past, not too far in future)
-        const selectedDate = new Date(body.dueDate)
-        const today = new Date()
-        today.setHours(0, 0, 0, 0)
-        const maxFutureDate = new Date()
-        maxFutureDate.setFullYear(today.getFullYear() + 1)
-        
-        if (selectedDate < today) {
-          errors.push('Birth date cannot be in the past')
-        } else if (selectedDate > maxFutureDate) {
-          errors.push('Birth date must be within one year from today')
-        }
-      }
-    }
-    
-    // Weight validation - 1-10 kg range
-    if (body.weight === undefined || body.weight === null) {
-      errors.push('Please enter the predicted weight in kg')
-    } else if (typeof body.weight !== 'number' || isNaN(body.weight)) {
-      errors.push('Weight must be a number (e.g., 3.5)')
-    } else if (body.weight < 1 || body.weight > 10) {
-      errors.push(`Weight must be between 1 and 10 kg (you entered ${body.weight} kg)`)
-    }
-    
-    // Length validation - 40-60 cm range  
-    if (body.length === undefined || body.length === null) {
-      errors.push('Please enter the predicted length in cm')
-    } else if (typeof body.length !== 'number' || isNaN(body.length)) {
-      errors.push('Length must be a number (e.g., 52)')
-    } else if (body.length < 40 || body.length > 60) {
-      errors.push(`Length must be between 40 and 60 cm (you entered ${body.length} cm)`)
-    }
-    
-    // Optional gender validation
-    if (body.gender && body.gender.trim().length > 0) {
-      const validGenders = ['boy', 'girl', 'surprise']
-      if (!validGenders.includes(body.gender.toLowerCase())) {
-        errors.push(`Gender must be one of: ${validGenders.join(', ')}`)
-      }
+    // Parse and validate request body
+    let body: PoolRequest
+    try {
+      body = await req.json()
+    } catch {
+      return createErrorResponse('Invalid JSON in request body', 400)
     }
 
-    if (errors.length > 0) {
-      return new Response(JSON.stringify({ error: 'Validation failed', details: errors }), { status: 400, headers })
+    // Input validation using standardized function
+    const validation = validateInput(body, {
+      name: { type: 'string', required: true, minLength: 1, maxLength: 100 },
+      prediction: { type: 'string', required: true, minLength: 1, maxLength: 500 },
+      dueDate: { type: 'string', required: true, pattern: /^\d{4}-\d{2}-\d{2}$/ },
+      weight: { type: 'number', required: true, min: 2.0, max: 6.0 },
+      length: { type: 'number', required: true, min: 40, max: 60 },
+      gender: { type: 'string', required: false, enum: ['boy', 'girl', 'surprise'] },
+      hairColor: { type: 'string', required: false, maxLength: 50 },
+      eyeColor: { type: 'string', required: false, maxLength: 50 },
+      personality: { type: 'string', required: false, maxLength: 200 }
+    })
+
+    if (!validation.isValid) {
+      return createErrorResponse('Validation failed', 400, validation.errors)
     }
 
-    const sanitizedName = body.name.trim().slice(0, 100)
-    const sanitizedPrediction = body.prediction.trim().slice(0, 500)
+    // Additional date validation
+    const selectedDate = new Date(body.dueDate)
+    const minDate = new Date('2024-01-01')
+    const maxDate = new Date('2025-12-31')
+    
+    if (selectedDate < minDate || selectedDate > maxDate) {
+      return createErrorResponse('Birth date must be between 2024-01-01 and 2025-12-31', 400)
+    }
+
+    // Use sanitized data from validation
+    const { name: sanitizedName, prediction: sanitizedPrediction } = validation.sanitized
 
     // Calculate averages for AI roast
     const { avgWeight, avgLength } = await calculateAverages(supabase)
@@ -246,7 +229,7 @@ serve(async (req: Request) => {
 
     if (error) {
       console.error('Supabase insert error:', error)
-      throw new Error(`Database error: ${error.message}`)
+      return createErrorResponse('Database operation failed', 500)
     }
 
     console.log(`[pool] Successfully inserted prediction with id: ${data.id}`)
@@ -268,30 +251,27 @@ serve(async (req: Request) => {
       // Silently continue without roast
     }
 
-    return new Response(
-      JSON.stringify({
-        success: true,
-        message: 'Prediction recorded!',
-        data: { 
-          id: data.id, 
-          predictor_name: sanitizedName, 
-          gender: body.gender?.toLowerCase() || 'surprise',
-          birth_date: body.dueDate,
-          weight_kg: body.weight,
-          length_cm: body.length,
-        },
-        roast: roast,
-        milestone: isMilestone ? {
-          triggered: true,
-          threshold: 50,
-          message: '🎉 We hit 50 submissions! Cake time!'
-        } : undefined
-      }),
-      { status: 201, headers }
-    )
+    // Return success response
+    return createSuccessResponse({
+      message: 'Prediction recorded!',
+      data: { 
+        id: data.id, 
+        predictor_name: sanitizedName, 
+        gender: body.gender?.toLowerCase() || 'surprise',
+        birth_date: body.dueDate,
+        weight_kg: body.weight,
+        length_cm: body.length,
+      },
+      roast: roast,
+      milestone: isMilestone ? {
+        triggered: true,
+        threshold: 50,
+        message: '🎉 We hit 50 submissions! Cake time!'
+      } : undefined
+    }, 201)
 
   } catch (err) {
     console.error('Edge Function error:', err)
-    return new Response(JSON.stringify({ error: err instanceof Error ? err.message : 'Internal error' }), { status: 500, headers })
+    return createErrorResponse('Internal server error', 500)
   }
 })

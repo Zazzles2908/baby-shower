@@ -1,5 +1,13 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { 
+  validateEnvironmentVariables, 
+  createErrorResponse, 
+  createSuccessResponse,
+  validateInput,
+  CORS_HEADERS,
+  SECURITY_HEADERS
+} from '../_shared/security.ts'
 
 interface AdviceRequest {
   name?: string
@@ -15,49 +23,73 @@ interface AIResponse {
 }
 
 serve(async (req: Request) => {
+  // Combine CORS and security headers
   const headers = new Headers({
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    ...CORS_HEADERS,
+    ...SECURITY_HEADERS,
     'Content-Type': 'application/json',
   })
 
-  if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers })
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { status: 204, headers })
+  }
+
   if (req.method !== 'POST') {
-    return new Response(JSON.stringify({ error: 'Method not allowed' }), { status: 405, headers })
+    return createErrorResponse('Method not allowed', 405)
   }
 
   try {
-    const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? ''
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    if (!supabaseUrl || !supabaseServiceKey) throw new Error('Missing env vars')
+    // Validate environment variables
+    const envValidation = validateEnvironmentVariables([
+      'SUPABASE_URL',
+      'SUPABASE_SERVICE_ROLE_KEY'
+    ], ['MINIMAX_API_KEY'])
+
+    if (!envValidation.isValid) {
+      console.error('Environment validation failed:', envValidation.errors)
+      return createErrorResponse('Server configuration error', 500)
+    }
+
+    if (envValidation.warnings.length > 0) {
+      console.warn('Environment warnings:', envValidation.warnings)
+    }
+
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey, {
       auth: { autoRefreshToken: false, persistSession: false },
     })
 
-    const body: AdviceRequest = await req.json()
-
-    // Accept either adviceType (from frontend) or category
-    const category = body.category || body.adviceType || ''
-    const adviceText = body.advice || body.message || ''
-    const name = body.name || 'Anonymous Advisor'
-
-    // Validation - Enhanced error messages for user-friendly feedback
-    const errors: string[] = []
-    
-    // Name validation (optional but provide better error)
-    if (body.name && body.name.length > 100) {
-      errors.push('Name must be 100 characters or less')
+    // Parse and validate request body
+    let body: AdviceRequest
+    try {
+      body = await req.json()
+    } catch {
+      return createErrorResponse('Invalid JSON in request body', 400)
     }
+
+    // Input validation using standardized function
+    const validation = validateInput(body, {
+      name: { type: 'string', required: false, maxLength: 100 },
+      advice: { type: 'string', required: false, maxLength: 2000 },
+      message: { type: 'string', required: false, maxLength: 2000 },
+      category: { type: 'string', required: false, maxLength: 50 },
+      adviceType: { type: 'string', required: false, maxLength: 50 }
+    })
+
+    // Additional manual validation for complex rules
+    const errors: string[] = [...validation.errors]
     
+    const adviceText = (validation.sanitized.advice as string) || (validation.sanitized.message as string) || ''
+    const category = (validation.sanitized.category as string) || (validation.sanitized.adviceType as string) || ''
+    const name = (validation.sanitized.name as string) || 'Anonymous Advisor'
+
     // Advice text validation
     if (!adviceText || adviceText.trim().length === 0) {
       errors.push('Please enter your advice or message')
     } else if (adviceText.length < 5) {
       errors.push('Message must be at least 5 characters long')
-    } else if (adviceText.length > 2000) {
-      errors.push('Message must be 2000 characters or less (yours is ' + adviceText.length + ' characters)')
     }
     
     // Category validation
@@ -79,13 +111,15 @@ serve(async (req: Request) => {
       } else if (!validCategories.includes(finalCategory)) {
         errors.push(`Invalid delivery method. Please choose "For Parents" or "For Baby"`)
       }
+      (validation.sanitized as any).finalCategory = finalCategory
     }
 
     if (errors.length > 0) {
-      return new Response(JSON.stringify({ error: 'Validation failed', details: errors }), { status: 400, headers })
+      return createErrorResponse('Validation failed', 400, errors)
     }
 
     const sanitizedAdvice = adviceText.trim().slice(0, 2000)
+    const finalCategory = (validation.sanitized as any).finalCategory
 
     // Handle AI Roast feature
     if (finalCategory === 'ai_roast') {
@@ -116,58 +150,56 @@ serve(async (req: Request) => {
 
     if (error) {
       console.error('Supabase insert error:', error)
-      throw new Error(`Database error: ${error.message}`)
+      return createErrorResponse('Database operation failed', 500)
     }
 
     console.log(`[advice] Successfully inserted advice with id: ${data.id}`)
 
-    return new Response(
-      JSON.stringify({
-        success: true,
-        data: {
-          id: data.id,
-          advice_text: sanitizedAdvice,
-          delivery_option: finalCategory,
-          created_at: data.created_at,
-        },
-        milestone: isMilestone ? {
-          triggered: true,
-          threshold: 50,
-          message: '🎉 We hit 50 submissions! Cake time!'
-        } : undefined
-      }),
-      { status: 201, headers }
-    )
+    return createSuccessResponse({
+      id: data.id,
+      advice_text: sanitizedAdvice,
+      delivery_option: finalCategory,
+      created_at: data.created_at,
+      milestone: isMilestone ? {
+        triggered: true,
+        threshold: 50,
+        message: '🎉 We hit 50 submissions! Cake time!'
+      } : undefined
+    }, 201)
 
   } catch (err) {
     console.error('Edge Function error:', err)
-    return new Response(JSON.stringify({ error: err instanceof Error ? err.message : 'Internal error' }), { status: 500, headers })
+    return createErrorResponse('Internal server error', 500)
   }
 })
 
 async function handleAIRoast(supabase: any, name: string, topic: string, headers: Headers) {
-  const minimaxApiKey = Deno.env.get('MINIMAX_API_KEY') ?? ''
+  // Validate environment variables for AI
+  const envValidation = validateEnvironmentVariables([], ['MINIMAX_API_KEY'])
   
-  if (!minimaxApiKey) {
-    return new Response(
-      JSON.stringify({ 
-        error: 'AI Roast feature not configured. MINIMAX_API_KEY is missing.',
-        configured: false 
-      }), 
-      { status: 503, headers }
-    )
+  if (!envValidation.isValid || !Deno.env.get('MINIMAX_API_KEY')) {
+    console.warn('MINIMAX_API_KEY not configured for AI roast')
+    return createErrorResponse('AI Roast feature not configured', 503, {
+      configured: false,
+      message: 'MINIMAX_API_KEY environment variable is required for AI roast functionality'
+    })
   }
 
+  const minimaxApiKey = Deno.env.get('MINIMAX_API_KEY')!
+
   try {
-    // Call MiniMax API for AI-generated roast - UPDATED 2026-01-03
-    const response = await fetch('https://api.minimax.chat/v1/chat/completions', {  // OpenAI-compatible endpoint
+    // Call MiniMax API for AI-generated roast with timeout
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 10000) // 10 second timeout
+
+    const response = await fetch('https://api.minimax.chat/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${minimaxApiKey}`,
       },
       body: JSON.stringify({
-        model: 'MiniMax-M2.1',  // UPDATED from abab6.5s-chat
+        model: 'MiniMax-M2.1',
         messages: [
           {
             role: 'system',
@@ -181,10 +213,16 @@ async function handleAIRoast(supabase: any, name: string, topic: string, headers
         temperature: 0.7,
         max_tokens: 200,
       }),
+      signal: controller.signal,
     })
 
+    clearTimeout(timeoutId)
+
     if (!response.ok) {
-      throw new Error(`MiniMax API error: ${response.status}`)
+      console.error('MiniMax API error:', response.status)
+      return createErrorResponse('AI service unavailable', 503, {
+        error: `MiniMax API returned status ${response.status}`
+      })
     }
 
     const aiData = await response.json()
@@ -206,29 +244,24 @@ async function handleAIRoast(supabase: any, name: string, topic: string, headers
       .select()
       .single()
 
-    if (error) throw new Error(`Database error: ${error.message}`)
+    if (error) {
+      console.error('Supabase insert error:', error)
+      return createErrorResponse('Database operation failed', 500)
+    }
 
     console.log(`[advice] Successfully inserted AI roast with id: ${data.id}`)
 
-    return new Response(
-      JSON.stringify({
-        success: true,
-        data: {
-          id: data.id,
-          advice_text: generatedAdvice,
-          delivery_option: 'ai_roast',
-          created_at: data.created_at,
-          ai_generated: true,
-        },
-      }),
-      { status: 201, headers }
-    )
+    return createSuccessResponse({
+      id: data.id,
+      advice_text: generatedAdvice,
+      delivery_option: 'ai_roast',
+      created_at: data.created_at,
+      ai_generated: true,
+    }, 201)
 
   } catch (err) {
     console.error('AI Roast error:', err)
-    return new Response(
-      JSON.stringify({ error: 'Failed to generate AI roast' }), 
-      { status: 500, headers }
-    )
+    const errorMessage = err instanceof Error ? err.message : 'Unknown error'
+    return createErrorResponse('Failed to generate AI roast', 500, { details: errorMessage })
   }
 }

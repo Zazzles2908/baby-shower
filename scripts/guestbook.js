@@ -52,10 +52,26 @@ function validateGuestbookForm(form) {
  * @returns {Object} Form data
  */
 function getGuestbookFormData(form) {
-    return {
-        name: form.querySelector('#guestbook-name').value.trim(),
+    const rawData = {
+        name: form.querySelector('#guestbook-name').value,
         relationship: form.querySelector('#guestbook-relationship').value,
-        message: form.querySelector('#guestbook-message').value.trim()
+        message: form.querySelector('#guestbook-message').value
+    };
+
+    // Use security sanitization if available
+    if (window.SECURITY) {
+        return {
+            name: window.SECURITY.sanitizeName(rawData.name),
+            relationship: window.SECURITY.sanitizeText(rawData.relationship, { maxLength: 50 }),
+            message: window.SECURITY.sanitizeText(rawData.message, { maxLength: 1000, allowNewlines: true })
+        };
+    }
+
+    // Fallback to basic sanitization
+    return {
+        name: rawData.name.trim().replace(/[^a-zA-Z\s\-\']/g, ''),
+        relationship: rawData.relationship.trim().substring(0, 50),
+        message: rawData.message.trim().substring(0, 1000)
     };
 }
 

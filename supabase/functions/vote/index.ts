@@ -1,13 +1,16 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { 
+  validateEnvironmentVariables, 
+  createErrorResponse, 
+  createSuccessResponse,
+  validateInput,
+  CORS_HEADERS,
+  SECURITY_HEADERS
+} from '../_shared/security.ts'
 
 interface VoteRequest {
   names: string[]
-}
-
-interface ErrorResponse {
-  error: string
-  details?: unknown
 }
 
 interface VoteResult {
@@ -23,11 +26,10 @@ interface VoteProgressData {
 }
 
 serve(async (req: Request) => {
-  // CORS headers
+  // Combine CORS and security headers
   const headers = new Headers({
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+    ...CORS_HEADERS,
+    ...SECURITY_HEADERS,
     'Content-Type': 'application/json',
   })
 
@@ -38,15 +40,23 @@ serve(async (req: Request) => {
   // GET endpoint: Retrieve vote progress data with percentages
   if (req.method === 'GET') {
     try {
-      const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? ''
-      const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+      // Validate environment variables
+      const envValidation = validateEnvironmentVariables([
+        'SUPABASE_URL',
+        'SUPABASE_SERVICE_ROLE_KEY'
+      ])
 
-      if (!supabaseUrl || !supabaseServiceKey) {
-        throw new Error('Missing environment variables')
+      if (!envValidation.isValid) {
+        console.error('Environment validation failed:', envValidation.errors)
+        return createErrorResponse('Server configuration error', 500)
       }
+
+      const supabaseUrl = Deno.env.get('SUPABASE_URL')!
+      const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 
       const supabase = createClient(supabaseUrl, supabaseServiceKey, {
         auth: { autoRefreshToken: false, persistSession: false },
+        schema: 'baby_shower'
       })
 
       console.log('[vote] GET: Fetching all votes from baby_shower.votes')
@@ -59,7 +69,7 @@ serve(async (req: Request) => {
 
       if (error) {
         console.error('Supabase query error:', error)
-        throw new Error(`Database error: ${error.message}`)
+        return createErrorResponse('Database operation failed', 500)
       }
 
       // Calculate vote counts and percentages from selected_names JSONB
@@ -96,82 +106,82 @@ serve(async (req: Request) => {
         lastUpdated: new Date().toISOString(),
       }
 
-      return new Response(
-        JSON.stringify({ success: true, data: progressData }),
-        { status: 200, headers }
-      )
+      return createSuccessResponse(progressData, 200)
 
     } catch (err) {
       console.error('Edge Function error:', err)
-      const errorMessage = err instanceof Error ? err.message : 'Internal server error'
-      return new Response(
-        JSON.stringify({ error: errorMessage } as ErrorResponse),
-        { status: 500, headers }
-      )
+      return createErrorResponse('Internal server error', 500)
     }
   }
 
   // POST endpoint: Submit a vote
   if (req.method !== 'POST') {
-    return new Response(
-      JSON.stringify({ error: 'Method not allowed' } as ErrorResponse),
-      { status: 405, headers }
-    )
+    return createErrorResponse('Method not allowed', 405)
   }
 
   try {
-    // Initialize Supabase client
-    const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? ''
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    // Validate environment variables
+    const envValidation = validateEnvironmentVariables([
+      'SUPABASE_URL',
+      'SUPABASE_SERVICE_ROLE_KEY'
+    ])
 
-    if (!supabaseUrl || !supabaseServiceKey) {
-      throw new Error('Missing environment variables')
+    if (!envValidation.isValid) {
+      console.error('Environment validation failed:', envValidation.errors)
+      return createErrorResponse('Server configuration error', 500)
     }
+
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey, {
       auth: { autoRefreshToken: false, persistSession: false },
+      schema: 'baby_shower'
     })
 
-    // Parse request
-    const body: VoteRequest = await req.json()
+    // Parse and validate request body
+    let body: VoteRequest
+    try {
+      body = await req.json()
+    } catch {
+      return createErrorResponse('Invalid JSON in request body', 400)
+    }
 
-    // Validation
-    const errors: string[] = []
+    // Input validation using standardized function
+    const validation = validateInput(body, {
+      names: { type: 'array', required: true }
+    })
+
+    // Additional validation
+    const errors: string[] = [...validation.errors]
     
-    if (!body.names || !Array.isArray(body.names)) {
-      errors.push('Names array is required')
+    const names = validation.sanitized.names as string[]
+    
+    if (names.length === 0) {
+      errors.push('At least one name is required')
+    }
+    if (names.length > 4) {
+      errors.push('Maximum 4 names allowed')
     }
     
-    if (body.names) {
-      if (body.names.length === 0) {
-        errors.push('At least one name is required')
+    // Validate each name
+    names.forEach((name: string, index: number) => {
+      if (!name || name.trim().length === 0) {
+        errors.push(`Name at index ${index} cannot be empty`)
       }
-      if (body.names.length > 4) {
-        errors.push('Maximum 4 names allowed')
+      if (name && name.length > 50) {
+        errors.push(`Name at index ${index} must be 50 characters or less`)
       }
-      
-      // Validate each name
-      body.names.forEach((name, index) => {
-        if (!name || name.trim().length === 0) {
-          errors.push(`Name at index ${index} cannot be empty`)
-        }
-        if (name && name.length > 50) {
-          errors.push(`Name at index ${index} must be 50 characters or less`)
-        }
-      })
-    }
+    })
 
     if (errors.length > 0) {
-      return new Response(
-        JSON.stringify({ error: 'Validation failed', details: errors } as ErrorResponse),
-        { status: 400, headers }
-      )
+      return createErrorResponse('Validation failed', 400, errors)
     }
 
     // Sanitize names
-    const sanitizedNames = body.names
-      .map(n => n.trim().slice(0, 50))
-      .filter(n => n.length > 0)
+    const sanitizedNames = names
+      .map((n: string) => n.trim().slice(0, 50))
+      .filter((n: string) => n.length > 0)
 
     // Count total submissions in baby_shower.votes BEFORE insert to check milestone
     const { count: totalCount } = await supabase
@@ -195,7 +205,7 @@ serve(async (req: Request) => {
 
     if (error) {
       console.error('Supabase insert error:', error)
-      throw new Error(`Database error: ${error.message}`)
+      return createErrorResponse('Database operation failed', 500)
     }
 
     console.log(`[vote] POST: Successfully inserted vote with id: ${data.id}`)
@@ -229,36 +239,25 @@ serve(async (req: Request) => {
       }))
       .sort((a, b) => b.count - a.count)
 
-    return new Response(
-      JSON.stringify({
-        success: true,
-        data: {
-          id: data.id,
-          selected_names: sanitizedNames,
-          vote_count: sanitizedNames.length,
-          created_at: data.created_at,
-        },
-        progress: {
-          totalVotes,
-          results,
-          lastUpdated: new Date().toISOString(),
-        },
-        milestone: isMilestone ? {
-          triggered: true,
-          threshold: 50,
-          message: '🎉 We hit 50 submissions! Cake time!'
-        } : undefined
-      }),
-      { status: 201, headers }
-    )
+    return createSuccessResponse({
+      id: data.id,
+      selected_names: sanitizedNames,
+      vote_count: sanitizedNames.length,
+      created_at: data.created_at,
+      progress: {
+        totalVotes,
+        results,
+        lastUpdated: new Date().toISOString(),
+      },
+      milestone: isMilestone ? {
+        triggered: true,
+        threshold: 50,
+        message: '🎉 We hit 50 submissions! Cake time!'
+      } : undefined
+    }, 201)
 
   } catch (err) {
     console.error('Edge Function error:', err)
-    const errorMessage = err instanceof Error ? err.message : 'Internal server error'
-    
-    return new Response(
-      JSON.stringify({ error: errorMessage } as ErrorResponse),
-      { status: 500, headers }
-    )
+    return createErrorResponse('Internal server error', 500)
   }
 })

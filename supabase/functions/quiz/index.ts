@@ -1,5 +1,13 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { 
+  validateEnvironmentVariables, 
+  createErrorResponse, 
+  createSuccessResponse,
+  validateInput,
+  CORS_HEADERS,
+  SECURITY_HEADERS
+} from '../_shared/security.ts'
 
 interface QuizRequest {
   name?: string
@@ -14,28 +22,51 @@ interface QuizRequest {
 }
 
 serve(async (req: Request) => {
+  // Combine CORS and security headers
   const headers = new Headers({
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    ...CORS_HEADERS,
+    ...SECURITY_HEADERS,
     'Content-Type': 'application/json',
   })
 
-  if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers })
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { status: 204, headers })
+  }
+
   if (req.method !== 'POST') {
-    return new Response(JSON.stringify({ error: 'Method not allowed' }), { status: 405, headers })
+    return createErrorResponse('Method not allowed', 405)
   }
 
   try {
-    const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? ''
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    if (!supabaseUrl || !supabaseServiceKey) throw new Error('Missing env vars')
+    // Validate environment variables
+    const envValidation = validateEnvironmentVariables([
+      'SUPABASE_URL',
+      'SUPABASE_SERVICE_ROLE_KEY'
+    ])
+
+    if (!envValidation.isValid) {
+      console.error('Environment validation failed:', envValidation.errors)
+      return createErrorResponse('Server configuration error', 500)
+    }
+
+    if (envValidation.warnings.length > 0) {
+      console.warn('Environment warnings:', envValidation.warnings)
+    }
+
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey, {
       auth: { autoRefreshToken: false, persistSession: false },
     })
 
-    const body: QuizRequest = await req.json()
+    // Parse and validate request body
+    let body: QuizRequest
+    try {
+      body = await req.json()
+    } catch {
+      return createErrorResponse('Invalid JSON in request body', 400)
+    }
 
     // Build answers object from individual puzzle fields if not provided
     const answers = body.answers || {
@@ -46,34 +77,36 @@ serve(async (req: Request) => {
       puzzle5: body.puzzle5 || '',
     }
 
-    // Validation
-    const errors: string[] = []
+    // Input validation using standardized function
+    const validation = validateInput({
+      ...body,
+      answers
+    }, {
+      name: { type: 'string', required: false, maxLength: 100 },
+      answers: { type: 'object', required: true },
+      score: { type: 'number', required: true, min: 0 },
+      totalQuestions: { type: 'number', required: true, min: 1 }
+    })
+
+    // Additional validation
+    const errors: string[] = [...validation.errors]
     
-    if (!answers || Object.keys(answers).length === 0) {
-      errors.push('Answers object is required')
-    }
-    
-    if (answers && Object.keys(answers).length < 5) {
+    if (validation.sanitized.answers && Object.keys(validation.sanitized.answers as Record<string, unknown>).length < 5) {
       errors.push('All 5 puzzle answers are required')
     }
     
-    if (typeof body.score !== 'number' || body.score < 0) {
-      errors.push('Score must be a non-negative number')
-    }
+    const score = validation.sanitized.score as number
+    const totalQuestions = validation.sanitized.totalQuestions as number
     
-    if (typeof body.totalQuestions !== 'number' || body.totalQuestions < 1) {
-      errors.push('Total questions must be at least 1')
-    }
-    
-    if (body.score > body.totalQuestions) {
+    if (score > totalQuestions) {
       errors.push('Score cannot exceed total questions')
     }
 
     if (errors.length > 0) {
-      return new Response(JSON.stringify({ error: 'Validation failed', details: errors }), { status: 400, headers })
+      return createErrorResponse('Validation failed', 400, errors)
     }
 
-    const participantName = body.name || 'Anonymous Quiz Taker'
+    const participantName = (validation.sanitized.name as string) || 'Anonymous Quiz Taker'
 
     // Count total submissions in baby_shower.quiz_results BEFORE insert to check milestone
     const { count: totalCount } = await supabase
@@ -89,10 +122,10 @@ serve(async (req: Request) => {
       .from('baby_shower.quiz_results')
       .insert({
         participant_name: participantName,
-        answers: answers,
-        score: body.score,
-        total_questions: body.totalQuestions,
-        percentage: Math.round((body.score / body.totalQuestions) * 100),
+        answers: validation.sanitized.answers,
+        score: score,
+        total_questions: totalQuestions,
+        percentage: Math.round((score / totalQuestions) * 100),
         submitted_by: participantName,
       })
       .select()
@@ -100,35 +133,29 @@ serve(async (req: Request) => {
 
     if (error) {
       console.error('Supabase insert error:', error)
-      throw new Error(`Database error: ${error.message}`)
+      return createErrorResponse('Database operation failed', 500)
     }
 
     console.log(`[quiz] Successfully inserted quiz result with id: ${data.id}`)
 
-    const percentage = Math.round((body.score / body.totalQuestions) * 100)
+    const percentage = Math.round((score / totalQuestions) * 100)
 
-    return new Response(
-      JSON.stringify({
-        success: true,
-        data: {
-          id: data.id,
-          participant_name: participantName,
-          score: body.score,
-          total_questions: body.totalQuestions,
-          percentage,
-          created_at: data.created_at,
-        },
-        milestone: isMilestone ? {
-          triggered: true,
-          threshold: 50,
-          message: '🎉 We hit 50 submissions! Cake time!'
-        } : undefined
-      }),
-      { status: 201, headers }
-    )
+    return createSuccessResponse({
+      id: data.id,
+      participant_name: participantName,
+      score: score,
+      total_questions: totalQuestions,
+      percentage,
+      created_at: data.created_at,
+      milestone: isMilestone ? {
+        triggered: true,
+        threshold: 50,
+        message: '🎉 We hit 50 submissions! Cake time!'
+      } : undefined
+    }, 201)
 
   } catch (err) {
     console.error('Edge Function error:', err)
-    return new Response(JSON.stringify({ error: err instanceof Error ? err.message : 'Internal error' }), { status: 500, headers })
+    return createErrorResponse('Internal server error', 500)
   }
 })

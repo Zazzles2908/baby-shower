@@ -496,11 +496,30 @@ function navigateToSection(sectionName) {
  */
 function initializeSection(sectionName) {
     switch(sectionName) {
-        case 'voting':
-            initializeVoting();
+        case 'guestbook':
+            if (window.Guestbook && typeof window.Guestbook.init === 'function') {
+                window.Guestbook.init();
+            }
             break;
         case 'pool':
+            if (window.Pool && typeof window.Pool.init === 'function') {
+                window.Pool.init();
+            }
             loadPoolStats();
+            break;
+        case 'quiz':
+            if (window.Quiz && typeof window.Quiz.init === 'function') {
+                window.Quiz.init();
+            }
+            break;
+        case 'advice':
+            // Initialize advice toggle when navigating to advice section
+            if (window.Advice && typeof window.Advice.init === 'function') {
+                window.Advice.init();
+            }
+            break;
+        case 'voting':
+            initializeVoting();
             break;
         case 'mom-vs-dad':
             // Mom vs Dad game is self-contained in mom-vs-dad.js
@@ -831,7 +850,7 @@ async function handleAdviceSubmit(event) {
             submitBtn.classList.add('api-loading');
             submitBtn.disabled = true;
         }
-        
+
         showLoading();
 
         const response = await submitAdvice(data);
@@ -842,8 +861,14 @@ async function handleAdviceSubmit(event) {
             triggerMilestoneCelebration(response.milestone);
         }
 
+        // Remove loading state from submit button before success message
+        if (submitBtn) {
+            submitBtn.classList.remove('api-loading');
+            submitBtn.disabled = false;
+        }
+
         hideLoading();
-        
+
         // Show inline success message
         showFormSuccessMessage('Thank you for your advice!', form);
         triggerConfetti();
@@ -856,6 +881,12 @@ async function handleAdviceSubmit(event) {
         repopulateNameField('advice-name');
 
     } catch (error) {
+        // Remove loading state from submit button on error
+        if (submitBtn) {
+            submitBtn.classList.remove('api-loading');
+            submitBtn.disabled = false;
+        }
+
         hideLoading();
         showError(error);
     }
