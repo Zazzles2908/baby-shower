@@ -92,9 +92,10 @@
             // Mom Character - Warm, welcoming mother figure
             mom: {
                 id: 'mom',
-                name: 'Sakura Mom',
+                name: 'Michelle',
                 role: 'hostess',
                 personality: 'warm, nurturing, encouraging',
+                avatarImage: 'https://bkszmvfsfgvdwzacgmfz.supabase.co/storage/v1/object/public/baby-shower-pictures/Pictures/Michelle_Icon/asset_chibi_avatar_f.png',
                 colors: {
                     primary: '#FF69B4', // Soft pink
                     secondary: '#FFB6C1', // Light pink
@@ -123,9 +124,10 @@
             // Dad Character - Playful, fun father figure
             dad: {
                 id: 'dad',
-                name: 'Takeshi Dad',
+                name: 'Jazeel',
                 role: 'host',
                 personality: 'playful, fun, enthusiastic',
+                avatarImage: 'https://bkszmvfsfgvdwzacgmfz.supabase.co/storage/v1/object/public/baby-shower-pictures/Pictures/Jazeel_Icon/asset_chibi_avatar_m.png',
                 colors: {
                     primary: '#4169E1', // Royal blue
                     secondary: '#87CEEB', // Sky blue
