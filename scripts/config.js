@@ -87,6 +87,161 @@
             SHOW_MILESTONES: true,
             ENABLE_CONFETTI: true
         },
+        // Anime Character System - "Digital Living Room" Hosts
+        ANIME_CHARACTERS: {
+            // Mom Character - Warm, welcoming mother figure
+            mom: {
+                id: 'mom',
+                name: 'Sakura Mom',
+                role: 'hostess',
+                personality: 'warm, nurturing, encouraging',
+                colors: {
+                    primary: '#FF69B4', // Soft pink
+                    secondary: '#FFB6C1', // Light pink
+                    accent: '#FFD700', // Gold
+                    skin: '#FFE4C4', // Bisque skin tone
+                    eyes: '#6B5B95' // Soft purple
+                },
+                emotions: {
+                    happy: '😊',
+                    excited: '😆',
+                    thinking: '🤔',
+                    surprised: '😲',
+                    proud: '😤',
+                    celebrating: '🎉',
+                    welcoming: '🤗',
+                    loving: '🥰'
+                },
+                phrases: [
+                    "Welcome, dear guest! 🌸",
+                    "Oh my, what lovely energy! ✨",
+                    "Let me help you get comfortable~",
+                    "So excited to have you here!",
+                    "Your kindness warms my heart! 💖"
+                ]
+            },
+            // Dad Character - Playful, fun father figure
+            dad: {
+                id: 'dad',
+                name: 'Takeshi Dad',
+                role: 'host',
+                personality: 'playful, fun, enthusiastic',
+                colors: {
+                    primary: '#4169E1', // Royal blue
+                    secondary: '#87CEEB', // Sky blue
+                    accent: '#FFD700', // Gold
+                    skin: '#F5DEB3', // Wheat skin tone
+                    eyes: '#2F4F4F' // Dark slate gray
+                },
+                emotions: {
+                    happy: '😄',
+                    excited: '🤩',
+                    thinking: '🧐',
+                    surprised: '😳',
+                    proud: '😎',
+                    celebrating: '🎊',
+                    welcoming: '🙌',
+                    funny: '😂'
+                },
+                phrases: [
+                    "Hey there, awesome guest! 🌟",
+                    "Let the fun begin! 🎮",
+                    "You're gonna love this!",
+                    "Best day ever, right?!",
+                    "High five for being here! ✋"
+                ]
+            },
+            // Baby Character - Adorable, curious
+            baby: {
+                id: 'baby',
+                name: 'Mochi Baby',
+                role: 'mascot',
+                personality: 'curious, adorable, innocent',
+                colors: {
+                    primary: '#FFB6C1', // Light pink
+                    secondary: '#E6E6FA', // Lavender
+                    accent: '#FFD700', // Gold
+                    skin: '#FFF0F5', // Lavender blush
+                    eyes: '#4169E1' // Blue
+                },
+                emotions: {
+                    happy: '🥺',
+                    excited: '🤩',
+                    curious: '👀',
+                    sleepy: '😴',
+                    hungry: '🍼',
+                    playful: '🎈',
+                    loving: '🥰',
+                    surprised: '😮'
+                },
+                phrases: [
+                    "Mochi happy! 🍡",
+                    "Sparkle sparkle~ ✨",
+                    "Baby love you! 💕",
+                    "So many exciting things!",
+                    "Welcome to baby world! 🌟"
+                ]
+            },
+            // Farm Animal Hosts - For the farm theme
+            farm: {
+                pig: {
+                    id: 'pig',
+                    name: 'Piggy-Chan',
+                    colors: { primary: '#FFB6C1', accent: '#FF69B4' },
+                    personality: 'cute, bubbly, loving',
+                    emoji: '🐷'
+                },
+                sheep: {
+                    id: 'sheep',
+                    name: 'Mimi Sheep',
+                    colors: { primary: '#F5F5F5', accent: '#E6E6FA' },
+                    personality: 'gentle, soft, kind',
+                    emoji: '🐑'
+                },
+                cow: {
+                    id: 'cow',
+                    name: 'Moo-Moo',
+                    colors: { primary: '#FFFFFF', accent: '#000000' },
+                    personality: 'calm, wise, nurturing',
+                    emoji: '🐄'
+                },
+                chicken: {
+                    id: 'chicken',
+                    name: 'Chick-Chan',
+                    colors: { primary: '#FFD700', accent: '#FFA500' },
+                    personality: 'energetic, cheerful, helpful',
+                    emoji: '🐔'
+                }
+            }
+        },
+        // Anime Icon Styles and Animations
+        ANIME_ICONS: {
+            // Chibi proportions (2.5 heads tall)
+            chibi: {
+                headScale: 1.0,
+                bodyScale: 0.7,
+                eyeSize: 'large',
+                expression: 'exaggerated'
+            },
+            // Animation speeds
+            animations: {
+                idle: 3000, // ms
+                happy: 500,
+                excited: 300,
+                thinking: 1500,
+                surprised: 400,
+                celebrate: 800
+            },
+            // Size variants
+            sizes: {
+                tiny: 24,
+                small: 32,
+                medium: 48,
+                large: 64,
+                xlarge: 96,
+                hero: 128
+            }
+        },
         MILESTONES: {
             GUESTBOOK_5: 5,
             GUESTBOOK_10: 10,

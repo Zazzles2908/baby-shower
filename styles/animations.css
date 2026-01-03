@@ -1,5 +1,753 @@
 /* Baby Shower App - Animations */
 
+/* ========================================
+   ANIME CHARACTER ICON SYSTEM
+   "Digital Living Room" Hosts
+   ======================================== */
+
+/* Anime Character Base Container */
+.anime-character {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Nunito', 'Quicksand', sans-serif;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Anime Character Sizes */
+.anime-character.tiny { width: 24px; height: 24px; }
+.anime-character.small { width: 32px; height: 32px; }
+.anime-character.medium { width: 48px; height: 48px; }
+.anime-character.large { width: 64px; height: 64px; }
+.anime-character.xlarge { width: 96px; height: 96px; }
+.anime-character.hero { width: 128px; height: 128px; }
+
+/* Anime Character SVG Styling */
+.anime-character svg {
+    width: 100%;
+    height: 100%;
+    filter: drop-shadow(0 4px 8px rgba(156, 175, 136, 0.25));
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.anime-character:hover svg {
+    transform: scale(1.1);
+    filter: drop-shadow(0 6px 12px rgba(156, 175, 136, 0.35));
+}
+
+/* Anime Character - Emotion States */
+.anime-character.emotion-happy .mouth {
+    animation: happySmile 0.5s ease-out;
+}
+
+.anime-character.emotion-excited {
+    animation: excitedBounce 0.3s ease-out;
+}
+
+.anime-character.emotion-thinking .head {
+    animation: thinkingNod 1.5s ease-in-out infinite;
+}
+
+.anime-character.emotion-surprised .eyes {
+    animation: surprisedPulse 0.4s ease-out;
+}
+
+.anime-character.emotion-proud {
+    animation: proudPuff 0.6s ease-out;
+}
+
+.anime-character.emotion-celebrating {
+    animation: celebrateSpin 0.8s ease-out;
+}
+
+.anime-character.emotion-welcoming {
+    animation: welcomeWave 1s ease-in-out;
+}
+
+.anime-character.emotion-loving .heart {
+    animation: lovingHeart 0.8s ease-out;
+}
+
+/* Anime Character Animation Keyframes */
+@keyframes happySmile {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.2); }
+}
+
+@keyframes excitedBounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+}
+
+@keyframes thinkingNod {
+    0%, 100% { transform: rotate(0deg); }
+    25% { transform: rotate(5deg); }
+    75% { transform: rotate(-5deg); }
+}
+
+@keyframes surprisedPulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.3); }
+}
+
+@keyframes proudPuff {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.15); }
+}
+
+@keyframes celebrateSpin {
+    0% { transform: rotate(0deg) scale(1); }
+    50% { transform: rotate(180deg) scale(1.1); }
+    100% { transform: rotate(360deg) scale(1); }
+}
+
+@keyframes welcomeWave {
+    0%, 100% { transform: rotate(0deg); }
+    25% { transform: rotate(20deg); }
+    75% { transform: rotate(-20deg); }
+}
+
+@keyframes lovingHeart {
+    0% { opacity: 0; transform: scale(0); }
+    50% { opacity: 1; transform: scale(1.3); }
+    100% { opacity: 0.8; transform: scale(1); }
+}
+
+/* Anime Character - Speech Bubble */
+.anime-speech-bubble {
+    position: relative;
+    background: linear-gradient(135deg, #FFFFFF 0%, var(--color-cream) 100%);
+    border: 2px solid var(--color-primary);
+    border-radius: 16px;
+    padding: 12px 18px;
+    margin: 10px 0;
+    box-shadow: 0 4px 12px rgba(156, 175, 136, 0.2);
+    animation: bubblePop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    font-size: 0.95rem;
+    line-height: 1.5;
+    max-width: 300px;
+}
+
+.anime-speech-bubble::before {
+    content: '';
+    position: absolute;
+    bottom: -10px;
+    left: 30px;
+    width: 0;
+    height: 0;
+    border-left: 10px solid transparent;
+    border-right: 10px solid transparent;
+    border-top: 12px solid var(--color-primary);
+}
+
+@keyframes bubblePop {
+    0% { transform: scale(0.8); opacity: 0; }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); opacity: 1; }
+}
+
+/* Anime Character - Host Container */
+.anime-host-container {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 20px;
+    background: linear-gradient(135deg, rgba(156, 175, 136, 0.1) 0%, rgba(244, 228, 188, 0.1) 100%);
+    border-radius: 20px;
+    border: 2px solid var(--color-beige);
+    margin-bottom: 20px;
+    box-shadow: var(--shadow-card);
+}
+
+.anime-host-avatar {
+    position: relative;
+    flex-shrink: 0;
+}
+
+.anime-host-avatar .anime-character {
+    position: relative;
+    z-index: 2;
+}
+
+.anime-host-avatar::after {
+    content: '';
+    position: absolute;
+    top: -4px;
+    left: -4px;
+    right: -4px;
+    bottom: -4px;
+    background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-accent) 100%);
+    border-radius: 50%;
+    opacity: 0.3;
+    z-index: 1;
+    animation: avatarGlow 3s ease-in-out infinite;
+}
+
+@keyframes avatarGlow {
+    0%, 100% { transform: scale(1); opacity: 0.3; }
+    50% { transform: scale(1.1); opacity: 0.5; }
+}
+
+.anime-host-content {
+    flex: 1;
+}
+
+.anime-host-name {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: var(--color-primary);
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.anime-host-role {
+    font-size: 0.85rem;
+    color: var(--color-text-light);
+    font-weight: 600;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.anime-host-message {
+    font-size: 1rem;
+    color: var(--color-text);
+    line-height: 1.6;
+    font-style: italic;
+}
+
+.anime-host-message::before {
+    content: '"';
+    font-size: 1.5rem;
+    color: var(--color-primary);
+    margin-right: 4px;
+}
+
+.anime-host-message::after {
+    content: '"';
+    font-size: 1.5rem;
+    color: var(--color-primary);
+    margin-left: 4px;
+}
+
+/* Anime Character - Activity Cards Enhancement */
+.activity-card .anime-character {
+    margin-bottom: 8px;
+}
+
+.activity-card:hover .anime-character {
+    animation: cardCharacterBounce 0.5s ease-out;
+}
+
+@keyframes cardCharacterBounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-8px); }
+}
+
+/* Anime Character - Floating Decoration */
+.anime-floating-character {
+    position: fixed;
+    z-index: 100;
+    pointer-events: none;
+    animation: floatCharacter 4s ease-in-out infinite;
+}
+
+.anime-floating-character.top-left {
+    top: 20px;
+    left: 20px;
+}
+
+.anime-floating-character.top-right {
+    top: 20px;
+    right: 20px;
+}
+
+.anime-floating-character.bottom-left {
+    bottom: 20px;
+    left: 20px;
+}
+
+.anime-floating-character.bottom-right {
+    bottom: 20px;
+    right: 20px;
+}
+
+@keyframes floatCharacter {
+    0%, 100% { transform: translateY(0) rotate(0deg); }
+    25% { transform: translateY(-15px) rotate(5deg); }
+    75% { transform: translateY(10px) rotate(-5deg); }
+}
+
+/* Anime Character - Sparkle Effects */
+.anime-sparkle {
+    position: absolute;
+    font-size: 1.2rem;
+    animation: sparklePulse 1.5s ease-in-out infinite;
+}
+
+.anime-sparkle:nth-child(1) { top: -8px; left: -8px; animation-delay: 0s; }
+.anime-sparkle:nth-child(2) { top: -8px; right: -8px; animation-delay: 0.5s; }
+.anime-sparkle:nth-child(3) { bottom: -8px; left: -8px; animation-delay: 1s; }
+.anime-sparkle:nth-child(4) { bottom: -8px; right: -8px; animation-delay: 0.3s; }
+
+@keyframes sparklePulse {
+    0%, 100% { opacity: 0; transform: scale(0); }
+    50% { opacity: 1; transform: scale(1); }
+}
+
+/* Anime Character - Success Animation */
+.anime-character-success {
+    animation: successCelebration 1s ease-out;
+}
+
+@keyframes successCelebration {
+    0% { transform: scale(1); }
+    25% { transform: scale(1.2) rotate(-10deg); }
+    50% { transform: scale(1.1) rotate(10deg); }
+    75% { transform: scale(1.15) rotate(-5deg); }
+    100% { transform: scale(1) rotate(0deg); }
+}
+
+/* Anime Character - Loading Animation */
+.anime-character-loading .anime-character svg {
+    animation: loadingPulse 1.5s ease-in-out infinite;
+}
+
+@keyframes loadingPulse {
+    0%, 100% { opacity: 0.6; transform: scale(0.95); }
+    50% { opacity: 1; transform: scale(1.05); }
+}
+
+/* Anime Character - Error Animation */
+.anime-character-error {
+    animation: errorShake 0.5s ease-out;
+}
+
+@keyframes errorShake {
+    0%, 100% { transform: translateX(0); }
+    20% { transform: translateX(-10px); }
+    40% { transform: translateX(10px); }
+    60% { transform: translateX(-5px); }
+    80% { transform: translateX(5px); }
+}
+
+/* Anime Character - Welcome Banner */
+.anime-welcome-banner {
+    position: relative;
+    background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-accent) 100%);
+    color: white;
+    padding: 20px 30px;
+    border-radius: 20px;
+    margin-bottom: 30px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    box-shadow: var(--shadow-soft);
+    overflow: hidden;
+}
+
+.anime-welcome-banner::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
+    animation: bannerShimmer 3s ease-in-out infinite;
+}
+
+@keyframes bannerShimmer {
+    0%, 100% { transform: translate(0, 0); }
+    50% { transform: translate(10%, 10%); }
+}
+
+.anime-welcome-character {
+    flex-shrink: 0;
+    position: relative;
+    z-index: 1;
+}
+
+.anime-welcome-content {
+    flex: 1;
+    position: relative;
+    z-index: 1;
+}
+
+.anime-welcome-title {
+    font-size: 1.8rem;
+    font-weight: 700;
+    margin-bottom: 6px;
+    animation: welcomeTitle 0.6s ease-out;
+}
+
+@keyframes welcomeTitle {
+    0% { opacity: 0; transform: translateY(-20px); }
+    100% { opacity: 1; transform: translateY(0); }
+}
+
+.anime-welcome-subtitle {
+    font-size: 1.1rem;
+    opacity: 0.95;
+    animation: welcomeSubtitle 0.8s ease-out 0.2s both;
+}
+
+@keyframes welcomeSubtitle {
+    0% { opacity: 0; transform: translateY(-15px); }
+    100% { opacity: 0.95; transform: translateY(0); }
+}
+
+/* Responsive Anime Characters */
+@media (max-width: 600px) {
+    .anime-host-container {
+        flex-direction: column;
+        text-align: center;
+        padding: 16px;
+    }
+
+    .anime-host-avatar {
+        margin-bottom: 12px;
+    }
+
+    .anime-speech-bubble {
+        font-size: 0.85rem;
+        padding: 10px 14px;
+        max-width: 100%;
+    }
+
+    .anime-welcome-banner {
+        flex-direction: column;
+        text-align: center;
+        padding: 16px 20px;
+        gap: 16px;
+    }
+
+    .anime-welcome-title {
+        font-size: 1.4rem;
+    }
+
+    .anime-welcome-subtitle {
+        font-size: 1rem;
+    }
+
+    .anime-floating-character {
+        display: none;
+    }
+}
+
+/* Reduced Motion Support */
+@media (prefers-reduced-motion: reduce) {
+    .anime-character,
+    .anime-character svg,
+    .anime-speech-bubble,
+    .anime-host-avatar::after,
+    .anime-floating-character,
+    .anime-sparkle {
+        animation: none !important;
+        transition: none !important;
+    }
+
+    .anime-character:hover svg {
+        transform: none;
+    }
+}
+
+/* ========================================
+   ANIME CHARACTER SELECTION STYLES
+   ======================================== */
+
+.anime-character-selection {
+    margin-bottom: 30px;
+    text-align: center;
+}
+
+.anime-selection-title {
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: var(--color-primary);
+    margin-bottom: 25px;
+    animation: fadeIn 0.6s ease-out;
+}
+
+.anime-selection-options {
+    display: flex;
+    justify-content: center;
+    gap: 30px;
+    flex-wrap: wrap;
+}
+
+.anime-selection-option {
+    background: linear-gradient(135deg, var(--color-white) 0%, var(--color-cream) 100%);
+    border: 3px solid var(--color-beige);
+    border-radius: 20px;
+    padding: 30px 20px;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+    box-shadow: var(--shadow-card);
+    position: relative;
+    overflow: hidden;
+}
+
+.anime-selection-option::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, var(--color-primary), var(--color-accent));
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.anime-selection-option:hover {
+    transform: translateY(-8px);
+    border-color: var(--color-primary);
+    box-shadow: var(--shadow-hover);
+}
+
+.anime-selection-option:hover::before {
+    opacity: 1;
+}
+
+.anime-selection-option:active {
+    transform: translateY(-4px);
+}
+
+.anime-selection-name {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: var(--color-primary);
+    font-family: 'Nunito', 'Quicksand', sans-serif;
+}
+
+.anime-selection-option.selected {
+    border-color: var(--color-primary);
+    background: linear-gradient(135deg, var(--color-cream) 0%, rgba(156, 175, 136, 0.1) 100%);
+    box-shadow: 0 0 0 4px rgba(156, 175, 136, 0.2);
+}
+
+.anime-selection-option.selected::before {
+    opacity: 1;
+}
+
+.anime-selection-option.selected .anime-character {
+    animation: selectionPop 0.5s ease-out;
+}
+
+@keyframes selectionPop {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.2); }
+    100% { transform: scale(1); }
+}
+
+/* Responsive Character Selection */
+@media (max-width: 600px) {
+    .anime-selection-options {
+        flex-direction: column;
+        align-items: center;
+        gap: 20px;
+    }
+
+    .anime-selection-option {
+        width: 100%;
+        max-width: 280px;
+        padding: 25px 20px;
+    }
+
+    .anime-selection-name {
+        font-size: 1.1rem;
+    }
+}
+
+/* ========================================
+   ANIME CHARACTER WRAPPER STYLES
+   ======================================== */
+
+.anime-character-wrapper {
+    display: inline-block;
+    position: relative;
+}
+
+.anime-character-wrapper .anime-character {
+    display: block;
+}
+
+/* Activity Card Character Enhancements */
+.activity-card .anime-character-wrapper {
+    margin-bottom: 8px;
+}
+
+.activity-card .anime-character {
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.activity-card:hover .anime-character {
+    transform: scale(1.15) rotate(-5deg);
+    filter: drop-shadow(0 8px 16px rgba(156, 175, 136, 0.4));
+}
+
+/* ========================================
+   ANIME CHARACTER INTERACTION FEEDBACK
+   ======================================== */
+
+.anime-character.interactive {
+    cursor: pointer;
+}
+
+.anime-character.interactive:hover {
+    animation: interactiveHover 0.3s ease-out;
+}
+
+@keyframes interactiveHover {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.1) rotate(5deg); }
+    100% { transform: scale(1.1) rotate(-5deg); }
+}
+
+.anime-character.clicked {
+    animation: clickReaction 0.4s ease-out;
+}
+
+@keyframes clickReaction {
+    0% { transform: scale(1); }
+    25% { transform: scale(0.9); }
+    50% { transform: scale(1.15); }
+    100% { transform: scale(1); }
+}
+
+/* ========================================
+   ANIME CHARACTER SUCCESS CELEBRATION
+   ======================================== */
+
+.anime-character.celebrating {
+    animation: celebrateSuccess 1.2s ease-out;
+}
+
+@keyframes celebrateSuccess {
+    0% { transform: scale(1) rotate(0deg); }
+    25% { transform: scale(1.2) rotate(-15deg); }
+    50% { transform: scale(1.1) rotate(15deg); }
+    75% { transform: scale(1.15) rotate(-8deg); }
+    100% { transform: scale(1) rotate(0deg); }
+}
+
+/* ========================================
+   ANIME CHARACTER CHIBI SPECIFIC STYLES
+   ======================================== */
+
+/* Chibi Face Expression */
+.anime-character .chibi-face {
+    transition: all 0.3s ease;
+}
+
+.anime-character.emotion-happy .chibi-face {
+    filter: brightness(1.05);
+}
+
+.anime-character.emotion-excited .chibi-face {
+    filter: brightness(1.1) saturate(1.1);
+}
+
+.anime-character.emotion-thinking .chibi-face {
+    filter: brightness(0.95);
+}
+
+/* Chibi Eye Animations */
+.anime-character .chibi-eyes {
+    transition: all 0.3s ease;
+}
+
+.anime-character.emotion-surprised .chibi-eyes {
+    transform: scale(1.2);
+}
+
+.anime-character.emotion-excited .chibi-eyes {
+    animation: eyesSparkle 0.6s ease-out infinite;
+}
+
+@keyframes eyesSparkle {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+}
+
+/* Chibi Mouth Animations */
+.anime-character .chibi-mouth {
+    transition: all 0.3s ease;
+}
+
+.anime-character.emotion-happy .chibi-mouth {
+    transform: scaleY(1.2);
+}
+
+/* ========================================
+   ANIME CHARACTER DECORATION STYLES
+   ======================================== */
+
+.anime-decoration-group {
+    position: relative;
+    display: inline-block;
+}
+
+.anime-decoration {
+    position: absolute;
+    font-size: 1.5rem;
+    animation: decorationFloat 3s ease-in-out infinite;
+    pointer-events: none;
+}
+
+.anime-decoration:nth-child(1) { top: -15px; left: -10px; animation-delay: 0s; }
+.anime-decoration:nth-child(2) { top: -15px; right: -10px; animation-delay: 0.5s; }
+.anime-decoration:nth-child(3) { bottom: -10px; left: 5px; animation-delay: 1s; }
+.anime-decoration:nth-child(4) { bottom: -10px; right: 5px; animation-delay: 1.5s; }
+
+@keyframes decorationFloat {
+    0%, 100% { transform: translateY(0) rotate(0deg); }
+    50% { transform: translateY(-8px) rotate(10deg); }
+}
+
+/* ========================================
+   ANIME CHARACTER LOADING STATES
+   ======================================== */
+
+.anime-character.state-loading .anime-character svg {
+    animation: characterLoading 1.5s ease-in-out infinite;
+}
+
+@keyframes characterLoading {
+    0%, 100% { opacity: 0.6; transform: scale(0.95) rotate(-2deg); }
+    50% { opacity: 1; transform: scale(1.05) rotate(2deg); }
+}
+
+.anime-character.state-success .anime-character svg {
+    animation: characterSuccess 0.8s ease-out;
+}
+
+@keyframes characterSuccess {
+    0% { transform: scale(1); filter: brightness(1); }
+    50% { transform: scale(1.2); filter: brightness(1.2); }
+    100% { transform: scale(1); filter: brightness(1); }
+}
+
+.anime-character.state-error .anime-character svg {
+    animation: characterError 0.5s ease-out;
+}
+
+@keyframes characterError {
+    0%, 100% { transform: translateX(0); }
+    20% { transform: translateX(-8px) rotate(-3deg); }
+    40% { transform: translateX(8px) rotate(3deg); }
+    60% { transform: translateX(-4px) rotate(-2deg); }
+    80% { transform: translateX(4px) rotate(2deg); }
+}
+
 /* Spin Animation for Loading Spinner */
 @keyframes spin {
     0% { transform: rotate(0deg); }

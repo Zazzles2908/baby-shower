@@ -3954,21 +3954,3 @@ picture img {
     gap: 10px;
 }
 
-.btn-lock-mom,
-.btn-lock-dad,
-.btn-reveal {
-    padding: 12px 20px;
-    border: none;
-    border-radius: 10px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.3s ease;
-}
-
-.btn-lock-mom {
-    background: linear-gradient(135deg, #FF69B4 0%, #FF1493 100%);
-    color: white;
-}
-
-.btn-lock-dad {
-    background: line
