@@ -11,12 +11,17 @@
 (function(global) {
   'use strict';
 
-  // Configuration - Replace with your Supabase project details
+  // Configuration - Updated to support both local files and Supabase Storage
   const CONFIG = {
+    // Local file configuration
+    USE_LOCAL_FILES: true,
+    LOCAL_BASE_PATH: '/baby_content/Pictures',
+    
+    // Supabase configuration (for fallback or mixed usage)
     SUPABASE_URL: import.meta.env?.VITE_SUPABASE_URL || 'https://bkszmvfsfgvdwzacgmfz.supabase.co',
     SUPABASE_ANON_KEY: import.meta.env?.VITE_SUPABASE_ANON_KEY || '',
     BUCKET_NAME: 'baby-shower-pictures',
-    CDN_ENABLED: true,
+    CDN_ENABLED: false, // Set to true if using Supabase CDN
     IMAGE_SIZES: {
       thumbnail: { width: 150, height: 150, suffix: 'thumb' },
       small: { width: 400, height: 400, suffix: 'small' },
@@ -31,10 +36,59 @@
   };
 
   /**
-   * Get the base storage URL for Supabase
+   * Map expected application paths to actual file system paths
+   * Converts virtual paths to real directory structure
+   * @param {string} path - The expected application path
+   * @returns {string} The actual file system path
+   */
+  function mapPathToActualLocation(path) {
+    if (!path) return path;
+
+    // Define path mappings from expected paths to actual locations
+    const pathMappings = {
+      // Hero images: hero/* -> Michelle_Jazeel/*
+      'hero/': 'Michelle_Jazeel/',
+      
+      // Gallery baby images
+      'gallery/jazeel_baby/': 'Jazeel_Baby/',
+      'gallery/michelle_baby/': 'Michelle_Baby/',
+      
+      // Icons mapping for avatar files
+      'icons/avatar_m.png': 'Jazeel_Icon/asset_chibi_avatar_m.png',
+      'icons/avatar_f.png': 'Michelle_Icon/asset_chibi_avatar_f.png',
+      'icons/heart.png': 'Jazeel&Michelle_Icon/asset_chibi_heart.png',
+      
+      // Handle icon subdirectories used in IMAGE_PATHS
+      'icons/jazeel_avatar/': 'Jazeel_Icon/',
+      'icons/michelle_avatar/': 'Michelle_Icon/',
+      'icons/shared/': 'Jazeel&Michelle_Icon/'
+    };
+
+    // Check for exact matches first, then prefix matches
+    for (const [expected, actual] of Object.entries(pathMappings)) {
+      // Check if path starts with the expected prefix
+      if (path.startsWith(expected)) {
+        const mappedPath = path.replace(expected, actual);
+        console.log(`[ImageService] Path mapped: "${path}" -> "${mappedPath}"`);
+        return mappedPath;
+      }
+    }
+
+    // No mapping found, return original path
+    return path;
+  }
+
+  /**
+   * Get the base storage URL for Supabase or local files
    */
   function getBaseUrl() {
-    return `${CONFIG.SUPABASE_URL}/storage/v1/object/public/${CONFIG.BUCKET_NAME}`;
+    if (CONFIG.USE_LOCAL_FILES) {
+      // Return local file path base URL
+      return CONFIG.LOCAL_BASE_PATH;
+    } else {
+      // Return Supabase storage URL
+      return `${CONFIG.SUPABASE_URL}/storage/v1/object/public/${CONFIG.BUCKET_NAME}`;
+    }
   }
 
   /**
@@ -51,7 +105,13 @@
 
     const baseUrl = getBaseUrl();
     
-    // If requesting original, return direct URL
+    // For local files, apply path mapping and return direct path without size variants
+    if (CONFIG.USE_LOCAL_FILES) {
+      const mappedPath = mapPathToActualLocation(path);
+      return `${baseUrl}/${mappedPath}`;
+    }
+
+    // If requesting original, return direct Supabase URL
     if (size === 'original' || size === '') {
       return `${baseUrl}/${path}`;
     }
@@ -63,7 +123,7 @@
       return `${baseUrl}/${path}`;
     }
 
-    // Construct path with size suffix
+    // Construct path with size suffix for Supabase
     const pathParts = path.split('/');
     const filename = pathParts.pop();
     const directory = pathParts.join('/');
@@ -240,16 +300,19 @@
    */
   function getImageMetadata(path) {
     const sizeConfig = CONFIG.IMAGE_SIZES;
+    const mappedPath = CONFIG.USE_LOCAL_FILES ? mapPathToActualLocation(path) : path;
+    
     const variants = Object.keys(sizeConfig).map(size => ({
       size,
       width: sizeConfig[size].width,
       height: sizeConfig[size].height,
-      url: getImageUrl(path, size)
+      url: getImageUrl(mappedPath, size)
     }));
 
     return {
       path,
-      originalUrl: getImageUrl(path, 'original'),
+      mappedPath,
+      originalUrl: getImageUrl(mappedPath, 'original'),
       variants,
       cdnUrl: getBaseUrl(),
       bucket: CONFIG.BUCKET_NAME,
@@ -280,7 +343,10 @@
       chibi: 'hero/app_hero_chibi.png',
       anime: 'hero/app_hero_anime.png',
       illustration: 'hero/app_hero_illustration.png',
-      pixar: 'hero/app_hero_pixar.png'
+      pixar: 'hero/app_hero_pixar.png',
+      couple_expecting: 'hero/chibi_couple_expecting.png',
+      anime_portrait: 'hero/asset_anime_portrait.png',
+      anime_scene: 'hero/asset_anime_scene.png'
     },
     // Couple images
     couple: {
@@ -300,11 +366,18 @@
         first_birthday: 'gallery/michelle_baby/chibi_michelle_1st_birthday.png',
         garden: 'gallery/michelle_baby/chibi_michelle_garden.png',
         sisters: 'gallery/michelle_baby/chibi_michelle_sisters.png'
-      }
+      },
+      // Direct path mapping for gallery items
+      jazeel_birthday: 'gallery/jazeel_baby/chibi_jazeel_birthday_edit.png',
+      jazeel_cake: 'gallery/jazeel_baby/chibi_jazeel_cake.png',
+      jazeel_dad: 'gallery/jazeel_baby/chibi_jazeel_dad_couch_edit.png',
+      michelle_birthday: 'gallery/michelle_baby/chibi_michelle_1st_birthday.png',
+      michelle_garden: 'gallery/michelle_baby/chibi_michelle_garden.png',
+      michelle_sisters: 'gallery/michelle_baby/chibi_michelle_sisters.png'
     },
     // Theme decorations
     theme: {
-      farm_animals: 'decorations/chibi_farm_animals.png'
+      farm_animals: 'theme/chibi_farm_animals.png'
     },
     // Icons/Avatars
     icons: {
@@ -312,7 +385,12 @@
       michelle_avatar: 'icons/michelle_avatar/asset_chibi_avatar_f.png',
       heart: 'icons/shared/asset_chibi_heart.png',
       think: 'icons/shared/asset_chibi_think.png',
-      win: 'icons/shared/asset_chibi_win.png'
+      win: 'icons/shared/asset_chibi_win.png',
+      shared: {
+        heart: 'icons/shared/asset_chibi_heart.png',
+        think: 'icons/shared/asset_chibi_think.png',
+        win: 'icons/shared/asset_chibi_win.png'
+      }
     }
   };
 
@@ -331,12 +409,40 @@
     }
 
     let path;
+    
+    // Handle baby category with various naming patterns
     if (category === 'baby') {
-      const subCategory = name.split('_')[0]; // jazeel or michelle
-      const imageName = name.split('_').slice(1).join('_');
-      path = categoryPaths[subCategory]?.[imageName];
-    } else {
+      // Try direct lookup first (for cases like 'jazeel_birthday', 'michelle_birthday')
       path = categoryPaths[name];
+      
+      // If not found, try parsing the name pattern (e.g., 'jazeel_birthday' -> jazeel.birthday)
+      if (!path && name.includes('_')) {
+        const parts = name.split('_');
+        const subCategory = parts[0]; // 'jazeel' or 'michelle'
+        const imageName = parts.slice(1).join('_'); // 'birthday', 'cake', etc.
+        path = categoryPaths[subCategory]?.[imageName];
+      }
+      
+      // Handle old format like 'jazeel_birthday' -> jazeel.birthday (where key is just 'birthday')
+      if (!path && name.includes('_')) {
+        const parts = name.split('_');
+        const subCategory = parts[0];
+        const imageName = parts[1]; // Just take the second part
+        path = categoryPaths[subCategory]?.[imageName];
+      }
+    } else {
+      // For other categories, direct lookup
+      path = categoryPaths[name];
+      
+      // Also try to find by checking if path ends with the name
+      if (!path && typeof categoryPaths === 'object') {
+        for (const key in categoryPaths) {
+          if (categoryPaths[key].includes(name) || categoryPaths[key].endsWith(name)) {
+            path = categoryPaths[key];
+            break;
+          }
+        }
+      }
     }
 
     if (!path) {
@@ -344,7 +450,9 @@
       return '';
     }
 
-    return getImageUrl(path, size);
+    // Apply path mapping for local files
+    const mappedPath = CONFIG.USE_LOCAL_FILES ? mapPathToActualLocation(path) : path;
+    return getImageUrl(mappedPath, size);
   }
 
   /**
@@ -362,7 +470,7 @@
       preloadHeroImage(heroImage);
     }
 
-    console.log('[ImageService] Initialized with CDN:', CONFIG.CDN_ENABLED);
+    console.log(`[ImageService] Initialized with ${CONFIG.USE_LOCAL_FILES ? 'local files' : 'Supabase CDN'}: ${CONFIG.USE_LOCAL_FILES ? CONFIG.LOCAL_BASE_PATH : CONFIG.SUPABASE_URL}`);
     
     return {
       version: '1.0.0',
@@ -375,6 +483,7 @@
       setupLazyLoading,
       getImageMetadata,
       getNamedImage,
+      mapPathToActualLocation,
       IMAGE_PATHS
     };
   }
@@ -390,6 +499,7 @@
     setupLazyLoading,
     getImageMetadata,
     getNamedImage,
+    mapPathToActualLocation,
     IMAGE_PATHS,
     CONFIG
   };

@@ -43,35 +43,42 @@ serve(async (req: Request) => {
     const adviceText = body.advice || body.message || ''
     const name = body.name || 'Anonymous Advisor'
 
-    // Validation
+    // Validation - Enhanced error messages for user-friendly feedback
     const errors: string[] = []
     
+    // Name validation (optional but provide better error)
+    if (body.name && body.name.length > 100) {
+      errors.push('Name must be 100 characters or less')
+    }
+    
+    // Advice text validation
     if (!adviceText || adviceText.trim().length === 0) {
-      errors.push('Advice text is required')
+      errors.push('Please enter your advice or message')
+    } else if (adviceText.length < 5) {
+      errors.push('Message must be at least 5 characters long')
+    } else if (adviceText.length > 2000) {
+      errors.push('Message must be 2000 characters or less (yours is ' + adviceText.length + ' characters)')
     }
     
-    if (adviceText && adviceText.length > 2000) {
-      errors.push('Advice must be 2000 characters or less')
-    }
-    
+    // Category validation
     if (!category || category.trim().length === 0) {
-      errors.push('Category is required')
-    }
-    
-    // Map frontend adviceType to valid categories if needed
-    const normalizedCategory = category.toLowerCase().trim()
-    const validCategories = ['general', 'naming', 'feeding', 'sleeping', 'safety', 'fun', 'ai_roast']
-    
-    // Map "For Parents" or "for parents" -> "general", "For Baby" or "for baby" -> "fun"
-    let finalCategory = normalizedCategory
-    if (normalizedCategory === 'for parents' || normalizedCategory === 'parents' || normalizedCategory === 'for parents\' 18th birthday') {
-      finalCategory = 'general'
-    } else if (normalizedCategory === 'for baby' || normalizedCategory === 'baby' || normalizedCategory === 'for baby\'s 18th birthday') {
-      finalCategory = 'fun'
-    }
-    
-    if (finalCategory && !validCategories.includes(finalCategory)) {
-      errors.push(`Category must be one of: ${validCategories.join(', ')}`)
+      errors.push('Please select a delivery method (For Parents or For Baby)')
+    } else {
+      // Normalize and validate category
+      const normalizedCategory = category.toLowerCase().trim()
+      const validCategories = ['general', 'naming', 'feeding', 'sleeping', 'safety', 'fun', 'ai_roast']
+      
+      // Map frontend values to valid categories
+      let finalCategory = normalizedCategory
+      if (normalizedCategory === 'for parents' || normalizedCategory === 'parents') {
+        finalCategory = 'general'
+      } else if (normalizedCategory === 'for baby' || normalizedCategory === 'baby') {
+        finalCategory = 'fun'
+      } else if (normalizedCategory === '18th birthday' || normalizedCategory === 'time capsule') {
+        finalCategory = 'fun'
+      } else if (!validCategories.includes(finalCategory)) {
+        errors.push(`Invalid delivery method. Please choose "For Parents" or "For Baby"`)
+      }
     }
 
     if (errors.length > 0) {

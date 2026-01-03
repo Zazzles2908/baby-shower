@@ -1152,13 +1152,19 @@ async function submitGuestbook(data, photoFile) {
  * Submit pool prediction using Supabase Edge Functions
  */
 async function submitPool(data) {
+    // Parse weight and length from form data
+    const weightGuess = parseFloat(data.weightGuess) || 0;
+    const lengthGuess = parseFloat(data.lengthGuess) || 0;
+    
     // Build complete prediction string with all fields
-    const prediction = `Date: ${data.dateGuess || ''}, Time: ${data.timeGuess || ''}, Weight: ${data.weightGuess || ''}kg, Length: ${data.lengthGuess || ''}cm`;
+    const prediction = `Date: ${data.dateGuess || ''}, Time: ${data.timeGuess || ''}, Weight: ${weightGuess}kg, Length: ${lengthGuess}cm`;
     
     return await window.API.submitPool({
         name: data.name?.trim() || '',
         prediction: prediction,
-        dueDate: data.dateGuess || ''
+        dueDate: data.dateGuess || '',
+        weight: weightGuess,
+        length: lengthGuess
     });
 }
 

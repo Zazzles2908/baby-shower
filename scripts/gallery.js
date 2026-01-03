@@ -123,8 +123,9 @@
         const heroContainer = document.getElementById('hero-image-container');
         if (!heroContainer) return;
 
-        // Use the chibi couple expecting image for hero
-        const heroImage = ImageService.getNamedImage('couple', 'expecting', 'hero');
+        // Use the chibi couple expecting image for hero (from GALLERY_ITEMS)
+        const heroData = GALLERY_ITEMS.find(item => item.id === 'couple-portrait') || GALLERY_ITEMS[0];
+        const heroImage = ImageService.getImageUrl(heroData.image, 'hero');
         
         if (heroImage) {
             heroContainer.innerHTML = `
@@ -165,7 +166,7 @@
         if (!container) return;
 
         const timelineHTML = GALLERY_ITEMS.map((item, index) => {
-            const imageUrl = ImageService.getNamedImage('baby', item.id.includes('michelle') ? 'michelle_' + item.id.split('-')[1] : 'jazeel_' + item.id.split('-')[1], 'medium');
+            const imageUrl = ImageService.getImageUrl(item.image, 'medium');
             
             return `
                 <div class="gallery-item" data-id="${item.id}">

@@ -123,17 +123,36 @@
     }
 
     /**
-     * Show error message to user
+     * Show error message to user (enhanced with better UX)
      */
     function showError(message) {
-        alert(message); // Could be enhanced with a toast notification
+        // Try to use enhanced error display if available
+        if (window.MomVsDadEnhanced && window.MomVsDadEnhanced.showGameError) {
+            window.MomVsDadEnhanced.showGameError(
+                'Oops!',
+                message,
+                'Try Again',
+                null // Could pass retry callback
+            );
+        } else {
+            // Fallback to alert
+            alert(message);
+        }
     }
 
     /**
-     * Show success message to user
+     * Show success message to user (enhanced with particles)
      */
     function showSuccess(message) {
-        alert(message); // Could be enhanced with a toast notification
+        console.log('[MomVsDad] Success:', message);
+
+        // Trigger floating particles for celebration
+        if (window.MomVsDadEnhanced && window.MomVsDadEnhanced.triggerFloatingParticles) {
+            window.MomVsDadEnhanced.triggerFloatingParticles('star', 8);
+        }
+
+        // Could show toast notification
+        // For now, keep it simple
     }
 
     /**
@@ -361,6 +380,59 @@
     }
 
     /**
+     * Handle leave game from voting screen (Enhanced UX)
+     */
+    function handleLeaveGameFromVoting() {
+        console.log('[MomVsDad] Leaving game from voting screen...');
+
+        // Confirm with user
+        const confirmed = confirm(
+            'Are you sure you want to leave the game?\n\n' +
+            'Your progress in the current round will be lost, but you can rejoin anytime.'
+        );
+
+        if (!confirmed) {
+            return;
+        }
+
+        try {
+            // Stop vote polling
+            stopVotePolling();
+
+            // Unsubscribe from game
+            unsubscribeFromGame();
+
+            // Clear game state
+            currentSession = null;
+            currentScenario = null;
+            voted = false;
+
+            // Show farewell message with particles
+            if (window.MomVsDadEnhanced && window.MomVsDadEnhanced.triggerFloatingParticles) {
+                window.MomVsDadEnhanced.triggerFloatingParticles('star', 15);
+            }
+
+            // Return to main menu using API navigation
+            if (window.API && typeof window.API.showSection === 'function') {
+                window.API.showSection('welcome-section');
+            } else {
+                // Fallback: reload page
+                location.reload();
+            }
+
+            console.log('[MomVsDad] Game left successfully');
+
+        } catch (error) {
+            console.error('[MomVsDad] Error leaving game:', error);
+
+            // Show enhanced error message with retry option
+            showError(
+                `Could not leave game: ${error.message}. Please try refreshing the page.`
+            );
+        }
+    }
+
+    /**
      * Handle game state updates
      */
     function handleGameUpdate(gameState) {
@@ -492,7 +564,7 @@
     }
 
     /**
-     * Handle answer locked
+     * Handle answer locked with enhanced feedback
      */
     function handleAnswerLocked(payload) {
         console.log('[MomVsDad] Answer locked:', payload);
@@ -511,10 +583,37 @@
             dadLock.textContent = '🔒 Locked';
         }
 
+        // Update lock button states
+        const btnLockMom = document.getElementById('btn-lock-mom');
+        const btnLockDad = document.getElementById('btn-lock-dad');
+
+        if (btnLockMom && payload.parent === 'mom') {
+            btnLockMom.classList.add('locked');
+            btnLockMom.disabled = true;
+            btnLockMom.querySelector('.lock-text').textContent = 'Michelle Locked';
+        }
+
+        if (btnLockDad && payload.parent === 'dad') {
+            btnLockDad.classList.add('locked');
+            btnLockDad.disabled = true;
+            btnLockDad.querySelector('.lock-text').textContent = 'Jazeel Locked';
+        }
+
+        // Trigger celebration particles
+        if (window.MomVsDadEnhanced && window.MomVsDadEnhanced.triggerFloatingParticles) {
+            window.MomVsDadEnhanced.triggerFloatingParticles('sparkle', 10);
+        }
+
         // Check if both locked and notify admin
         if (momLock?.classList.contains('locked') && dadLock?.classList.contains('locked')) {
             if (userRole === 'admin') {
                 showSuccess('Both parents locked! Ready to reveal!');
+
+                // Enable reveal button
+                const btnTriggerReveal = document.getElementById('btn-trigger-reveal');
+                if (btnTriggerReveal) {
+                    btnTriggerReveal.disabled = false;
+                }
             }
         }
     }
@@ -895,6 +994,16 @@
                             <span class="info-label">Session:</span>
                             <span class="info-value game-session-code">---</span>
                         </div>
+                    </div>
+
+                    <!-- Leave Game Button (Enhanced UX) -->
+                    <div class="game-actions-footer">
+                        ${window.MomVsDadEnhanced ? window.MomVsDadEnhanced.createLeaveButton('Leave Game') : `
+                            <button type="button" id="btn-leave-game" class="game-leave-btn" aria-label="Leave game and return to menu">
+                                <span class="game-leave-icon">🚪</span>
+                                <span class="game-leave-text">Leave Game</span>
+                            </button>
+                        `}
                     </div>
                 </div>
             </div>
@@ -1372,6 +1481,12 @@
 
         if (btnVoteDad) {
             btnVoteDad.addEventListener('click', () => submitVote('dad'));
+        }
+
+        // Leave game button event listener (Enhanced UX)
+        const btnLeaveGame = document.getElementById('btn-leave-game');
+        if (btnLeaveGame) {
+            btnLeaveGame.addEventListener('click', handleLeaveGameFromVoting);
         }
 
         // Admin panel event listeners

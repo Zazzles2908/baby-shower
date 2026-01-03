@@ -92,13 +92,13 @@ function validatePoolForm(form) {
         return false;
     }
 
-    if (!weightGuess || weightGuess < 1 || weightGuess > 6) {
-        alert('Please enter a valid weight between 1 and 6 kg');
+    if (!weightGuess || weightGuess < 1 || weightGuess > 10) {
+        alert('Please enter a valid weight between 1 and 10 kg');
         return false;
     }
 
-    if (!lengthGuess || lengthGuess < 30 || lengthGuess > 60) {
-        alert('Please enter a valid length between 30 and 60 cm');
+    if (!lengthGuess || lengthGuess < 40 || lengthGuess > 60) {
+        alert('Please enter a valid length between 40 and 60 cm');
         return false;
     }
 

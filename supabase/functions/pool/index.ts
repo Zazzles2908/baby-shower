@@ -142,30 +142,70 @@ serve(async (req: Request) => {
 
     const body: PoolRequest = await req.json()
 
-    // Validation
+    // Validation - Enhanced error messages for user-friendly feedback
     const errors: string[] = []
-    if (!body.name || body.name.trim().length === 0) errors.push('Name is required')
-    if (body.name?.length > 100) errors.push('Name must be 100 chars or less')
-    if (!body.prediction || body.prediction.trim().length === 0) errors.push('Prediction is required')
-    if (body.prediction?.length > 500) errors.push('Prediction must be 500 chars or less')
     
-    // Validate date format (YYYY-MM-DD)
-    const dateRegex = /^\d{4}-\d{2}-\d{2}$/
-    if (!body.dueDate || !dateRegex.test(body.dueDate)) {
-      errors.push('Due date must be in YYYY-MM-DD format')
+    // Name validation
+    if (!body.name || body.name.trim().length === 0) {
+      errors.push('Please enter your name')
+    } else if (body.name.length > 100) {
+      errors.push('Name must be 100 characters or less')
     }
-
-    // Validate weight and length
-    if (typeof body.weight !== 'number' || body.weight < 1 || body.weight > 6) {
-      errors.push('Weight must be between 1 and 6 kg')
+    
+    // Prediction validation
+    if (!body.prediction || body.prediction.trim().length === 0) {
+      errors.push('Please provide your prediction details')
+    } else if (body.prediction.length > 500) {
+      errors.push('Prediction must be 500 characters or less')
     }
-    if (typeof body.length !== 'number' || body.length < 30 || body.length > 60) {
-      errors.push('Length must be between 30 and 60 cm')
+    
+    // Due date validation - YYYY-MM-DD format
+    if (!body.dueDate) {
+      errors.push('Please select a predicted birth date')
+    } else {
+      const dateRegex = /^\d{4}-\d{2}-\d{2}$/
+      if (!dateRegex.test(body.dueDate)) {
+        errors.push('Birth date must be in YYYY-MM-DD format (e.g., 2026-02-15)')
+      } else {
+        // Validate date is reasonable (not in the past, not too far in future)
+        const selectedDate = new Date(body.dueDate)
+        const today = new Date()
+        today.setHours(0, 0, 0, 0)
+        const maxFutureDate = new Date()
+        maxFutureDate.setFullYear(today.getFullYear() + 1)
+        
+        if (selectedDate < today) {
+          errors.push('Birth date cannot be in the past')
+        } else if (selectedDate > maxFutureDate) {
+          errors.push('Birth date must be within one year from today')
+        }
+      }
     }
-
-    // Validate optional gender field
-    if (body.gender && !['boy', 'girl', 'surprise'].includes(body.gender.toLowerCase())) {
-      errors.push('Gender must be boy, girl, or surprise')
+    
+    // Weight validation - 1-10 kg range
+    if (body.weight === undefined || body.weight === null) {
+      errors.push('Please enter the predicted weight in kg')
+    } else if (typeof body.weight !== 'number' || isNaN(body.weight)) {
+      errors.push('Weight must be a number (e.g., 3.5)')
+    } else if (body.weight < 1 || body.weight > 10) {
+      errors.push(`Weight must be between 1 and 10 kg (you entered ${body.weight} kg)`)
+    }
+    
+    // Length validation - 40-60 cm range  
+    if (body.length === undefined || body.length === null) {
+      errors.push('Please enter the predicted length in cm')
+    } else if (typeof body.length !== 'number' || isNaN(body.length)) {
+      errors.push('Length must be a number (e.g., 52)')
+    } else if (body.length < 40 || body.length > 60) {
+      errors.push(`Length must be between 40 and 60 cm (you entered ${body.length} cm)`)
+    }
+    
+    // Optional gender validation
+    if (body.gender && body.gender.trim().length > 0) {
+      const validGenders = ['boy', 'girl', 'surprise']
+      if (!validGenders.includes(body.gender.toLowerCase())) {
+        errors.push(`Gender must be one of: ${validGenders.join(', ')}`)
+      }
     }
 
     if (errors.length > 0) {
