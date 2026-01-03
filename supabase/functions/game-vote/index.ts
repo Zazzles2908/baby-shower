@@ -155,15 +155,20 @@ serve(async (req: Request) => {
     let action: 'vote' | 'lock' | 'unknown' = 'unknown'
 
     if (contentType?.includes('application/json')) {
+      // Read body only once
       const body = await req.json()
       
       // Check if this is a lock answer request (has admin_code)
       if (body.admin_code && body.parent && body.answer) {
         action = 'lock'
+        // Handle lock request
+        return await handleLockAnswer(client, body, headers)
       }
       // Otherwise treat as vote submission
       else if (body.scenario_id && body.guest_name && body.vote_choice) {
         action = 'vote'
+        // Handle vote request
+        return await handleSubmitVote(client, body, headers)
       }
     }
 
@@ -177,34 +182,65 @@ serve(async (req: Request) => {
       )
     }
 
-    // Handle vote submission
-    if (action === 'vote') {
-      const body: SubmitVoteRequest = await req.json()
+    // Fallback for unknown action
+    return new Response(
+      JSON.stringify({ error: 'Unknown action' } as ErrorResponse),
+      { status: 400, headers }
+    )
 
-      // Validate required fields
-      const errors: string[] = []
-      
-      if (!body.scenario_id) {
-        errors.push('scenario_id is required')
+  } catch (err) {
+    console.error('[game-vote] Edge Function error:', err)
+    const errorMessage = err instanceof Error ? err.message : 'Internal server error'
+    
+    return new Response(
+      JSON.stringify({ error: errorMessage } as ErrorResponse),
+      { status: 500, headers }
+    )
+  } finally {
+    if (client) {
+      try {
+        await client.end()
+      } catch (e) {
+        console.error('[game-vote] Error closing database connection:', e)
       }
-      if (!body.guest_name || body.guest_name.trim().length === 0) {
-        errors.push('guest_name is required')
-      }
-      if (!body.vote_choice || !['mom', 'dad'].includes(body.vote_choice)) {
-        errors.push('vote_choice must be "mom" or "dad"')
-      }
-      if (body.guest_name && body.guest_name.length > 100) {
-        errors.push('guest_name must be 100 characters or less')
-      }
+    }
+  }
+})
 
-      if (errors.length > 0) {
-        return new Response(
-          JSON.stringify({ error: 'Validation failed', details: errors } as ErrorResponse),
-          { status: 400, headers }
-        )
-      }
+/**
+ * Handle submitting a vote
+ */
+async function handleSubmitVote(
+  client: Client,
+  body: SubmitVoteRequest,
+  headers: Headers
+): Promise<Response> {
+  // Validate required fields
+  const errors: string[] = []
+  
+  if (!body.scenario_id) {
+    errors.push('scenario_id is required')
+  }
+  if (!body.guest_name || body.guest_name.trim().length === 0) {
+    errors.push('guest_name is required')
+  }
+  if (!body.vote_choice || !['mom', 'dad'].includes(body.vote_choice)) {
+    errors.push('vote_choice must be "mom" or "dad"')
+  }
+  if (body.guest_name && body.guest_name.length > 100) {
+    errors.push('guest_name must be 100 characters or less')
+  }
 
-      console.log(`[game-vote] POST: Guest ${body.guest_name} voting ${body.vote_choice} for scenario ${body.scenario_id}`)
+  if (errors.length > 0) {
+    return new Response(
+      JSON.stringify({ error: 'Validation failed', details: errors } as ErrorResponse),
+      { status: 400, headers }
+    )
+  }
+
+  console.log(`[game-vote] POST: Guest ${body.guest_name} voting ${body.vote_choice} for scenario ${body.scenario_id}`)
+
+  // ... rest of vote handling code ...
 
       // Get scenario and verify session status using direct SQL
       const scenarioResult = await client.queryObject<{
