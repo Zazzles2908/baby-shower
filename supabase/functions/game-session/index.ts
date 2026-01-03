@@ -134,6 +134,28 @@ serve(async (req: Request) => {
     const body = await req.json()
     const action = body.action
 
+    console.log(`[game-session] Action: ${action}`)
+
+    // Route to appropriate handler
+    switch (action) {
+      case 'create':
+        return await handleCreateSession(client, body, headers)
+      case 'join':
+        return await handleJoinSession(client, body, headers)
+      case 'update':
+        return await handleUpdateSession(client, body, headers)
+      case 'join_as_admin':
+        return await handleJoinAsAdmin(client, body, headers)
+      default:
+        return new Response(
+          JSON.stringify({ error: 'Invalid action. Must be create, join, join_as_admin, or update' }),
+          { status: 400, headers }
+        )
+    }
+
+    const body = await req.json()
+    const action = body.action
+
     // Route to appropriate handler
     switch (action) {
       case 'create':
