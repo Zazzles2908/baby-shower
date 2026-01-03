@@ -122,7 +122,8 @@
      */
     async function fetchLobbyStatus(lobbyKey) {
         try {
-            const supabase = getSupabase();
+            // Use existing Supabase client from window (created in main.js)
+            const supabase = window.supabaseClient;
             if (!supabase) {
                 console.warn('[MomVsDadSimplified] No Supabase client available');
                 return null;
