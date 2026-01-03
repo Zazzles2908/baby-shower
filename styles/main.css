@@ -90,6 +90,45 @@ section.hidden {
 }
 
 /* Hero Image Enhancement */
+
+/* Image Loading States - Skeleton Loading */
+.image-wrapper {
+    position: relative;
+    display: inline-block;
+    overflow: hidden;
+    background: var(--color-cream);
+    border-radius: 12px;
+    min-height: 120px;
+}
+
+.image-wrapper.loading::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: linear-gradient(90deg, var(--color-beige) 25%, var(--color-cream) 50%, var(--color-beige) 75%);
+    background-size: 200% 100%;
+    animation: imageShimmer 1.5s infinite linear;
+    z-index: 1;
+}
+
+.image-wrapper.loaded img { opacity: 1; }
+.image-wrapper img { opacity: 0; transition: opacity 0.3s ease; }
+
+.image-wrapper.error img { opacity: 0; }
+.image-wrapper.error::after {
+    content: '🖼️';
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 3rem;
+    opacity: 0.5;
+}
+
+@keyframes imageShimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+
 .hero-image-wrapper {
     max-width: 400px;
     margin: 0 auto 25px;
@@ -1138,7 +1177,7 @@ form {
     animation: bounce 0.6s ease-in-out;
 }
 
-/* Responsive Design */
+/* Responsive Design - Mobile Typography Improvements */
 @media (max-width: 600px) {
     #app {
         padding: 12px;
@@ -1149,12 +1188,15 @@ form {
         border-radius: 16px;
     }
 
+    /* Typography improvements with better line-height */
     h1 {
         font-size: 1.8rem;
+        line-height: 1.3;
     }
 
     h2 {
         font-size: 1.4rem;
+        line-height: 1.3;
     }
 
     .activity-buttons {
@@ -1168,22 +1210,27 @@ form {
         gap: 6px;
     }
 
+    /* Card icon touch target improved */
     .card-icon:not(.anime-character-wrapper) {
         font-size: 2rem;
-        width: 45px;
-        height: 45px;
+        width: 50px;
+        height: 50px;
     }
 
     .card-icon.anime-character-wrapper {
         margin-bottom: 8px;
     }
 
+    /* Card title with better line-height and weight */
     .card-title {
-        font-size: 1.1rem;
+        font-size: 1.15rem;
+        line-height: 1.3;
+        font-weight: 700;
     }
 
     .card-subtitle {
-        font-size: 0.85rem;
+        font-size: 0.95rem;
+        line-height: 1.4;
     }
 
     .name-list {
@@ -1206,9 +1253,41 @@ form {
         min-height: 150px;
     }
 
+    /* Submit button mobile touch target (52px minimum) */
     .submit-btn {
-        padding: 14px 24px;
+        padding: 18px 28px;
+        min-height: 52px;
         font-size: 1rem;
+    }
+}
+
+/* Small Mobile Grid Optimization */
+@media (max-width: 400px) {
+    .activity-buttons {
+        grid-template-columns: 1fr;
+        gap: 14px;
+    }
+
+    .activity-card {
+        min-height: 240px;
+        padding: 25px 18px;
+    }
+
+    .card-icon.anime-character-wrapper {
+        margin-bottom: 6px;
+    }
+
+    .card-icon.anime-character-wrapper .anime-character {
+        max-width: 70px;
+        max-height: 90px;
+    }
+
+    .card-title {
+        font-size: 1.1rem;
+    }
+
+    .card-subtitle {
+        font-size: 0.9rem;
     }
 }
 
