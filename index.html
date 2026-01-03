@@ -77,6 +77,12 @@
                             <span class="card-title">Voting</span>
                             <span class="card-subtitle">Help choose the perfect name</span>
                         </button>
+                        <button class="activity-card" data-section="mom-vs-dad" aria-label="Mom vs Dad - The Truth Revealed">
+                            <div class="card-background-image"></div>
+                            <span class="card-icon">🎮</span>
+                            <span class="card-title">Mom vs Dad</span>
+                            <span class="card-subtitle">The Truth Revealed</span>
+                        </button>
                     </div>
                 </div>
             </div>
@@ -313,6 +319,24 @@
             </div>
         </section>
 
+        <!-- Mom vs Dad Game Section -->
+        <section id="mom-vs-dad-section" class="hidden">
+            <div class="container">
+                <button class="back-btn">← Back to Activities</button>
+                <div class="section-decoration">
+                    <div class="corner-decoration top-left">🐷</div>
+                    <div class="corner-decoration top-right">🐔</div>
+                    <div class="corner-decoration bottom-left">🐮</div>
+                    <div class="corner-decoration bottom-right">🐑</div>
+                </div>
+                <h1>🎮 Mom vs Dad: The Truth Revealed</h1>
+                <p class="subtitle">Guess who would rather... then watch the chaos unfold!</p>
+                
+                <!-- Game content will be populated by JavaScript -->
+                <div id="game-container"></div>
+            </div>
+        </section>
+
         <!-- Loading Overlay -->
         <div id="loading-overlay" class="overlay hidden">
             <div class="loading-spinner"></div>
@@ -353,6 +377,7 @@
     <script src="scripts/quiz.js"></script>
     <script src="scripts/advice.js"></script>
     <script src="scripts/voting.js"></script>
+    <script src="scripts/mom-vs-dad.js"></script>
     
     <!-- Activity Ticker -->
     <div id="activity-ticker" class="activity-ticker hidden" role="status" aria-live="polite" aria-atomic="true">

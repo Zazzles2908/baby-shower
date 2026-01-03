@@ -1983,21 +1983,779 @@ form {
     display: block;
 }
 
-@media (max-width: 600px) {
-    .hero-image-wrapper {
-        max-width: 100%;
+    @media (max-width: 600px) {
+        .hero-image-wrapper {
+            max-width: 100%;
+        }
     }
+
+    /* Card image styles */
+    .card-image {
+        width: 100%;
+        max-width: 120px;
+        height: 120px;
+        object-fit: cover;
+        border-radius: 16px;
+        margin-bottom: 12px;
+        box-shadow: var(--shadow-card);
+    }
+
+/* ========================================
+   MOM VS DAD GAME STYLES
+   ======================================== */
+
+/* Game Join Screen */
+.game-join-screen {
+    text-align: center;
+    padding: 30px 20px;
+    animation: fadeInUp 0.6s ease-out;
 }
 
-/* Card image styles */
-.card-image {
+.game-join-form {
+    max-width: 400px;
+    margin: 30px auto;
+}
+
+.game-join-form .form-group {
+    margin-bottom: 20px;
+    text-align: left;
+}
+
+.game-join-form label {
+    font-weight: 700;
+    color: var(--color-primary);
+    font-size: 1rem;
+    display: block;
+    margin-bottom: 8px;
+}
+
+.game-join-input {
     width: 100%;
-    max-width: 120px;
-    height: 120px;
-    object-fit: cover;
-    border-radius: 16px;
-    margin-bottom: 12px;
+    padding: 14px 16px;
+    border: 2px solid var(--color-beige);
+    border-radius: 12px;
+    font-size: 1rem;
+    font-family: 'Nunito', 'Quicksand', sans-serif;
+    text-align: center;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.game-join-input:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 4px rgba(156, 175, 136, 0.15);
+}
+
+.game-join-btn {
+    background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
+    color: var(--color-white);
+    border: none;
+    border-radius: 15px;
+    padding: 16px 40px;
+    font-size: 1.1rem;
+    cursor: pointer;
+    font-weight: 700;
+    font-family: 'Nunito', 'Quicksand', sans-serif;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 12px rgba(156, 175, 136, 0.35);
+}
+
+.game-join-btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(156, 175, 136, 0.45);
+}
+
+/* Game Waiting Screen */
+.game-waiting-screen {
+    text-align: center;
+    padding: 40px 20px;
+}
+
+.game-waiting-icon {
+    font-size: 5rem;
+    margin-bottom: 20px;
+    animation: float 3s ease-in-out infinite;
+}
+
+.game-waiting-title {
+    font-size: 1.8rem;
+    color: var(--color-primary);
+    font-weight: 700;
+    margin-bottom: 15px;
+}
+
+.game-waiting-subtitle {
+    font-size: 1.1rem;
+    color: var(--color-text-light);
+    margin-bottom: 30px;
+}
+
+.game-participants {
+    max-width: 400px;
+    margin: 0 auto;
+    text-align: left;
+}
+
+.participant-item {
+    background: var(--color-cream);
+    padding: 12px 16px;
+    margin-bottom: 10px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    animation: slideIn 0.3s ease-out;
+    font-weight: 500;
+    color: var(--color-text);
+}
+
+.participant-icon {
+    font-size: 1.5rem;
+}
+
+/* Voting Screen */
+.game-voting-screen {
+    padding: 30px 20px;
+}
+
+.game-scenario-display {
+    background: linear-gradient(135deg, var(--color-cream) 0%, var(--color-secondary) 100%);
+    border: 2px dashed var(--color-primary);
+    border-radius: 20px;
+    padding: 35px 25px;
+    margin-bottom: 30px;
+    text-align: center;
+    animation: fadeInUp 0.6s ease-out;
     box-shadow: var(--shadow-card);
+}
+
+.scenario-text {
+    font-size: 1.3rem;
+    color: var(--color-text);
+    font-weight: 600;
+    line-height: 1.6;
+    margin-bottom: 25px;
+    font-style: italic;
+}
+
+.scenario-options {
+    display: flex;
+    gap: 20px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.scenario-option {
+    background: var(--color-white);
+    border: 3px solid var(--color-beige);
+    border-radius: 18px;
+    padding: 25px 30px;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    flex: 1;
+    min-width: 200px;
+    max-width: 300px;
+    text-align: center;
+    font-weight: 700;
+    font-size: 1.1rem;
+    font-family: 'Nunito', 'Quicksand', sans-serif;
+    box-shadow: var(--shadow-card);
+    position: relative;
+    overflow: hidden;
+}
+
+.scenario-option::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, var(--color-primary), var(--color-accent));
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.scenario-option:hover {
+    transform: translateY(-5px);
+    border-color: var(--color-primary);
+    box-shadow: 0 6px 20px rgba(156, 175, 136, 0.25);
+}
+
+.scenario-option:hover::before {
+    opacity: 1;
+}
+
+.scenario-option:active {
+    transform: translateY(-2px);
+}
+
+.scenario-option.selected {
+    border-color: var(--color-primary);
+    background: linear-gradient(135deg, rgba(156, 175, 136, 0.1) 0%, rgba(156, 175, 136, 0.05) 100%);
+    box-shadow: 0 0 0 4px rgba(156, 175, 136, 0.2);
+}
+
+.option-icon {
+    font-size: 3rem;
+    display: block;
+    margin-bottom: 12px;
+    filter: drop-shadow(0 2px 4px rgba(156, 175, 136, 0.2));
+}
+
+.option-label {
+    color: var(--color-primary);
+    font-size: 1.2rem;
+    display: block;
+    margin-bottom: 5px;
+}
+
+.option-text {
+    color: var(--color-text);
+    font-weight: 500;
+    display: block;
+}
+
+/* Tug of War Bar */
+.game-tug-of-war {
+    background: var(--color-white);
+    border: 2px solid var(--color-beige);
+    border-radius: 20px;
+    padding: 30px 25px;
+    margin-bottom: 30px;
+    box-shadow: var(--shadow-card);
+    animation: fadeInUp 0.8s ease-out;
+}
+
+.tug-of-war-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.tug-of-war-label {
+    font-weight: 700;
+    color: var(--color-text);
+    font-size: 1.1rem;
+}
+
+.tug-of-war-counts {
+    display: flex;
+    gap: 30px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--color-text-light);
+}
+
+.tug-of-war-bar-container {
+    height: 60px;
+    background: linear-gradient(90deg, rgba(156, 175, 136, 0.2) 0%, rgba(244, 228, 188, 0.2) 100%);
+    border-radius: 30px;
+    position: relative;
+    overflow: hidden;
+    border: 2px solid var(--color-beige);
+}
+
+.tug-of-war-bar {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 100%;
+    height: 100%;
+    display: flex;
+}
+
+.tug-of-war-mom {
+    background: linear-gradient(90deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
+    height: 100%;
+    transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+    border-radius: 30px 0 0 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.tug-of-war-dad {
+    background: linear-gradient(90deg, var(--color-accent) 0%, var(--color-secondary) 100%);
+    height: 100%;
+    transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+    border-radius: 0 30px 30px 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.tug-of-war-center {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 40px;
+    height: 40px;
+    background: var(--color-white);
+    border-radius: 50%;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    z-index: 10;
+    transition: left 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+}
+
+.tug-of-war-mom-text,
+.tug-of-war-dad-text {
+    color: var(--color-white);
+    font-weight: 700;
+    font-size: 1rem;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.tug-of-war-mom-text {
+    padding-right: 25px;
+}
+
+.tug-of-war-dad-text {
+    padding-left: 25px;
+}
+
+/* Chibi Avatars */
+.game-avatars {
+    display: flex;
+    justify-content: center;
+    gap: 80px;
+    margin-bottom: 30px;
+    padding: 20px;
+}
+
+.chibi-avatar {
+    text-align: center;
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.chibi-avatar.bounce {
+    animation: chibiBounce 0.6s ease-out;
+}
+
+.chibi-avatar.pulse {
+    animation: chibiPulse 0.6s ease-out;
+}
+
+.chibi-avatar.shake {
+    animation: chibiShake 0.6s ease-out;
+}
+
+.chibi-avatar.glow {
+    filter: drop-shadow(0 0 20px var(--color-accent));
+}
+
+@keyframes chibiBounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-30px); }
+}
+
+@keyframes chibiPulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.15); }
+}
+
+@keyframes chibiShake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-10px); }
+    75% { transform: translateX(10px); }
+}
+
+.chibi-image {
+    font-size: 5rem;
+    display: block;
+    margin-bottom: 15px;
+    filter: drop-shadow(0 4px 8px rgba(156, 175, 136, 0.3));
+    transition: transform 0.3s ease;
+}
+
+.chibi-avatar:hover .chibi-image {
+    transform: scale(1.1);
+}
+
+.chibi-name {
+    font-weight: 700;
+    font-size: 1.3rem;
+    color: var(--color-primary);
+    margin-bottom: 8px;
+}
+
+.chibi-score {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--color-text-light);
+    background: var(--color-cream);
+    padding: 8px 16px;
+    border-radius: 20px;
+    display: inline-block;
+}
+
+/* Result Screen */
+.game-result-screen {
+    text-align: center;
+    padding: 30px 20px;
+}
+
+.result-header {
+    margin-bottom: 30px;
+    animation: fadeInUp 0.6s ease-out;
+}
+
+.result-title {
+    font-size: 2rem;
+    color: var(--color-primary);
+    font-weight: 700;
+    margin-bottom: 15px;
+}
+
+.result-crowd-choice {
+    font-size: 1.2rem;
+    color: var(--color-text);
+    margin-bottom: 10px;
+}
+
+.result-crowd-percentage {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--color-accent);
+}
+
+.result-actual-choice {
+    font-size: 1.1rem;
+    color: var(--color-text-light);
+    margin-bottom: 20px;
+}
+
+.result-roast {
+    background: linear-gradient(135deg, var(--color-secondary) 0%, var(--color-accent) 100%);
+    border: 2px dashed var(--color-accent);
+    border-radius: 18px;
+    padding: 25px 20px;
+    margin: 30px auto;
+    max-width: 500px;
+    position: relative;
+    overflow: hidden;
+    animation: fadeInUp 0.8s ease-out;
+    box-shadow: var(--shadow-card);
+}
+
+.result-roast::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
+    animation: shimmer 3s ease-in-out infinite;
+    pointer-events: none;
+}
+
+.roast-text {
+    font-size: 1.15rem;
+    color: var(--color-text);
+    font-style: italic;
+    font-weight: 600;
+    line-height: 1.6;
+    position: relative;
+    z-index: 1;
+}
+
+.roast-text::before {
+    content: '💬 ';
+}
+
+.roast-text::after {
+    content: ' ✨';
+}
+
+.result-actions {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    margin-top: 30px;
+    flex-wrap: wrap;
+}
+
+.result-btn {
+    background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
+    color: var(--color-white);
+    border: none;
+    border-radius: 15px;
+    padding: 14px 28px;
+    font-size: 1rem;
+    cursor: pointer;
+    font-weight: 700;
+    font-family: 'Nunito', 'Quicksand', sans-serif;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 12px rgba(156, 175, 136, 0.35);
+}
+
+.result-btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(156, 175, 136, 0.45);
+}
+
+.result-btn.secondary {
+    background: linear-gradient(135deg, var(--color-secondary) 0%, var(--color-accent) 100%);
+}
+
+/* Admin Panel */
+.game-admin-panel {
+    background: linear-gradient(135deg, var(--color-cream) 0%, var(--color-secondary) 100%);
+    border: 2px dashed var(--color-primary);
+    border-radius: 20px;
+    padding: 25px 20px;
+    margin-top: 30px;
+    box-shadow: var(--shadow-card);
+}
+
+.admin-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 2px solid rgba(156, 175, 136, 0.3);
+}
+
+.admin-title {
+    font-weight: 700;
+    color: var(--color-primary);
+    font-size: 1.2rem;
+}
+
+.admin-login-btn {
+    background: var(--color-white);
+    border: 2px solid var(--color-beige);
+    border-radius: 10px;
+    padding: 8px 16px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 0.9rem;
+    font-family: 'Nunito', 'Quicksand', sans-serif;
+    transition: all 0.3s ease;
+}
+
+.admin-login-btn:hover {
+    border-color: var(--color-primary);
+    box-shadow: 0 4px 12px rgba(156, 175, 136, 0.15);
+}
+
+.admin-controls {
+    display: none;
+}
+
+.admin-controls.active {
+    display: block;
+    animation: fadeInUp 0.5s ease-out;
+}
+
+.admin-control-row {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 15px;
+    align-items: center;
+}
+
+.admin-label {
+    font-weight: 600;
+    color: var(--color-text);
+    min-width: 120px;
+}
+
+.admin-value {
+    font-weight: 700;
+    color: var(--color-primary);
+}
+
+.admin-status-badge {
+    display: inline-block;
+    padding: 6px 12px;
+    border-radius: 12px;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.admin-status-badge.pending {
+    background: var(--color-cream);
+    color: var(--color-text);
+}
+
+.admin-status-badge.locked {
+    background: var(--color-primary);
+    color: var(--color-white);
+}
+
+.admin-status-badge.revealed {
+    background: var(--color-accent);
+    color: var(--color-white);
+}
+
+.admin-actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 20px;
+}
+
+.admin-action-btn {
+    flex: 1;
+    padding: 12px 20px;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    font-weight: 600;
+    font-family: 'Nunito', 'Quicksand', sans-serif;
+    transition: all 0.3s ease;
+    font-size: 0.95rem;
+}
+
+.admin-action-btn.primary {
+    background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
+    color: var(--color-white);
+}
+
+.admin-action-btn.primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(156, 175, 136, 0.3);
+}
+
+.admin-action-btn.secondary {
+    background: var(--color-white);
+    border: 2px solid var(--color-beige);
+    color: var(--color-text);
+}
+
+.admin-action-btn.secondary:hover {
+    border-color: var(--color-primary);
+}
+
+.admin-pin-input {
+    padding: 12px 16px;
+    border: 2px solid var(--color-beige);
+    border-radius: 10px;
+    font-size: 1rem;
+    font-family: 'Nunito', 'Quicksand', sans-serif;
+    text-align: center;
+    letter-spacing: 8px;
+    width: 150px;
+    font-weight: 700;
+}
+
+.admin-pin-input:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 4px rgba(156, 175, 136, 0.15);
+}
+
+/* Game Progress Indicator */
+.game-progress {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    margin-bottom: 30px;
+    padding: 15px 20px;
+    background: var(--color-white);
+    border-radius: 15px;
+    border: 2px solid var(--color-beige);
+    box-shadow: var(--shadow-card);
+}
+
+.progress-dot {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: var(--color-beige);
+    transition: all 0.3s ease;
+}
+
+.progress-dot.active {
+    background: var(--color-primary);
+    box-shadow: 0 0 10px rgba(156, 175, 136, 0.5);
+}
+
+.progress-dot.completed {
+    background: var(--color-success);
+}
+
+/* Responsive Design for Game */
+@media (max-width: 600px) {
+    .game-avatars {
+        gap: 40px;
+    }
+
+    .chibi-image {
+        font-size: 4rem;
+    }
+
+    .chibi-name {
+        font-size: 1.1rem;
+    }
+
+    .scenario-options {
+        flex-direction: column;
+        gap: 15px;
+    }
+
+    .scenario-option {
+        max-width: 100%;
+        min-width: auto;
+        padding: 20px;
+    }
+
+    .option-icon {
+        font-size: 2.5rem;
+    }
+
+    .tug-of-war-bar-container {
+        height: 50px;
+    }
+
+    .tug-of-war-center {
+        width: 35px;
+        height: 35px;
+        font-size: 1rem;
+    }
+
+    .tug-of-war-mom-text,
+    .tug-of-war-dad-text {
+        font-size: 0.9rem;
+    }
+
+    .result-title {
+        font-size: 1.6rem;
+    }
+
+    .result-roast {
+        padding: 20px 15px;
+    }
+
+    .roast-text {
+        font-size: 1rem;
+    }
+
+    .admin-actions {
+        flex-direction: column;
+    }
+
+    .admin-control-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+
+    .admin-pin-input {
+        width: 100%;
+    }
+}
     transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
