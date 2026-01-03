@@ -83,18 +83,21 @@
     }
 
     /**
-     * Generic API fetch with error handling
-     */
+      * Generic API fetch with error handling
+      * Note: For Supabase Edge Functions with verify_jwt:true, use apikey header only
+      * Don't send Authorization: Bearer <anon_key> as it's not a valid JWT
+      */
     async function apiFetch(url, options = {}) {
         const supabaseKey = root.CONFIG?.SUPABASE?.ANON_KEY || '';
         const headers = {
             'Content-Type': 'application/json',
+            'apikey': supabaseKey,  // Use apikey header for Edge Function access
             ...options.headers,
         };
 
-        if (supabaseKey) {
-            headers['Authorization'] = `Bearer ${supabaseKey}`;
-            headers['apikey'] = supabaseKey;
+        // For REST API calls to baby_shower schema, add Accept-Profile
+        if (url.includes('/rest/v1/')) {
+            headers['Accept-Profile'] = 'baby_shower';
         }
 
         try {
@@ -137,7 +140,6 @@
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${supabaseKey}`,
                     'apikey': supabaseKey,
                     'Accept-Profile': 'baby_shower'
                 }
