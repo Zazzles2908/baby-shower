@@ -56,6 +56,7 @@ serve(async (req: Request) => {
 
       const supabase = createClient(supabaseUrl, supabaseServiceKey, {
         auth: { autoRefreshToken: false, persistSession: false },
+        schema: 'baby_shower'
       })
 
       console.log('[vote] GET: Fetching all votes from baby_shower.votes')
@@ -133,9 +134,10 @@ serve(async (req: Request) => {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 
-      const supabase = createClient(supabaseUrl, supabaseServiceKey, {
-        auth: { autoRefreshToken: false, persistSession: false },
-      })
+    const supabase = createClient(supabaseUrl, supabaseServiceKey, {
+      auth: { autoRefreshToken: false, persistSession: false },
+      schema: 'baby_shower'
+    })
 
     // Parse and validate request body
     let body: VoteRequest
