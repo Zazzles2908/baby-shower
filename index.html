@@ -11,6 +11,7 @@
         <link rel="stylesheet" href="styles/animations.css">
         <link rel="stylesheet" href="styles/main.css">
         <link rel="stylesheet" href="styles/who-would-rather.css">
+        <link rel="stylesheet" href="styles/mom-vs-dad-simplified.css">
         <link rel="icon" type="image/x-icon" href="baby_content\Pictures\Jazeel_Icon\asset_chibi_avatar_f.png">
         <link rel="icon" type="image/x-icon" href="baby_content\Pictures\Michelle_Icon\asset_chibi_avatar_m.png">
         <link rel="icon" type="image/x-icon" href="favicon.png">
@@ -69,45 +70,38 @@
                     <div class="activity-buttons">
                         <button class="activity-card" data-section="guestbook" aria-label="Guestbook - Leave your wishes for baby">
                             <div class="card-background-image"></div>
-                            <span class="card-icon">💌</span>
                             <span class="card-title">Guestbook</span>
                             <span class="card-subtitle">Leave your wishes for baby</span>
                         </button>
                         <button class="activity-card" data-section="pool" aria-label="Baby Pool - Predict the big arrival">
                             <div class="card-background-image"></div>
-                            <span class="card-icon">🎯</span>
                             <span class="card-title">Baby Pool</span>
                             <span class="card-subtitle">Predict the big arrival</span>
                         </button>
                         <button class="activity-card" data-section="quiz" aria-label="Baby Quiz - Decode baby emoji puzzles">
                             <div class="card-background-image"></div>
-                            <span class="card-icon">🧩</span>
                             <span class="card-title">Baby Quiz</span>
                             <span class="card-subtitle">Decode baby emoji puzzles</span>
                         </button>
                         <button class="activity-card" data-section="advice" aria-label="Advice - Share your wisdom">
                             <div class="card-background-image"></div>
-                            <span class="card-icon">💡</span>
                             <span class="card-title">Advice</span>
                             <span class="card-subtitle">Share your wisdom</span>
                         </button>
                         <button class="activity-card" data-section="voting" aria-label="Voting - Help choose the perfect name">
                             <div class="card-background-image"></div>
-                            <span class="card-icon">❤️</span>
                             <span class="card-title">Voting</span>
                             <span class="card-subtitle">Help choose the perfect name</span>
                         </button>
                         <button class="activity-card" data-section="mom-vs-dad" aria-label="Mom vs Dad - The Truth Revealed">
                             <div class="card-background-image"></div>
-                            <span class="card-icon">🎮</span>
                             <span class="card-title">Mom vs Dad</span>
                             <span class="card-subtitle">The Truth Revealed</span>
                         </button>
-                        <button class="activity-card" data-section="who-would-rather" aria-label="Who Would Rather - 24 Fun Questions">
+                        <button class="activity-card" data-section="who-would-rather" aria-label="Who Would Rather - Tap Michelle or Jazeel">
                             <div class="card-background-image"></div>
-                            <span class="card-icon">🎯</span>
                             <span class="card-title">Who Would Rather</span>
-                            <span class="card-subtitle">24 Fun Questions</span>
+                            <span class="card-subtitle">Tap Michelle or Jazeel</span>
                         </button>
                     </div>
                 </div>
@@ -377,25 +371,16 @@
         <section id="mom-vs-dad-section" class="hidden">
             <div class="container">
                 <button class="back-btn">← Back to Activities</button>
-                <div class="section-decoration">
-                    <div class="corner-decoration top-left">
-                        <img src="https://bkszmvfsfgvdwzacgmfz.supabase.co/storage/v1/object/public/baby-shower-pictures/Pictures/Jazeel_Baby/chibi_jazeel_cake.png" alt="Baby Jazeel" class="corner-decoration-img">
-                    </div>
-                    <div class="corner-decoration top-right">
-                        <img src="https://bkszmvfsfgvdwzacgmfz.supabase.co/storage/v1/object/public/baby-shower-pictures/Pictures/Michelle_Jazeel/asset_anime_portrait.png" alt="Couple" class="corner-decoration-img">
-                    </div>
-                    <div class="corner-decoration bottom-left">
-                        <img src="https://bkszmvfsfgvdwzacgmfz.supabase.co/storage/v1/object/public/baby-shower-pictures/Pictures/Jazeel_Baby/chibi_jazeel_birthday_edit.png" alt="Baby Jazeel" class="corner-decoration-img">
-                    </div>
-                    <div class="corner-decoration bottom-right">
-                        <img src="https://bkszmvfsfgvdwzacgmfz.supabase.co/storage/v1/object/public/baby-shower-pictures/Pictures/Michelle_Jazeel/app_hero_anime.png" alt="Couple" class="corner-decoration-img">
-                    </div>
+                <div class="section-decoration" style="display: none;">
+                    <!-- Remove all corner decorations to fix overlay issue -->
                 </div>
                 <h1>🎮 Mom vs Dad: The Truth Revealed</h1>
                 <p class="subtitle">Guess who would rather... then watch the chaos unfold!</p>
-
-                <!-- Game content will be populated by JavaScript -->
-                <div id="game-container"></div>
+                
+                <!-- New simplified game container -->
+                <div id="mom-vs-dad-game">
+                    <!-- LobbySelector renders here -->
+                </div>
             </div>
         </section>
 
@@ -417,8 +402,8 @@
                         <img src="https://bkszmvfsfgvdwzacgmfz.supabase.co/storage/v1/object/public/baby-shower-pictures/Pictures/Michelle_Jazeel/app_hero_illustration.png" alt="Couple" class="corner-decoration-img">
                     </div>
                 </div>
-                <h1>🎯 Who Would Rather?</h1>
-                <p class="subtitle">24 fun questions - vote Mom or Dad!</p>
+                <h1>Who Would Rather?</h1>
+                <p class="subtitle">15 fun questions about Michelle & Jazeel</p>
 
                 <!-- Game container -->
                 <div id="who-would-rather-container"></div>
@@ -467,8 +452,7 @@
     <script src="scripts/quiz.js"></script>
     <script src="scripts/advice.js"></script>
     <script src="scripts/voting.js"></script>
-    <script src="scripts/mom-vs-dad-enhanced.js"></script>
-    <script src="scripts/mom-vs-dad.js"></script>
+    <script src="scripts/mom-vs-dad-simplified.js"></script>
     <script src="scripts/who-would-rather.js"></script>
 
     <!-- Activity Ticker -->

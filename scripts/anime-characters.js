@@ -76,10 +76,6 @@
                 return `
                     <div class="anime-character ${size} emotion-${emotion}" data-character="${characterId}" data-emotion="${emotion}">
                         <img src="${charConfig.avatarImage}" alt="${charConfig.name}" class="anime-character-image" />
-                        <div class="anime-sparkle">✨</div>
-                        <div class="anime-sparkle">✨</div>
-                        <div class="anime-sparkle">✨</div>
-                        <div class="anime-sparkle">✨</div>
                     </div>
                 `;
             }
@@ -110,10 +106,6 @@
             return `
                 <div class="anime-character ${size} emotion-${emotion}" data-character="${characterId}" data-emotion="${emotion}">
                     ${svgContent}
-                    <div class="anime-sparkle">✨</div>
-                    <div class="anime-sparkle">✨</div>
-                    <div class="anime-sparkle">✨</div>
-                    <div class="anime-sparkle">✨</div>
                 </div>
             `;
         },
@@ -278,7 +270,6 @@
                 <div class="anime-host-content">
                     <div class="anime-host-name">
                         <span>${this.characters.mom.name}</span>
-                        <span class="anime-sparkle">✨</span>
                     </div>
                     <div class="anime-host-role">${this.characters.mom.role}</div>
                     <p class="anime-host-message">${this.getRandomPhrase('mom')}</p>
@@ -295,7 +286,6 @@
                 <div class="anime-host-content">
                     <div class="anime-host-name">
                         <span>${this.characters.dad.name}</span>
-                        <span class="anime-sparkle">✨</span>
                     </div>
                     <div class="anime-host-role">${this.characters.dad.host}</div>
                     <p class="anime-host-message">${this.getRandomPhrase('dad')}</p>

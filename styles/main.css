@@ -3317,6 +3317,11 @@ form {
     object-fit: cover;
 }
 
+/* Hide section decorations in Mom vs Dad section to fix overlay issue */
+#mom-vs-dad-section .section-decoration {
+    display: none !important;
+}
+
 /* Icon/image avatar styles */
 .avatar {
     width: 48px;

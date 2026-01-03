@@ -522,9 +522,9 @@ function initializeSection(sectionName) {
             initializeVoting();
             break;
         case 'mom-vs-dad':
-            // Mom vs Dad game is self-contained in mom-vs-dad.js
+            // Mom vs Dad simplified game is self-contained in mom-vs-dad-simplified.js
             // It will auto-initialize when DOM is ready
-            console.log('Mom vs Dad game will auto-initialize from mom-vs-dad.js');
+            console.log('Mom vs Dad simplified game will auto-initialize from mom-vs-dad-simplified.js');
             break;
         default:
             break;
