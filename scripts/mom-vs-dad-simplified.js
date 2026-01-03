@@ -122,8 +122,18 @@
      */
     async function fetchLobbyStatus(lobbyKey) {
         try {
-            // Use existing Supabase client from window (created in main.js)
-            const supabase = window.supabaseClient;
+            // Create Supabase client using global supabase object (same as main.js)
+            let supabase = window.supabaseClient;
+            if (!supabase) {
+                const supabaseUrl = root.CONFIG?.SUPABASE?.URL || '';
+                const supabaseKey = root.CONFIG?.SUPABASE?.ANON_KEY || '';
+                
+                if (typeof supabase !== 'undefined' && supabaseUrl && supabaseKey) {
+                    supabase = supabase.createClient(supabaseUrl, supabaseKey);
+                    window.supabaseClient = supabase;
+                }
+            }
+            
             if (!supabase) {
                 console.warn('[MomVsDadSimplified] No Supabase client available');
                 return null;
