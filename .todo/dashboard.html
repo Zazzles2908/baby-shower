@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Baby Shower V2 - Multi-Agent Task Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+        
+        header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+        
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            transition: transform 0.3s ease;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+        
+        .card-header h2 {
+            font-size: 1.3em;
+            color: #333;
+        }
+        
+        .status-badge {
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.8em;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+        
+        .status-active {
+            background: #4CAF50;
+            color: white;
+        }
+        
+        .status-idle {
+            background: #9e9e9e;
+            color: white;
+        }
+        
+        .agent-list {
+            list-style: none;
+        }
+        
+        .agent-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        
+        .agent-item:last-child {
+            border-bottom: none;
+        }
+        
+        .agent-name {
+            font-weight: bold;
+            color: #555;
+        }
+        
+        .agent-task {
+            font-size: 0.9em;
+            color: #888;
+        }
+        
+        .deployment-status {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .deployment-item {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+        }
+        
+        .deployment-item.success {
+            border-left-color: #4CAF50;
+        }
+        
+        .deployment-item.failed {
+            border-left-color: #f44336;
+        }
+        
+        .deployment-item.in-progress {
+            border-left-color: #ff9800;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.7; }
+            100% { opacity: 1; }
+        }
+        
+        .commit-hash {
+            font-family: monospace;
+            background: #333;
+            color: #0f0;
+            padding: 2px 8px;
+            border-radius: 5px;
+            font-size: 0.9em;
+        }
+        
+        .timestamp {
+            font-size: 0.8em;
+            color: #888;
+            margin-top: 5px;
+        }
+        
+        .task-list {
+            list-style: none;
+        }
+        
+        .task-item {
+            display: flex;
+            align-items: flex-start;
+            padding: 12px;
+            margin-bottom: 8px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+        
+        .task-item:hover {
+            background: #f0f0f0;
+        }
+        
+        .task-item.in-progress {
+            border-left: 4px solid #ff9800;
+        }
+        
+        .task-item.completed {
+            border-left: 4px solid #4CAF50;
+            opacity: 0.7;
+        }
+        
+        .task-item.pending {
+            border-left: 4px solid #9e9e9e;
+        }
+        
+        .priority-badge {
+            padding: 3px 10px;
+            border-radius: 10px;
+            font-size: 0.7em;
+            font-weight: bold;
+            margin-left: 10px;
+            text-transform: uppercase;
+        }
+        
+        .priority-high {
+            background: #f44336;
+            color: white;
+        }
+        
+        .priority-medium {
+            background: #ff9800;
+            color: white;
+        }
+        
+        .priority-low {
+            background: #4CAF50;
+            color: white;
+        }
+        
+        .task-content {
+            flex: 1;
+        }
+        
+        .task-title {
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 5px;
+        }
+        
+        .task-meta {
+            font-size: 0.8em;
+            color: #888;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background: #e0e0e0;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-top: 20px;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            transition: width 0.5s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 0.8em;
+            font-weight: bold;
+        }
+        
+        .refresh-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 25px;
+            font-size: 1em;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        
+        .refresh-btn:hover {
+            transform: scale(1.05);
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 15px;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        
+        .stat-number {
+            font-size: 2.5em;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .stat-label {
+            font-size: 0.9em;
+            opacity: 0.9;
+        }
+        
+        footer {
+            text-align: center;
+            color: white;
+            margin-top: 30px;
+            padding: 20px;
+            opacity: 0.8;
+        }
+        
+        @media (max-width: 768px) {
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎯 Baby Shower V2 - Multi-Agent Task Dashboard</h1>
+            <p>Real-time task monitoring for OpenCode orchestrator</p>
+        </header>
+        
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-number" id="total-tasks">0</div>
+                <div class="stat-label">Total Tasks</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="in-progress">0</div>
+                <div class="stat-label">In Progress</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="completed">0</div>
+                <div class="stat-label">Completed</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="active-agents">0</div>
+                <div class="stat-label">Active Agents</div>
+            </div>
+        </div>
+        
+        <div class="dashboard-grid">
+            <div class="card">
+                <div class="card-header">
+                    <h2>🤖 Agent Workloads</h2>
+                    <span class="status-badge status-active">Live</span>
+                </div>
+                <ul class="agent-list" id="agent-list">
+                    <!-- Populated by JavaScript -->
+                </ul>
+            </div>
+            
+            <div class="card">
+                <div class="card-header">
+                    <h2>🚀 Deployment Status</h2>
+                    <span class="status-badge status-active">Monitoring</span>
+                </div>
+                <div class="deployment-status" id="deployment-status">
+                    <!-- Populated by JavaScript -->
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-header">
+                    <h2>📋 Task Queue</h2>
+                    <span class="status-badge status-active">Active</span>
+                </div>
+                <ul class="task-list" id="task-list">
+                    <!-- Populated by JavaScript -->
+                </ul>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progress-fill" style="width: 0%;">0%</div>
+                </div>
+            </div>
+        </div>
+        
+        <div style="text-align: center;">
+            <button class="refresh-btn" onclick="refreshDashboard()">🔄 Refresh Dashboard</button>
+        </div>
+        
+        <footer>
+            <p>OpenCode Orchestrator v1.0 | Last Updated: <span id="last-updated">Loading...</span></p>
+        </footer>
+    </div>
+    
+    <script>
+        async function loadTodoData() {
+            try {
+                const response = await fetch('.todo/todos.json');
+                const data = await response.json();
+                return data;
+            } catch (error) {
+                console.error('Error loading todo data:', error);
+                return null;
+            }
+        }
+        
+        function updateDashboard(data) {
+            if (!data) return;
+            
+            // Update stats
+            const todoList = data.todoList || [];
+            const completed = todoList.filter(t => t.status === 'completed').length;
+            const inProgress = todoList.filter(t => t.status === 'in_progress').length;
+            
+            document.getElementById('total-tasks').textContent = todoList.length;
+            document.getElementById('in-progress').textContent = inProgress;
+            document.getElementById('completed').textContent = completed;
+            
+            // Count active agents
+            const agentWorkloads = data.agentWorkloads || {};
+            const activeAgents = Object.values(agentWorkloads).filter(a => a.status === 'active').length;
+            document.getElementById('active-agents').textContent = activeAgents;
+            
+            // Update agent list
+            const agentList = document.getElementById('agent-list');
+            agentList.innerHTML = '';
+            Object.entries(agentWorkloads).forEach(([name, workload]) => {
+                const li = document.createElement('li');
+                li.className = 'agent-item';
+                li.innerHTML = `
+                    <div>
+                        <div class="agent-name">${name.replace('_', ' ')}</div>
+                        <div class="agent-task">${workload.currentTask ? `Task ${workload.currentTask}` : 'No active task'}</div>
+                    </div>
+                    <span class="status-badge ${workload.status === 'active' ? 'status-active' : 'status-idle'}">
+                        ${workload.status}
+                    </span>
+                `;
+                agentList.appendChild(li);
+            });
+            
+            // Update deployment status
+            const deploymentStatus = document.getElementById('deployment-status');
+            deploymentStatus.innerHTML = '';
+            const deployments = data.activeSession?.deployments || [];
+            deployments.slice(-3).reverse().forEach(dep => {
+                const div = document.createElement('div');
+                div.className = `deployment-item ${dep.status}`;
+                div.innerHTML = `
+                    <div><span class="commit-hash">${dep.commitHash}</span></div>
+                    <div class="timestamp">${new Date(dep.timestamp).toLocaleString()}</div>
+                    <div>Status: <strong>${dep.status}</strong></div>
+                `;
+                deploymentStatus.appendChild(div);
+            });
+            
+            // Update task list
+            const taskList = document.getElementById('task-list');
+            taskList.innerHTML = '';
+            todoList.forEach(task => {
+                const li = document.createElement('li');
+                li.className = `task-item ${task.status}`;
+                li.innerHTML = `
+                    <div class="task-content">
+                        <div class="task-title">
+                            ${task.content}
+                            <span class="priority-badge priority-${task.priority}">${task.priority}</span>
+                        </div>
+                        <div class="task-meta">
+                            Agent: ${task.assignedAgent} | Status: ${task.status}
+                        </div>
+                    </div>
+                `;
+                taskList.appendChild(li);
+            });
+            
+            // Update progress bar
+            const progress = todoList.length > 0 ? (completed / todoList.length * 100) : 0;
+            const progressFill = document.getElementById('progress-fill');
+            progressFill.style.width = `${progress}%`;
+            progressFill.textContent = `${Math.round(progress)}%`;
+            
+            // Update last updated
+            document.getElementById('last-updated').textContent = new Date().toLocaleString();
+        }
+        
+        async function refreshDashboard() {
+            const data = await loadTodoData();
+            updateDashboard(data);
+        }
+        
+        // Initial load
+        refreshDashboard();
+        
+        // Auto-refresh every 10 seconds
+        setInterval(refreshDashboard, 10000);
+    </script>
+</body>
+</html>
