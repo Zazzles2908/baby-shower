@@ -1,30 +1,30 @@
 {
-  "timestamp": "2026-01-03T10:30:36.297Z",
+  "timestamp": "2026-01-03T10:46:45.509Z",
   "baseUrl": "https://bkszmvfsfgvdwzacgmfz.supabase.co/functions/v1/",
-  "sessionCode": "XCWFHJ",
-  "adminPin": "1438",
+  "sessionCode": "22AC6G",
+  "adminPin": "4319",
   "tests": [
     {
       "name": "Create new game session",
       "passed": true,
-      "timestamp": "2026-01-03T10:30:38.901Z",
+      "timestamp": "2026-01-03T10:46:48.158Z",
       "details": {
-        "session_id": "6e6f3b3b-b1e1-4709-af0b-ca846b0d7d59",
-        "session_code": "Z2K5M3",
-        "admin_code": "5281",
+        "session_id": "5083a942-5eeb-4a7a-917e-1f930217146a",
+        "session_code": "22AC6G",
+        "admin_code": "4319",
         "mom_name": "Test Mom",
         "dad_name": "Test Dad",
         "status": "setup",
         "current_round": 0,
         "total_rounds": 3,
-        "created_at": "2026-01-03T10:30:38.724Z"
+        "created_at": "2026-01-03T10:46:47.952Z"
       },
       "error": null
     },
     {
       "name": "Get existing session by code",
       "passed": true,
-      "timestamp": "2026-01-03T10:30:41.247Z",
+      "timestamp": "2026-01-03T10:46:50.435Z",
       "details": {
         "session_code": "XCWFHJ",
         "mom_name": "Emma",
@@ -39,12 +39,12 @@
     {
       "name": "Join session as guest",
       "passed": true,
-      "timestamp": "2026-01-03T10:30:43.557Z",
+      "timestamp": "2026-01-03T10:46:52.732Z",
       "details": {
-        "session_code": "XCWFHJ",
-        "mom_name": "Emma",
-        "dad_name": "Oliver",
-        "status": "voting",
+        "session_code": "22AC6G",
+        "mom_name": "Test Mom",
+        "dad_name": "Test Dad",
+        "status": "setup",
         "current_round": 0,
         "total_rounds": 3
       },
@@ -53,9 +53,9 @@
     {
       "name": "Update session status to voting",
       "passed": true,
-      "timestamp": "2026-01-03T10:30:46.124Z",
+      "timestamp": "2026-01-03T10:46:55.251Z",
       "details": {
-        "session_code": "XCWFHJ",
+        "session_code": "22AC6G",
         "status": "voting",
         "current_round": 0,
         "total_rounds": 3
@@ -65,7 +65,7 @@
     {
       "name": "Reject missing mom name",
       "passed": true,
-      "timestamp": "2026-01-03T10:30:48.569Z",
+      "timestamp": "2026-01-03T10:46:57.339Z",
       "details": [
         "Mom name is required"
       ],
@@ -74,7 +74,7 @@
     {
       "name": "Reject invalid session code",
       "passed": true,
-      "timestamp": "2026-01-03T10:30:50.655Z",
+      "timestamp": "2026-01-03T10:46:59.449Z",
       "details": [
         "Session code must be 6 characters"
       ],
@@ -83,12 +83,12 @@
     {
       "name": "Generate new scenario",
       "passed": true,
-      "timestamp": "2026-01-03T10:30:55.791Z",
+      "timestamp": "2026-01-03T10:47:04.434Z",
       "details": {
-        "scenario_id": "d5a1b1c0-296b-4239-aa78-d0b97643e123",
+        "scenario_id": "78e5c475-3bb6-4d64-a8e2-4a6dc6ae26bb",
         "scenario_text": "It's 3 AM and the baby has a dirty diaper that requires immediate attention.",
-        "mom_option": "Emma would handle it with grace",
-        "dad_option": "Oliver would figure it out",
+        "mom_option": "Test Mom would handle it with grace",
+        "dad_option": "Test Dad would figure it out",
         "intensity": "0.50"
       },
       "error": null
@@ -96,21 +96,21 @@
     {
       "name": "Get current scenario",
       "passed": true,
-      "timestamp": "2026-01-03T10:30:58.076Z",
+      "timestamp": "2026-01-03T10:47:07.081Z",
       "details": {
-        "scenario_id": "d5a1b1c0-296b-4239-aa78-d0b97643e123",
+        "scenario_id": "78e5c475-3bb6-4d64-a8e2-4a6dc6ae26bb",
         "scenario_text": "It's 3 AM and the baby has a dirty diaper that requires immediate attention.",
-        "mom_option": "Emma would handle it with grace",
-        "dad_option": "Oliver would figure it out",
+        "mom_option": "Test Mom would handle it with grace",
+        "dad_option": "Test Dad would figure it out",
         "intensity": "0.50",
-        "created_at": "2026-01-03T10:30:55.612Z"
+        "created_at": "2026-01-03T10:47:04.229Z"
       },
       "error": null
     },
     {
       "name": "Reject missing session_id",
       "passed": true,
-      "timestamp": "2026-01-03T10:31:00.157Z",
+      "timestamp": "2026-01-03T10:47:09.260Z",
       "details": [
         "session_id is required"
       ],
@@ -119,7 +119,7 @@
     {
       "name": "Reject invalid theme",
       "passed": true,
-      "timestamp": "2026-01-03T10:31:02.294Z",
+      "timestamp": "2026-01-03T10:47:11.380Z",
       "details": [
         "theme must be one of: general, farm, funny, sleep, feeding, messy, emotional"
       ],
@@ -127,49 +127,101 @@
     },
     {
       "name": "Submit vote for mom",
-      "passed": false,
-      "timestamp": "2026-01-03T10:31:08.428Z",
-      "details": null,
-      "error": "Voting is not currently active for this scenario"
+      "passed": true,
+      "timestamp": "2026-01-03T10:47:14.997Z",
+      "details": {
+        "vote_counts": {
+          "mom_votes": 1,
+          "dad_votes": 0,
+          "mom_pct": 100,
+          "dad_pct": 0,
+          "total_votes": 1
+        },
+        "your_vote": {
+          "scenario_id": "78e5c475-3bb6-4d64-a8e2-4a6dc6ae26bb",
+          "guest_name": "Guest 1",
+          "choice": "mom"
+        }
+      },
+      "error": null
     },
     {
       "name": "Submit vote for dad",
-      "passed": false,
-      "timestamp": "2026-01-03T10:31:10.975Z",
-      "details": null,
-      "error": "Voting is not currently active for this scenario"
+      "passed": true,
+      "timestamp": "2026-01-03T10:47:18.107Z",
+      "details": {
+        "vote_counts": {
+          "mom_votes": 1,
+          "dad_votes": 1,
+          "mom_pct": 50,
+          "dad_pct": 50,
+          "total_votes": 2
+        },
+        "your_vote": {
+          "scenario_id": "78e5c475-3bb6-4d64-a8e2-4a6dc6ae26bb",
+          "guest_name": "Guest 2",
+          "choice": "dad"
+        }
+      },
+      "error": null
     },
     {
       "name": "Submit additional vote for mom",
-      "passed": false,
-      "timestamp": "2026-01-03T10:31:13.473Z",
-      "details": null,
-      "error": "Voting is not currently active for this scenario"
+      "passed": true,
+      "timestamp": "2026-01-03T10:47:21.224Z",
+      "details": {
+        "vote_counts": {
+          "mom_votes": 2,
+          "dad_votes": 1,
+          "mom_pct": 67,
+          "dad_pct": 33,
+          "total_votes": 3
+        },
+        "your_vote": {
+          "scenario_id": "78e5c475-3bb6-4d64-a8e2-4a6dc6ae26bb",
+          "guest_name": "Guest 3",
+          "choice": "mom"
+        }
+      },
+      "error": null
     },
     {
       "name": "Get vote counts",
       "passed": true,
-      "timestamp": "2026-01-03T10:31:15.978Z",
+      "timestamp": "2026-01-03T10:47:23.739Z",
       "details": {
-        "mom_votes": 0,
-        "dad_votes": 0,
-        "mom_pct": 0,
-        "dad_pct": 0,
-        "total_votes": 0
+        "mom_votes": 2,
+        "dad_votes": 1,
+        "mom_pct": 67,
+        "dad_pct": 33,
+        "total_votes": 3
       },
       "error": null
     },
     {
       "name": "Update existing vote",
-      "passed": false,
-      "timestamp": "2026-01-03T10:31:18.492Z",
-      "details": null,
-      "error": "Voting is not currently active for this scenario"
+      "passed": true,
+      "timestamp": "2026-01-03T10:47:26.813Z",
+      "details": {
+        "vote_counts": {
+          "mom_votes": 1,
+          "dad_votes": 2,
+          "mom_pct": 33,
+          "dad_pct": 67,
+          "total_votes": 3
+        },
+        "your_vote": {
+          "scenario_id": "78e5c475-3bb6-4d64-a8e2-4a6dc6ae26bb",
+          "guest_name": "Guest 1",
+          "choice": "dad"
+        }
+      },
+      "error": null
     },
     {
       "name": "Reject invalid vote choice",
       "passed": true,
-      "timestamp": "2026-01-03T10:31:20.608Z",
+      "timestamp": "2026-01-03T10:47:28.896Z",
       "details": [
         "vote_choice must be \"mom\" or \"dad\""
       ],
@@ -178,35 +230,49 @@
     {
       "name": "Reject missing scenario_id",
       "passed": true,
-      "timestamp": "2026-01-03T10:31:22.756Z",
+      "timestamp": "2026-01-03T10:47:31.007Z",
       "details": "Provide either vote data (scenario_id, guest_name, vote_choice) or lock data (scenario_id, parent, answer, admin_code)",
       "error": null
     },
     {
       "name": "Lock mom's answer",
-      "passed": false,
-      "timestamp": "2026-01-03T10:31:25.818Z",
-      "details": null,
-      "error": "Invalid admin PIN"
+      "passed": true,
+      "timestamp": "2026-01-03T10:47:34.343Z",
+      "details": {
+        "locked": true,
+        "both_locked": false,
+        "mom_locked": true,
+        "dad_locked": false,
+        "mom_answer": "mom",
+        "dad_answer": null
+      },
+      "error": null
     },
     {
       "name": "Lock dad's answer",
-      "passed": false,
-      "timestamp": "2026-01-03T10:31:28.211Z",
-      "details": null,
-      "error": "Invalid admin PIN"
+      "passed": true,
+      "timestamp": "2026-01-03T10:47:37.173Z",
+      "details": {
+        "locked": true,
+        "both_locked": true,
+        "mom_locked": true,
+        "dad_locked": true,
+        "mom_answer": "mom",
+        "dad_answer": "dad"
+      },
+      "error": null
     },
     {
       "name": "Reject invalid admin PIN",
       "passed": true,
-      "timestamp": "2026-01-03T10:31:30.711Z",
+      "timestamp": "2026-01-03T10:47:39.668Z",
       "details": "Invalid admin PIN",
       "error": null
     },
     {
       "name": "Reject invalid parent",
       "passed": true,
-      "timestamp": "2026-01-03T10:31:32.822Z",
+      "timestamp": "2026-01-03T10:47:41.835Z",
       "details": [
         "parent must be \"mom\" or \"dad\""
       ],
@@ -215,15 +281,16 @@
     {
       "name": "Get reveal status",
       "passed": true,
-      "timestamp": "2026-01-03T10:31:39.775Z",
+      "timestamp": "2026-01-03T10:47:45.343Z",
       "details": {
-        "scenario_id": "d5a1b1c0-296b-4239-aa78-d0b97643e123",
+        "scenario_id": "78e5c475-3bb6-4d64-a8e2-4a6dc6ae26bb",
         "is_revealed": false,
-        "session_status": "setup",
+        "both_parents_locked": true,
+        "session_status": "voting",
         "scenario": {
           "text": "It's 3 AM and the baby has a dirty diaper that requires immediate attention.",
-          "mom_option": "Emma would handle it with grace",
-          "dad_option": "Oliver would figure it out"
+          "mom_option": "Test Mom would handle it with grace",
+          "dad_option": "Test Dad would figure it out"
         },
         "parents": {
           "mom_name": "Test Mom",
@@ -235,22 +302,45 @@
     },
     {
       "name": "Trigger reveal",
-      "passed": false,
-      "timestamp": "2026-01-03T10:31:42.301Z",
-      "details": null,
-      "error": "Invalid admin PIN"
+      "passed": true,
+      "timestamp": "2026-01-03T10:47:49.999Z",
+      "details": {
+        "roast_commentary": "🤔 Hmm, 67% picked wrong! Test Mom had other plans!",
+        "perception_gap": 34,
+        "vote_comparison": {
+          "mom_votes": 1,
+          "dad_votes": 2,
+          "mom_percentage": 33,
+          "dad_percentage": 67,
+          "total_votes": 3,
+          "crowd_choice": "dad",
+          "actual_choice": "mom"
+        },
+        "particle_effect": "confetti",
+        "result_id": "b6f69bc2-e6e4-4818-943f-9747107168cd",
+        "scenario_info": {
+          "text": "It's 3 AM and the baby has a dirty diaper that requires immediate attention.",
+          "mom_option": "Test Mom would handle it with grace",
+          "dad_option": "Test Dad would figure it out"
+        },
+        "round_info": {
+          "current_round": 1,
+          "total_rounds": 3
+        }
+      },
+      "error": null
     },
     {
       "name": "Reject double reveal",
       "passed": true,
-      "timestamp": "2026-01-03T10:31:44.839Z",
-      "details": "Invalid admin PIN",
+      "timestamp": "2026-01-03T10:47:52.564Z",
+      "details": "Cannot trigger reveal - voting is not active",
       "error": null
     },
     {
       "name": "Reject missing scenario_id",
       "passed": true,
-      "timestamp": "2026-01-03T10:31:46.942Z",
+      "timestamp": "2026-01-03T10:47:54.687Z",
       "details": [
         "scenario_id is required"
       ],
@@ -259,55 +349,55 @@
     {
       "name": "Reject invalid admin PIN for reveal",
       "passed": true,
-      "timestamp": "2026-01-03T10:31:49.433Z",
+      "timestamp": "2026-01-03T10:47:57.191Z",
       "details": "Invalid admin PIN",
       "error": null
     },
     {
       "name": "Handle invalid JSON",
       "passed": true,
-      "timestamp": "2026-01-03T10:31:52.085Z",
+      "timestamp": "2026-01-03T10:47:59.826Z",
       "details": 500,
       "error": null
     },
     {
       "name": "Reject GET on POST-only endpoint",
       "passed": false,
-      "timestamp": "2026-01-03T10:31:54.082Z",
+      "timestamp": "2026-01-03T10:48:01.940Z",
       "details": 400,
       "error": null
     },
     {
       "name": "Handle missing content type",
       "passed": true,
-      "timestamp": "2026-01-03T10:31:56.153Z",
+      "timestamp": "2026-01-03T10:48:04.031Z",
       "details": 400,
       "error": null
     },
     {
       "name": "Timeout handling works",
       "passed": true,
-      "timestamp": "2026-01-03T10:31:57.158Z",
+      "timestamp": "2026-01-03T10:48:05.035Z",
       "details": null,
       "error": null
     }
   ],
   "summary": {
     "total": 30,
-    "passed": 22,
-    "failed": 8,
+    "passed": 29,
+    "failed": 1,
     "skipped": 0
   },
   "sessionData": {
-    "sessionId": "6e6f3b3b-b1e1-4709-af0b-ca846b0d7d59",
-    "momName": "Emma",
-    "dadName": "Oliver",
+    "sessionId": "5083a942-5eeb-4a7a-917e-1f930217146a",
+    "momName": "Test Mom",
+    "dadName": "Test Dad",
     "scenarios": [
       {
-        "scenario_id": "d5a1b1c0-296b-4239-aa78-d0b97643e123",
+        "scenario_id": "78e5c475-3bb6-4d64-a8e2-4a6dc6ae26bb",
         "scenario_text": "It's 3 AM and the baby has a dirty diaper that requires immediate attention.",
-        "mom_option": "Emma would handle it with grace",
-        "dad_option": "Oliver would figure it out",
+        "mom_option": "Test Mom would handle it with grace",
+        "dad_option": "Test Dad would figure it out",
         "intensity": "0.50"
       }
     ]

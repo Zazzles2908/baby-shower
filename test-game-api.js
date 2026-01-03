@@ -131,6 +131,8 @@ async function testGameSession() {
             results.sessionData.sessionId = response.data.data.session_id;
             results.sessionData.momName = response.data.data.mom_name;
             results.sessionData.dadName = response.data.data.dad_name;
+            results.sessionCode = response.data.data.session_code;  // Store the new session code
+            results.adminPin = response.data.data.admin_code;  // Store the new admin PIN
             console.log(`    Session ID: ${response.data.data.session_id}`);
             console.log(`    Session Code: ${response.data.data.session_code}`);
             console.log(`    Admin PIN: ${response.data.data.admin_code}`);
@@ -155,12 +157,11 @@ async function testGameSession() {
         );
         
         if (success && response.data?.data) {
-            results.sessionData.sessionId = response.data.data.session_id || results.sessionData.sessionId;
-            results.sessionData.momName = response.data.data.mom_name || results.sessionData.momName;
-            results.sessionData.dadName = response.data.data.dad_name || results.sessionData.dadName;
-            console.log(`    Session Code: ${response.data.data.session_code}`);
-            console.log(`    Status: ${response.data.data.status}`);
-            console.log(`    Current Round: ${response.data.data.current_round}`);
+            // Keep the new session from Test 1, just log the old session info
+            console.log(`    Old Session Code: ${response.data.data.session_code}`);
+            console.log(`    Old Status: ${response.data.data.status}`);
+            console.log(`    Old Current Round: ${response.data.data.current_round}`);
+            console.log(`    → Using NEW session from Test 1: ${results.sessionData.sessionId}`);
         }
     } catch (error) {
         logTest('Get existing session by code', false, null, error);
@@ -173,7 +174,7 @@ async function testGameSession() {
             method: 'POST',
             body: JSON.stringify({
                 action: 'join',
-                session_code: 'XCWFHJ',
+                session_code: results.sessionCode,  // Use the new session code
                 guest_name: 'Test Guest'
             })
         });
@@ -200,8 +201,8 @@ async function testGameSession() {
             method: 'POST',
             body: JSON.stringify({
                 action: 'update',
-                session_code: 'XCWFHJ',
-                admin_code: '1438',
+                session_code: results.sessionCode,  // Use the new session code
+                admin_code: results.adminPin,  // Use the new admin PIN
                 status: 'voting'
             })
         });
@@ -582,7 +583,7 @@ async function testLockAnswers() {
                 scenario_id: scenarioId,
                 parent: 'mom',
                 answer: 'mom',
-                admin_code: '1438'
+                admin_code: results.adminPin  // Use the new admin PIN
             })
         });
         
@@ -612,7 +613,7 @@ async function testLockAnswers() {
                 scenario_id: scenarioId,
                 parent: 'dad',
                 answer: 'dad',
-                admin_code: '1438'
+                admin_code: results.adminPin  // Use the new admin PIN
             })
         });
         
@@ -663,7 +664,7 @@ async function testLockAnswers() {
                 scenario_id: scenarioId,
                 parent: 'invalid',
                 answer: 'mom',
-                admin_code: '1438'
+                admin_code: results.adminPin  // Use the new admin PIN
             })
         });
         
@@ -726,7 +727,7 @@ async function testGameReveal() {
             method: 'POST',
             body: JSON.stringify({
                 scenario_id: scenarioId,
-                admin_code: '1438'
+                admin_code: results.adminPin  // Use the new admin PIN
             })
         });
         
@@ -756,7 +757,7 @@ async function testGameReveal() {
             method: 'POST',
             body: JSON.stringify({
                 scenario_id: scenarioId,
-                admin_code: '1438'
+                admin_code: results.adminPin  // Use the new admin PIN
             })
         });
         
@@ -777,7 +778,7 @@ async function testGameReveal() {
         const response = await apiRequest('game-reveal', {
             method: 'POST',
             body: JSON.stringify({
-                admin_code: '1438'
+                admin_code: results.adminPin  // Use the new admin PIN
             })
         });
         
