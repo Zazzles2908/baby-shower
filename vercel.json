@@ -1,10 +1,15 @@
 {
-  "buildCommand": "node inject-env.js && echo 'Building Baby Shower App'",
+  "buildCommand": "node inject-env.js",
   "outputDirectory": ".",
   "framework": null,
+  "functions": {
+    "api/*.js": {
+      "runtime": "nodejs18.x"
+    }
+  },
   "env": {
-    "NEXT_PUBLIC_SUPABASE_URL": "process.env.NEXT_PUBLIC_SUPABASE_URL",
-    "NEXT_PUBLIC_SUPABASE_ANON_KEY": "process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY"
+    "NEXT_PUBLIC_SUPABASE_URL": "@supabase_url",
+    "NEXT_PUBLIC_SUPABASE_ANON_KEY": "@supabase_anon_key"
   },
   "headers": [
     {
