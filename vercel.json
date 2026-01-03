@@ -1,4 +1,11 @@
 {
+  "buildCommand": "echo 'Building Baby Shower App'",
+  "outputDirectory": ".",
+  "framework": null,
+  "env": {
+    "VITE_SUPABASE_URL": "@supabase_url",
+    "VITE_SUPABASE_ANON_KEY": "@supabase_anon_key"
+  },
   "headers": [
     {
       "source": "/scripts/(.*)",
