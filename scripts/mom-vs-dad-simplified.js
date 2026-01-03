@@ -118,24 +118,62 @@
     }
 
     /**
-     * Fetch lobby status - WORKAROUND: Use direct Supabase query instead of Edge Function
+     * Fetch lobby status - WORKAROUND: Use direct fetch with Accept-Profile header
      */
     async function fetchLobbyStatus(lobbyKey) {
         try {
-            // Create Supabase client using window.supabase (global Supabase library)
-            let supabase = window.supabaseClient;
+            const supabaseUrl = root.CONFIG?.SUPABASE?.URL || '';
+            const supabaseKey = root.CONFIG?.SUPABASE?.ANON_KEY || '';
             
-            // If no cached client, try to create one
-            if (!supabase) {
-                // Wait for supabase library to be available (max 5 seconds)
-                let attempts = 0;
-                const maxAttempts = 50; // 50 * 100ms = 5 seconds
-                
-                while (attempts < maxAttempts) {
-                    // Check if window.supabase is available with createClient
-                    if (typeof window.supabase !== 'undefined' && window.supabase.createClient) {
-                        break;
+            if (!supabaseUrl || !supabaseKey) {
+                console.warn('[MomVsDadSimplified] Supabase config not available');
+                return null;
+            }
+
+            // Use direct fetch with Accept-Profile header to access baby_shower schema
+            const url = `${supabaseUrl}/rest/v1/mom_dad_lobbies?lobby_key=eq.${lobbyKey}`;
+            
+            const response = await fetch(url, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${supabaseKey}`,
+                    'apikey': supabaseKey,
+                    'Accept-Profile': 'baby_shower'
+                }
+            });
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                console.warn('[MomVsDadSimplified] API error:', response.status, errorText);
+                return null;
+            }
+
+            const data = await response.json();
+            
+            if (data && data.length > 0) {
+                const lobby = data[0];
+                return {
+                    success: true,
+                    data: {
+                        lobby: lobby,
+                        players: [],
+                        game_status: {
+                            state: lobby.status,
+                            rounds_completed: 0,
+                            current_round: null,
+                            can_start: lobby.status === 'waiting'
+                        }
                     }
+                };
+            }
+
+            return null;
+        } catch (error) {
+            console.warn('[MomVsDadSimplified] Failed to fetch lobby status:', error.message);
+            return null;
+        }
+    }
                     // Check if window.supabaseClient was created by other scripts
                     if (window.supabaseClient) {
                         supabase = window.supabaseClient;
@@ -164,6 +202,7 @@
             }
 
             // Use direct Supabase query as workaround for Edge Function issue
+            // Note: Use schema.table format for baby_shower schema
             const { data, error } = await supabase
                 .from('baby_shower.mom_dad_lobbies')
                 .select('*')
