@@ -502,6 +502,11 @@ function initializeSection(sectionName) {
         case 'pool':
             loadPoolStats();
             break;
+        case 'mom-vs-dad':
+            // Mom vs Dad game is self-contained in mom-vs-dad.js
+            // It will auto-initialize when DOM is ready
+            console.log('Mom vs Dad game will auto-initialize from mom-vs-dad.js');
+            break;
         default:
             break;
     }
