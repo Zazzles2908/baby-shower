@@ -1,5 +1,5 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { Client } from 'https://deno.land/x/postgres@v0.17.0/mod.ts'
 
 // Request/Response interfaces
 interface RevealRequest {
@@ -39,6 +39,21 @@ interface RealtimePayload {
   type: 'result_reveal'
   scenario_id: string
   result: GameResult
+}
+
+/**
+ * Get database client using connection string from environment
+ */
+function getDbClient(): Client {
+  const connectionString = Deno.env.get('POSTGRES_URL') ?? 
+    Deno.env.get('SUPABASE_DB_URL') ?? 
+    Deno.env.get('DATABASE_URL') ?? ''
+  
+  if (!connectionString) {
+    throw new Error('Missing database connection string: POSTGRES_URL, SUPABASE_DB_URL, or DATABASE_URL')
+  }
+  
+  return new Client(connectionString)
 }
 
 // Particle effect mapping based on perception gap
@@ -244,25 +259,6 @@ function calculatePercentages(momVotes: number, dadVotes: number): VoteCounts {
   }
 }
 
-// Broadcast realtime reveal event
-async function broadcastRealtimeUpdate(
-  supabase: ReturnType<typeof createClient>,
-  payload: RealtimePayload
-): Promise<void> {
-  try {
-    const channel = supabase.channel('game_state')
-    await channel.send({
-      type: 'broadcast',
-      event: payload.type,
-      payload,
-    })
-    console.log(`[game-reveal] Broadcast ${payload.type} for scenario ${payload.scenario_id}`)
-  } catch (error) {
-    console.error('[game-reveal] Failed to broadcast realtime update:', error)
-    // Non-blocking - don't fail the request if realtime fails
-  }
-}
-
 serve(async (req: Request) => {
   // CORS headers
   const headers = new Headers({
@@ -277,23 +273,12 @@ serve(async (req: Request) => {
     return new Response(null, { status: 204, headers })
   }
 
-  // Initialize Supabase client with service role
-  const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? ''
-  const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-
-  if (!supabaseUrl || !supabaseServiceKey) {
-    console.error('[game-reveal] Missing Supabase environment variables')
-    return new Response(
-      JSON.stringify({ error: 'Server configuration error' } as ErrorResponse),
-      { status: 500, headers }
-    )
-  }
-
-  const supabase = createClient(supabaseUrl, supabaseServiceKey, {
-    auth: { autoRefreshToken: false, persistSession: false },
-  })
+  let client: Client | null = null
 
   try {
+    client = getDbClient()
+    await client.connect()
+
     // GET endpoint: Get reveal status and results
     if (req.method === 'GET') {
       const url = new URL(req.url)
@@ -308,28 +293,32 @@ serve(async (req: Request) => {
 
       console.log(`[game-reveal] GET: Fetching reveal status for scenario ${scenarioId}`)
 
-      // Get scenario details
-      const { data: scenario, error: scenarioError } = await supabase
-        .from('baby_shower.game_scenarios')
-        .select(`
-          id,
-          session_id,
-          scenario_text,
-          mom_option,
-          dad_option,
-          baby_shower.game_sessions!inner (status, mom_name, dad_name)
-        `)
-        .eq('id', scenarioId)
-        .single()
+      // Get scenario details using direct SQL
+      const scenarioResult = await client.queryObject<{
+        session_id: string
+        scenario_text: string
+        mom_option: string
+        dad_option: string
+        baby_shower: { game_sessions: { status: string; mom_name: string; dad_name: string }[] }
+      }>(
+        `SELECT s.session_id, s.scenario_text, s.mom_option, s.dad_option,
+                (SELECT json_agg(json_build_object('status', gs.status, 'mom_name', gs.mom_name, 'dad_name', gs.dad_name))
+                 FROM baby_shower.game_sessions gs
+                 WHERE gs.id = s.session_id) as baby_shower
+         FROM baby_shower.game_scenarios s
+         WHERE s.id = $1`,
+        [scenarioId]
+      )
 
-      if (scenarioError || !scenario) {
-        console.error('[game-reveal] Scenario not found:', scenarioError?.message)
+      if (scenarioResult.rows.length === 0) {
+        console.error('[game-reveal] Scenario not found')
         return new Response(
           JSON.stringify({ error: 'Scenario not found' } as ErrorResponse),
           { status: 404, headers }
         )
       }
 
+      const scenario = scenarioResult.rows[0]
       const sessionData = scenario.baby_shower?.game_sessions?.[0]
       if (!sessionData) {
         console.error('[game-reveal] Failed to get session data')
@@ -340,33 +329,39 @@ serve(async (req: Request) => {
       }
 
       // Check if results exist for this scenario
-      const { data: existingResult, error: resultError } = await supabase
-        .from('baby_shower.game_results')
-        .select('*')
-        .eq('scenario_id', scenarioId)
-        .maybeSingle()
-
-      if (resultError) {
-        console.error('[game-reveal] Failed to check results:', resultError.message)
-        throw new Error(`Database error: ${resultError.message}`)
-      }
+      const existingResultResult = await client.queryObject<{
+        roast_commentary: string
+        perception_gap: number
+        mom_votes: number
+        dad_votes: number
+        mom_percentage: number
+        crowd_choice: string
+        actual_choice: string
+        particle_effect: string
+        revealed_at: Date
+      }>(
+        `SELECT roast_commentary, perception_gap, mom_votes, dad_votes, mom_percentage,
+                crowd_choice, actual_choice, particle_effect, revealed_at
+         FROM baby_shower.game_results WHERE scenario_id = $1`,
+        [scenarioId]
+      )
 
       // Check lock status for answers
-      const { data: gameAnswer, error: answerError } = await supabase
-        .from('baby_shower.game_answers')
-        .select('*')
-        .eq('scenario_id', scenarioId)
-        .maybeSingle()
-
-      if (answerError) {
-        console.error('[game-reveal] Failed to check answers:', answerError.message)
-        throw new Error(`Database error: ${answerError.message}`)
-      }
+      const gameAnswerResult = await client.queryObject<{
+        mom_locked: boolean
+        dad_locked: boolean
+      }>(
+        `SELECT mom_locked, dad_locked FROM baby_shower.game_answers WHERE scenario_id = $1`,
+        [scenarioId]
+      )
 
       const isRevealed = sessionData.status === 'revealed' || sessionData.status === 'complete'
+      const gameAnswer = gameAnswerResult.rows[0]
       const bothLocked = gameAnswer?.mom_locked && gameAnswer?.dad_locked
 
       console.log(`[game-reveal] GET: Status - revealed: ${isRevealed}, both locked: ${bothLocked}`)
+
+      const existingResult = existingResultResult.rows[0]
 
       return new Response(
         JSON.stringify({
@@ -443,29 +438,43 @@ serve(async (req: Request) => {
 
     console.log(`[game-reveal] POST: Triggering reveal for scenario ${body.scenario_id}`)
 
-    // Get scenario and session details
-    const { data: scenario, error: scenarioError } = await supabase
-      .from('baby_shower.game_scenarios')
-      .select(`
-        id,
-        session_id,
-        scenario_text,
-        mom_option,
-        dad_option,
-        round_number,
-        baby_shower.game_sessions!inner (id, status, admin_code, mom_name, dad_name, current_round, total_rounds)
-      `)
-      .eq('id', body.scenario_id)
-      .single()
+    // Get scenario and session details using direct SQL
+    const scenarioResult = await client.queryObject<{
+      session_id: string
+      scenario_text: string
+      mom_option: string
+      dad_option: string
+      round_number: number
+      baby_shower: { game_sessions: { 
+        id: string
+        status: string
+        admin_code: string
+        mom_name: string
+        dad_name: string
+        current_round: number
+        total_rounds: number
+      }[] }
+    }>(
+      `SELECT s.session_id, s.scenario_text, s.mom_option, s.dad_option, s.round_number,
+              (SELECT json_agg(json_build_object('id', gs.id, 'status', gs.status, 'admin_code', gs.admin_code,
+                       'mom_name', gs.mom_name, 'dad_name', gs.dad_name, 'current_round', gs.current_round,
+                       'total_rounds', gs.total_rounds))
+               FROM baby_shower.game_sessions gs
+               WHERE gs.id = s.session_id) as baby_shower
+       FROM baby_shower.game_scenarios s
+       WHERE s.id = $1`,
+      [body.scenario_id]
+    )
 
-    if (scenarioError || !scenario) {
-      console.error('[game-reveal] Scenario not found:', scenarioError?.message)
+    if (scenarioResult.rows.length === 0) {
+      console.error('[game-reveal] Scenario not found')
       return new Response(
         JSON.stringify({ error: 'Scenario not found' } as ErrorResponse),
         { status: 404, headers }
       )
     }
 
+    const scenario = scenarioResult.rows[0]
     const sessionData = scenario.baby_shower?.game_sessions?.[0]
     if (!sessionData) {
       console.error('[game-reveal] Failed to get session data')
@@ -497,16 +506,18 @@ serve(async (req: Request) => {
     }
 
     // Check if both parents have locked their answers
-    const { data: gameAnswer, error: answerError } = await supabase
-      .from('baby_shower.game_answers')
-      .select('*')
-      .eq('scenario_id', body.scenario_id)
-      .maybeSingle()
+    const gameAnswerResult = await client.queryObject<{
+      mom_locked: boolean
+      dad_locked: boolean
+      mom_answer: string
+      dad_answer: string
+    }>(
+      `SELECT mom_locked, dad_locked, mom_answer, dad_answer 
+       FROM baby_shower.game_answers WHERE scenario_id = $1`,
+      [body.scenario_id]
+    )
 
-    if (answerError) {
-      console.error('[game-reveal] Failed to check game answers:', answerError.message)
-      throw new Error(`Database error: ${answerError.message}`)
-    }
+    const gameAnswer = gameAnswerResult.rows[0]
 
     if (!gameAnswer || !gameAnswer.mom_locked || !gameAnswer.dad_locked) {
       console.error('[game-reveal] Both parents must lock their answers before reveal')
@@ -523,19 +534,14 @@ serve(async (req: Request) => {
     }
 
     // Get votes for this scenario
-    const { data: votes, error: votesError } = await supabase
-      .from('baby_shower.game_votes')
-      .select('vote_choice')
-      .eq('scenario_id', body.scenario_id)
-
-    if (votesError) {
-      console.error('[game-reveal] Failed to fetch votes:', votesError.message)
-      throw new Error(`Database error: ${votesError.message}`)
-    }
+    const votesResult = await client.queryObject<{ vote_choice: string }>(
+      `SELECT vote_choice FROM baby_shower.game_votes WHERE scenario_id = $1`,
+      [body.scenario_id]
+    )
 
     // Calculate vote counts
-    const momVotes = votes?.filter(v => v.vote_choice === 'mom').length ?? 0
-    const dadVotes = votes?.filter(v => v.vote_choice === 'dad').length ?? 0
+    const momVotes = votesResult.rows.filter(v => v.vote_choice === 'mom').length
+    const dadVotes = votesResult.rows.filter(v => v.vote_choice === 'dad').length
     const voteCounts = calculatePercentages(momVotes, dadVotes)
 
     // Determine crowd choice and actual choice
@@ -589,64 +595,45 @@ serve(async (req: Request) => {
     const accuracy = crowdChoice === actualChoice
     const particleEffect = determineParticleEffect(Math.abs(perceptionGap), accuracy)
 
-    // Insert result into baby_shower.game_results
-    const { data: result, error: insertError } = await supabase
-      .from('baby_shower.game_results')
-      .insert({
-        scenario_id: body.scenario_id,
-        mom_votes: momVotes,
-        dad_votes: dadVotes,
-        crowd_choice: crowdChoice,
-        actual_choice: actualChoice,
-        perception_gap: perceptionGap,
-        roast_commentary: roastCommentary,
-        roast_provider: 'minimax',
-        roast_model: 'MiniMax-M2.1',
-        particle_effect: particleEffect,
-        revealed_at: new Date().toISOString(),
-      })
-      .select()
-      .single()
+    // Insert result into baby_shower.game_results using direct SQL
+    const insertResult = await client.queryObject<{
+      id: string
+      scenario_id: string
+      mom_votes: number
+      dad_votes: number
+      mom_percentage: number
+      crowd_choice: string
+      actual_choice: string
+      perception_gap: number
+      roast_commentary: string
+      particle_effect: string
+      revealed_at: Date
+    }>(
+      `INSERT INTO baby_shower.game_results 
+        (scenario_id, mom_votes, dad_votes, crowd_choice, actual_choice, 
+         perception_gap, roast_commentary, roast_provider, roast_model, particle_effect, revealed_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, 'minimax', 'MiniMax-M2.1', $8, NOW())
+       RETURNING *`,
+      [body.scenario_id, momVotes, dadVotes, crowdChoice, actualChoice, 
+       perceptionGap, roastCommentary, particleEffect]
+    )
 
-    if (insertError) {
-      console.error('[game-reveal] Failed to insert game result:', insertError.message)
-      throw new Error(`Database error: ${insertError.message}`)
+    if (insertResult.rows.length === 0) {
+      throw new Error('Failed to insert game result: No rows returned')
     }
 
+    const result = insertResult.rows[0]
     console.log(`[game-reveal] Successfully inserted result with id: ${result.id}`)
 
     // Update session status to 'revealed'
-    const { error: updateError } = await supabase
-      .from('baby_shower.game_sessions')
-      .update({ 
-        status: 'revealed',
-        current_round: sessionData.current_round + 1,
-      })
-      .eq('id', sessionData.id)
+    await client.queryObject(
+      `UPDATE baby_shower.game_sessions 
+       SET status = 'revealed', current_round = $1
+       WHERE id = $2`,
+      [sessionData.current_round + 1, sessionData.id]
+    )
 
-    if (updateError) {
-      console.error('[game-reveal] Failed to update session status:', updateError.message)
-    }
-
-    // Broadcast realtime reveal event
-    await broadcastRealtimeUpdate(supabase, {
-      type: 'result_reveal',
-      scenario_id: body.scenario_id,
-      result: {
-        id: result.id,
-        scenario_id: result.scenario_id,
-        mom_votes: result.mom_votes,
-        dad_votes: result.dad_votes,
-        mom_percentage: Number(result.mom_percentage),
-        dad_percentage: 100 - Number(result.mom_percentage),
-        crowd_choice: result.crowd_choice,
-        actual_choice: result.actual_choice,
-        perception_gap: result.perception_gap,
-        roast_commentary: result.roast_commentary,
-        particle_effect: result.particle_effect,
-        revealed_at: result.revealed_at,
-      },
-    })
+    // Note: Realtime broadcast would need to be implemented differently with direct Postgres
 
     // Prepare response
     const voteComparison = {
@@ -692,5 +679,13 @@ serve(async (req: Request) => {
       JSON.stringify({ error: errorMessage } as ErrorResponse),
       { status: 500, headers }
     )
+  } finally {
+    if (client) {
+      try {
+        await client.end()
+      } catch (e) {
+        console.error('[game-reveal] Error closing database connection:', e)
+      }
+    }
   }
 })

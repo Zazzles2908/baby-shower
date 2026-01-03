@@ -1,5 +1,5 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { Client } from 'https://deno.land/x/postgres@v0.17.0/mod.ts'
 
 interface ScenarioRequest {
   session_id: string
@@ -16,14 +16,19 @@ interface ScenarioResponse {
   intensity: number
 }
 
-interface GameScenario {
-  id: string
-  session_id: string
-  scenario_text: string
-  mom_option: string
-  dad_option: string
-  intensity: number
-  created_at: string
+/**
+ * Get database client using connection string from environment
+ */
+function getDbClient(): Client {
+  const connectionString = Deno.env.get('POSTGRES_URL') ?? 
+    Deno.env.get('SUPABASE_DB_URL') ?? 
+    Deno.env.get('DATABASE_URL') ?? ''
+  
+  if (!connectionString) {
+    throw new Error('Missing database connection string: POSTGRES_URL, SUPABASE_DB_URL, or DATABASE_URL')
+  }
+  
+  return new Client(connectionString)
 }
 
 /**
@@ -190,29 +195,6 @@ function generateFallbackScenario(momName: string, dadName: string): {
   }
 }
 
-/**
- * Get the current active scenario for a game session
- */
-async function getCurrentScenario(
-  supabase: ReturnType<typeof createClient>,
-  sessionId: string
-): Promise<GameScenario | null> {
-  const { data, error } = await supabase
-    .from('baby_shower.game_scenarios')
-    .select('*')
-    .eq('session_id', sessionId)
-    .order('created_at', { ascending: false })
-    .limit(1)
-    .single()
-
-  if (error || !data) {
-    console.log('No active scenario found for session:', sessionId)
-    return null
-  }
-
-  return data as GameScenario
-}
-
 serve(async (req: Request) => {
   const headers = new Headers({
     'Access-Control-Allow-Origin': '*',
@@ -226,16 +208,11 @@ serve(async (req: Request) => {
     return new Response(null, { status: 204, headers })
   }
 
-  try {
-    const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? ''
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    if (!supabaseUrl || !supabaseServiceKey) {
-      throw new Error('Missing required environment variables')
-    }
+  let client: Client | null = null
 
-    const supabase = createClient(supabaseUrl, supabaseServiceKey, {
-      auth: { autoRefreshToken: false, persistSession: false },
-    })
+  try {
+    client = getDbClient()
+    await client.connect()
 
     // GET: Fetch current scenario
     if (req.method === 'GET') {
@@ -249,9 +226,26 @@ serve(async (req: Request) => {
         )
       }
 
-      const scenario = await getCurrentScenario(supabase, sessionId)
+      console.log(`[game-scenario] GET: Fetching scenario for session: ${sessionId}`)
 
-      if (!scenario) {
+      // Get the most recent scenario for this session
+      const result = await client.queryObject<{
+        id: string
+        scenario_text: string
+        mom_option: string
+        dad_option: string
+        intensity: number
+        created_at: Date
+      }>(
+        `SELECT id, scenario_text, mom_option, dad_option, intensity, created_at
+         FROM baby_shower.game_scenarios 
+         WHERE session_id = $1
+         ORDER BY created_at DESC
+         LIMIT 1`,
+        [sessionId]
+      )
+
+      if (result.rows.length === 0) {
         return new Response(
           JSON.stringify({ 
             success: true, 
@@ -262,6 +256,7 @@ serve(async (req: Request) => {
         )
       }
 
+      const scenario = result.rows[0]
       return new Response(
         JSON.stringify({
           success: true,
@@ -271,7 +266,7 @@ serve(async (req: Request) => {
             mom_option: scenario.mom_option,
             dad_option: scenario.dad_option,
             intensity: scenario.intensity,
-            created_at: scenario.created_at
+            created_at: scenario.created_at.toISOString()
           }
         }),
         { status: 200, headers }
@@ -331,24 +326,31 @@ serve(async (req: Request) => {
       console.warn('[game-scenario] AI generation failed, using fallback')
     }
 
-    // Insert scenario into database
-    const { data: scenarioData, error: insertError } = await supabase
-      .from('baby_shower.game_scenarios')
-      .insert({
-        session_id: body.session_id,
-        scenario_text: aiResult?.scenario || generateFallbackScenario(sanitizedMomName, sanitizedDadName).scenario,
-        mom_option: aiResult?.momOption || `${sanitizedMomName} would handle it with grace`,
-        dad_option: aiResult?.dadOption || `${sanitizedDadName} would figure it out`,
-        intensity: aiResult?.intensity || 0.5,
-      })
-      .select()
-      .single()
+    const scenarioText = aiResult?.scenario || generateFallbackScenario(sanitizedMomName, sanitizedDadName).scenario
+    const momOption = aiResult?.momOption || `${sanitizedMomName} would handle it with grace`
+    const dadOption = aiResult?.dadOption || `${sanitizedDadName} would figure it out`
+    const intensity = aiResult?.intensity || 0.5
 
-    if (insertError) {
-      console.error('Failed to insert scenario:', insertError)
-      throw new Error(`Database error: ${insertError.message}`)
+    // Insert scenario into database using direct SQL
+    const insertResult = await client.queryObject<{
+      id: string
+      scenario_text: string
+      mom_option: string
+      dad_option: string
+      intensity: number
+    }>(
+      `INSERT INTO baby_shower.game_scenarios 
+        (session_id, scenario_text, mom_option, dad_option, intensity)
+       VALUES ($1, $2, $3, $4, $5)
+       RETURNING id, scenario_text, mom_option, dad_option, intensity`,
+      [body.session_id, scenarioText, momOption, dadOption, intensity]
+    )
+
+    if (insertResult.rows.length === 0) {
+      throw new Error('Failed to insert scenario: No rows returned')
     }
 
+    const scenarioData = insertResult.rows[0]
     console.log(`[game-scenario] Successfully created scenario: ${scenarioData.id}`)
 
     const response: ScenarioResponse = {
@@ -376,5 +378,13 @@ serve(async (req: Request) => {
       }),
       { status: 500, headers }
     )
+  } finally {
+    if (client) {
+      try {
+        await client.end()
+      } catch (e) {
+        console.error('[game-scenario] Error closing database connection:', e)
+      }
+    }
   }
 })

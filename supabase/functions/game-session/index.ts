@@ -1,24 +1,5 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-
-// Request/Response interfaces
-interface CreateSessionRequest {
-  mom_name: string
-  dad_name: string
-  total_rounds?: number
-}
-
-interface JoinSessionRequest {
-  session_code: string
-  guest_name: string
-}
-
-interface UpdateSessionRequest {
-  session_code: string
-  admin_code: string
-  status?: string
-  current_round?: number
-}
+import { Client } from 'https://deno.land/x/postgres@v0.17.0/mod.ts'
 
 interface SessionResponse {
   session_code: string
@@ -51,6 +32,21 @@ function generateAdminPIN(): string {
   return Math.floor(1000 + Math.random() * 9000).toString()
 }
 
+/**
+ * Get database client using connection string from environment
+ */
+function getDbClient(): Client {
+  const connectionString = Deno.env.get('POSTGRES_URL') ?? 
+    Deno.env.get('SUPABASE_DB_URL') ?? 
+    Deno.env.get('DATABASE_URL') ?? ''
+  
+  if (!connectionString) {
+    throw new Error('Missing database connection string: POSTGRES_URL, SUPABASE_DB_URL, or DATABASE_URL')
+  }
+  
+  return new Client(connectionString)
+}
+
 serve(async (req: Request) => {
   const headers = new Headers({
     'Access-Control-Allow-Origin': '*',
@@ -64,17 +60,11 @@ serve(async (req: Request) => {
     return new Response(null, { status: 204, headers })
   }
 
-  try {
-    const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? ''
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    
-    if (!supabaseUrl || !supabaseServiceKey) {
-      throw new Error('Missing environment variables: SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY')
-    }
+  let client: Client | null = null
 
-    const supabase = createClient(supabaseUrl, supabaseServiceKey, {
-      auth: { autoRefreshToken: false, persistSession: false },
-    })
+  try {
+    client = getDbClient()
+    await client.connect()
 
     // GET: Retrieve session by code
     if (req.method === 'GET') {
@@ -90,13 +80,24 @@ serve(async (req: Request) => {
 
       console.log(`[game-session] Retrieving session: ${sessionCode}`)
 
-      const { data: session, error } = await supabase
-        .from('baby_shower.game_sessions')
-        .select('*')
-        .eq('session_code', sessionCode.toUpperCase())
-        .single()
+      const result = await client.queryObject<{
+        id: string
+        session_code: string
+        mom_name: string
+        dad_name: string
+        status: string
+        current_round: number
+        total_rounds: number
+        created_at: Date
+      }>(
+        `SELECT id, session_code, mom_name, dad_name, status, 
+                current_round, total_rounds, created_at
+         FROM baby_shower.game_sessions 
+         WHERE session_code = $1`,
+        [sessionCode.toUpperCase()]
+      )
 
-      if (error || !session) {
+      if (result.rows.length === 0) {
         console.error('[game-session] Session not found:', sessionCode)
         return new Response(
           JSON.stringify({ error: 'Session not found' }),
@@ -104,6 +105,7 @@ serve(async (req: Request) => {
         )
       }
 
+      const session = result.rows[0]
       return new Response(
         JSON.stringify({
           success: true,
@@ -114,7 +116,7 @@ serve(async (req: Request) => {
             status: session.status,
             current_round: session.current_round,
             total_rounds: session.total_rounds,
-            created_at: session.created_at,
+            created_at: session.created_at.toISOString(),
           }
         }),
         { status: 200, headers }
@@ -135,11 +137,11 @@ serve(async (req: Request) => {
     // Route to appropriate handler
     switch (action) {
       case 'create':
-        return await handleCreateSession(supabase, body, headers)
+        return await handleCreateSession(client, body, headers)
       case 'join':
-        return await handleJoinSession(supabase, body, headers)
+        return await handleJoinSession(client, body, headers)
       case 'update':
-        return await handleUpdateSession(supabase, body, headers)
+        return await handleUpdateSession(client, body, headers)
       default:
         return new Response(
           JSON.stringify({ error: 'Invalid action. Must be create, join, or update' }),
@@ -153,6 +155,14 @@ serve(async (req: Request) => {
       JSON.stringify({ error: err instanceof Error ? err.message : 'Internal server error' }),
       { status: 500, headers }
     )
+  } finally {
+    if (client) {
+      try {
+        await client.end()
+      } catch (e) {
+        console.error('[game-session] Error closing database connection:', e)
+      }
+    }
   }
 })
 
@@ -160,8 +170,8 @@ serve(async (req: Request) => {
  * Handle creating a new game session
  */
 async function handleCreateSession(
-  supabase: ReturnType<typeof createClient>,
-  body: CreateSessionRequest,
+  client: Client,
+  body: { mom_name: string; dad_name: string; total_rounds?: number },
   headers: Headers
 ): Promise<Response> {
   const { mom_name, dad_name, total_rounds } = body
@@ -192,23 +202,21 @@ async function handleCreateSession(
   }
 
   // Generate unique session code and admin PIN
-  const sessionCode = generateSessionCode()
+  let sessionCode = generateSessionCode()
   const adminCode = generateAdminPIN()
 
   console.log(`[game-session] Creating session with code: ${sessionCode}`)
 
   // Ensure unique session code (collision prevention)
   let attempts = 0
-  let finalCode = sessionCode
   while (attempts < 10) {
-    const { data: existing } = await supabase
-      .from('baby_shower.game_sessions')
-      .select('session_code')
-      .eq('session_code', finalCode)
-      .single()
-
-    if (existing) {
-      finalCode = generateSessionCode()
+    const result = await client.queryObject<{ session_code: string }>(
+      `SELECT session_code FROM baby_shower.game_sessions WHERE session_code = $1`,
+      [sessionCode]
+    )
+    
+    if (result.rows.length > 0) {
+      sessionCode = generateSessionCode()
       attempts++
     } else {
       break
@@ -219,25 +227,41 @@ async function handleCreateSession(
     throw new Error('Failed to generate unique session code after 10 attempts')
   }
 
-  const { data: session, error } = await supabase
-    .from('baby_shower.game_sessions')
-    .insert({
-      session_code: finalCode,
-      admin_code: adminCode,
-      mom_name: mom_name.trim(),
-      dad_name: dad_name.trim(),
-      status: 'setup',
-      current_round: 0,
-      total_rounds: total_rounds || 5,
-    })
-    .select()
-    .single()
+  // Insert the new session
+  const insertResult = await client.queryObject<{
+    id: string
+    session_code: string
+    admin_code: string
+    mom_name: string
+    dad_name: string
+    status: string
+    current_round: number
+    total_rounds: number
+    created_at: Date
+  }>(
+    `INSERT INTO baby_shower.game_sessions 
+      (session_code, admin_code, mom_name, dad_name, status, current_round, total_rounds)
+     VALUES ($1, $2, $3, $4, 'setup', 0, $5)
+     RETURNING id, session_code, admin_code, mom_name, dad_name, status, 
+               current_round, total_rounds, created_at`,
+    [sessionCode, adminCode, mom_name.trim(), dad_name.trim(), total_rounds || 5]
+  )
 
-  if (error) {
-    console.error('[game-session] Database insert error:', error)
-    throw new Error(`Failed to create session: ${error.message}`)
+  if (insertResult.rows.length === 0) {
+    throw new Error('Failed to create session: No rows returned')
   }
 
+  const session = insertResult.rows[0] as {
+    id: string
+    session_code: string
+    admin_code: string
+    mom_name: string
+    dad_name: string
+    status: string
+    current_round: number
+    total_rounds: number
+    created_at: Date
+  }
   console.log(`[game-session] Session created successfully: ${session.id}`)
 
   return new Response(
@@ -252,7 +276,7 @@ async function handleCreateSession(
         status: session.status,
         current_round: session.current_round,
         total_rounds: session.total_rounds,
-        created_at: session.created_at,
+        created_at: session.created_at.toISOString(),
       }
     } as SessionResponse),
     { status: 201, headers }
@@ -263,8 +287,8 @@ async function handleCreateSession(
  * Handle joining a session as a guest
  */
 async function handleJoinSession(
-  supabase: ReturnType<typeof createClient>,
-  body: JoinSessionRequest,
+  client: Client,
+  body: { session_code: string; guest_name: string },
   headers: Headers
 ): Promise<Response> {
   const { session_code, guest_name } = body
@@ -297,19 +321,29 @@ async function handleJoinSession(
   console.log(`[game-session] Guest "${sanitizedGuestName}" joining session: ${normalizedCode}`)
 
   // Check if session exists and is active
-  const { data: session, error: sessionError } = await supabase
-    .from('baby_shower.game_sessions')
-    .select('*')
-    .eq('session_code', normalizedCode)
-    .single()
+  const result = await client.queryObject<{
+    session_code: string
+    mom_name: string
+    dad_name: string
+    status: string
+    current_round: number
+    total_rounds: number
+  }>(
+    `SELECT session_code, mom_name, dad_name, status, current_round, total_rounds
+     FROM baby_shower.game_sessions 
+     WHERE session_code = $1`,
+    [normalizedCode]
+  )
 
-  if (sessionError || !session) {
+  if (result.rows.length === 0) {
     console.error('[game-session] Session not found:', normalizedCode)
     return new Response(
       JSON.stringify({ error: 'Session not found' }),
       { status: 404, headers }
     )
   }
+
+  const session = result.rows[0]
 
   // Check if session is in a valid state for joining
   const validStatuses = ['setup', 'voting']
@@ -343,8 +377,8 @@ async function handleJoinSession(
  * Handle updating session status (admin only)
  */
 async function handleUpdateSession(
-  supabase: ReturnType<typeof createClient>,
-  body: UpdateSessionRequest,
+  client: Client,
+  body: { session_code: string; admin_code: string; status?: string; current_round?: number },
   headers: Headers
 ): Promise<Response> {
   const { session_code, admin_code, status, current_round } = body
@@ -379,19 +413,28 @@ async function handleUpdateSession(
   console.log(`[game-session] Updating session: ${normalizedCode}`)
 
   // Get session
-  const { data: session, error: sessionError } = await supabase
-    .from('baby_shower.game_sessions')
-    .select('*')
-    .eq('session_code', normalizedCode)
-    .single()
+  const result = await client.queryObject<{
+    session_code: string
+    admin_code: string
+    status: string
+    current_round: number
+    total_rounds: number
+  }>(
+    `SELECT session_code, admin_code, status, current_round, total_rounds
+     FROM baby_shower.game_sessions 
+     WHERE session_code = $1`,
+    [normalizedCode]
+  )
 
-  if (sessionError || !session) {
+  if (result.rows.length === 0) {
     console.error('[game-session] Session not found:', normalizedCode)
     return new Response(
       JSON.stringify({ error: 'Session not found' }),
       { status: 404, headers }
     )
   }
+
+  const session = result.rows[0]
 
   // Verify admin code
   if (session.admin_code !== admin_code) {
@@ -402,39 +445,57 @@ async function handleUpdateSession(
     )
   }
 
-  // Build update object
-  const updateData: Record<string, unknown> = {}
-  if (status) updateData.status = status
-  if (current_round !== undefined) updateData.current_round = current_round
+  // Build update query
+  const updates: string[] = []
+  const values: unknown[] = []
+  let paramIndex = 1
+
+  if (status) {
+    updates.push(`status = $${paramIndex++}`)
+    values.push(status)
+  }
+  if (current_round !== undefined) {
+    updates.push(`current_round = $${paramIndex++}`)
+    values.push(current_round)
+  }
 
   // Don't update if nothing changed
-  if (Object.keys(updateData).length === 0) {
+  if (updates.length === 0) {
     return new Response(
-      JSON.stringify({ 
-        success: true, 
+      JSON.stringify({
+        success: true,
         message: 'No changes to apply',
         data: {
           session_code: session.session_code,
           status: session.status,
           current_round: session.current_round,
+          total_rounds: session.total_rounds,
         }
       }),
       { status: 200, headers }
     )
   }
 
-  const { data: updatedSession, error: updateError } = await supabase
-    .from('baby_shower.game_sessions')
-    .update(updateData)
-    .eq('session_code', normalizedCode)
-    .select()
-    .single()
+  values.push(normalizedCode)
 
-  if (updateError) {
-    console.error('[game-session] Database update error:', updateError)
-    throw new Error(`Failed to update session: ${updateError.message}`)
+  const updateResult = await client.queryObject<{
+    session_code: string
+    status: string
+    current_round: number
+    total_rounds: number
+  }>(
+    `UPDATE baby_shower.game_sessions 
+     SET ${updates.join(', ')} 
+     WHERE session_code = $${paramIndex}
+     RETURNING session_code, status, current_round, total_rounds`,
+    values
+  )
+
+  if (updateResult.rows.length === 0) {
+    throw new Error('Failed to update session: No rows returned')
   }
 
+  const updatedSession = updateResult.rows[0]
   console.log(`[game-session] Session updated successfully: ${normalizedCode}`)
 
   return new Response(

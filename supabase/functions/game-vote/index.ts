@@ -1,5 +1,5 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { Client } from 'https://deno.land/x/postgres@v0.17.0/mod.ts'
 
 // Request/Response interfaces
 interface SubmitVoteRequest {
@@ -60,23 +60,19 @@ function calculatePercentages(momVotes: number, dadVotes: number): VoteCounts {
   }
 }
 
-// Broadcast realtime event to all connected clients
-async function broadcastRealtimeUpdate(
-  supabase: ReturnType<typeof createClient>,
-  payload: RealtimePayload
-): Promise<void> {
-  try {
-    const channel = supabase.channel('game_state')
-    await channel.send({
-      type: 'broadcast',
-      event: payload.type,
-      payload,
-    })
-    console.log(`[game-vote] Broadcast ${payload.type} for scenario ${payload.scenario_id}`)
-  } catch (error) {
-    console.error('[game-vote] Failed to broadcast realtime update:', error)
-    // Non-blocking - don't fail the request if realtime fails
+/**
+ * Get database client using connection string from environment
+ */
+function getDbClient(): Client {
+  const connectionString = Deno.env.get('POSTGRES_URL') ?? 
+    Deno.env.get('SUPABASE_DB_URL') ?? 
+    Deno.env.get('DATABASE_URL') ?? ''
+  
+  if (!connectionString) {
+    throw new Error('Missing database connection string: POSTGRES_URL, SUPABASE_DB_URL, or DATABASE_URL')
   }
+  
+  return new Client(connectionString)
 }
 
 serve(async (req: Request) => {
@@ -93,23 +89,12 @@ serve(async (req: Request) => {
     return new Response(null, { status: 204, headers })
   }
 
-  // Initialize Supabase client with service role
-  const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? ''
-  const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-
-  if (!supabaseUrl || !supabaseServiceKey) {
-    console.error('[game-vote] Missing Supabase environment variables')
-    return new Response(
-      JSON.stringify({ error: 'Server configuration error' } as ErrorResponse),
-      { status: 500, headers }
-    )
-  }
-
-  const supabase = createClient(supabaseUrl, supabaseServiceKey, {
-    auth: { autoRefreshToken: false, persistSession: false },
-  })
+  let client: Client | null = null
 
   try {
+    client = getDbClient()
+    await client.connect()
+
     // GET endpoint: Get current vote counts for a scenario
     if (req.method === 'GET') {
       const url = new URL(req.url)
@@ -125,14 +110,13 @@ serve(async (req: Request) => {
       console.log(`[game-vote] GET: Fetching vote counts for scenario ${scenarioId}`)
 
       // Get scenario details to verify it exists
-      const { data: scenario, error: scenarioError } = await supabase
-        .from('baby_shower.game_scenarios')
-        .select('id, session_id')
-        .eq('id', scenarioId)
-        .single()
+      const scenarioResult = await client.queryObject<{ id: string, session_id: string }>(
+        `SELECT id, session_id FROM baby_shower.game_scenarios WHERE id = $1`,
+        [scenarioId]
+      )
 
-      if (scenarioError || !scenario) {
-        console.error('[game-vote] Scenario not found:', scenarioError?.message)
+      if (scenarioResult.rows.length === 0) {
+        console.error('[game-vote] Scenario not found')
         return new Response(
           JSON.stringify({ error: 'Scenario not found' } as ErrorResponse),
           { status: 404, headers }
@@ -140,19 +124,14 @@ serve(async (req: Request) => {
       }
 
       // Count votes for this scenario
-      const { data: votes, error: votesError } = await supabase
-        .from('baby_shower.game_votes')
-        .select('vote_choice')
-        .eq('scenario_id', scenarioId)
-
-      if (votesError) {
-        console.error('[game-vote] Failed to fetch votes:', votesError.message)
-        throw new Error(`Database error: ${votesError.message}`)
-      }
+      const votesResult = await client.queryObject<{ vote_choice: string }>(
+        `SELECT vote_choice FROM baby_shower.game_votes WHERE scenario_id = $1`,
+        [scenarioId]
+      )
 
       // Calculate vote counts
-      const momVotes = votes?.filter(v => v.vote_choice === 'mom').length ?? 0
-      const dadVotes = votes?.filter(v => v.vote_choice === 'dad').length ?? 0
+      const momVotes = votesResult.rows.filter(v => v.vote_choice === 'mom').length
+      const dadVotes = votesResult.rows.filter(v => v.vote_choice === 'dad').length
       const voteCounts = calculatePercentages(momVotes, dadVotes)
 
       console.log(`[game-vote] GET: Returning vote counts - Mom: ${momVotes}, Dad: ${dadVotes}`)
@@ -227,25 +206,29 @@ serve(async (req: Request) => {
 
       console.log(`[game-vote] POST: Guest ${body.guest_name} voting ${body.vote_choice} for scenario ${body.scenario_id}`)
 
-      // Get scenario and verify session status
-      const { data: scenario, error: scenarioError } = await supabase
-        .from('baby_shower.game_scenarios')
-        .select(`
-          id,
-          session_id,
-          baby_shower.game_sessions!inner (status, admin_code)
-        `)
-        .eq('id', body.scenario_id)
-        .single()
+      // Get scenario and verify session status using direct SQL
+      const scenarioResult = await client.queryObject<{
+        session_id: string
+        baby_shower: { game_sessions: { status: string; admin_code: string }[] }
+      }>(
+        `SELECT s.session_id, 
+                (SELECT json_agg(json_build_object('status', gs.status, 'admin_code', gs.admin_code))
+                 FROM baby_shower.game_sessions gs
+                 WHERE gs.id = s.session_id) as baby_shower
+         FROM baby_shower.game_scenarios s
+         WHERE s.id = $1`,
+        [body.scenario_id]
+      )
 
-      if (scenarioError || !scenario) {
-        console.error('[game-vote] Scenario not found:', scenarioError?.message)
+      if (scenarioResult.rows.length === 0) {
+        console.error('[game-vote] Scenario not found')
         return new Response(
           JSON.stringify({ error: 'Scenario not found' } as ErrorResponse),
           { status: 404, headers }
         )
       }
 
+      const scenario = scenarioResult.rows[0]
       const sessionData = scenario.baby_shower?.game_sessions?.[0]
       if (!sessionData) {
         console.error('[game-vote] Failed to get session data')
@@ -268,70 +251,45 @@ serve(async (req: Request) => {
       }
 
       // Check if guest already voted for this scenario
-      const { data: existingVote, error: existingVoteError } = await supabase
-        .from('baby_shower.game_votes')
-        .select('id')
-        .eq('scenario_id', body.scenario_id)
-        .eq('guest_name', body.guest_name.trim())
-        .maybeSingle()
+      const existingVoteResult = await client.queryObject<{ id: string }>(
+        `SELECT id FROM baby_shower.game_votes 
+         WHERE scenario_id = $1 AND guest_name = $2`,
+        [body.scenario_id, body.guest_name.trim()]
+      )
 
-      if (existingVoteError) {
-        console.error('[game-vote] Failed to check existing vote:', existingVoteError.message)
-        throw new Error(`Database error: ${existingVoteError.message}`)
-      }
-
-      if (existingVote) {
+      if (existingVoteResult.rows.length > 0) {
         console.log(`[game-vote] Guest ${body.guest_name} already voted, updating instead`)
         
         // Update existing vote
-        const { error: updateError } = await supabase
-          .from('baby_shower.game_votes')
-          .update({ vote_choice: body.vote_choice })
-          .eq('id', existingVote.id)
-
-        if (updateError) {
-          console.error('[game-vote] Failed to update vote:', updateError.message)
-          throw new Error(`Database error: ${updateError.message}`)
-        }
+        await client.queryObject(
+          `UPDATE baby_shower.game_votes 
+           SET vote_choice = $1 
+           WHERE scenario_id = $2 AND guest_name = $3`,
+          [body.vote_choice, body.scenario_id, body.guest_name.trim()]
+        )
       } else {
         // Insert new vote
-        const { error: insertError } = await supabase
-          .from('baby_shower.game_votes')
-          .insert({
-            scenario_id: body.scenario_id,
-            guest_name: body.guest_name.trim(),
-            vote_choice: body.vote_choice,
-          })
-
-        if (insertError) {
-          console.error('[game-vote] Failed to insert vote:', insertError.message)
-          throw new Error(`Database error: ${insertError.message}`)
-        }
+        await client.queryObject(
+          `INSERT INTO baby_shower.game_votes (scenario_id, guest_name, vote_choice)
+           VALUES ($1, $2, $3)`,
+          [body.scenario_id, body.guest_name.trim(), body.vote_choice]
+        )
       }
 
       console.log(`[game-vote] Vote recorded successfully for ${body.guest_name}`)
 
       // Get updated vote counts
-      const { data: allVotes, error: countError } = await supabase
-        .from('baby_shower.game_votes')
-        .select('vote_choice')
-        .eq('scenario_id', body.scenario_id)
+      const allVotesResult = await client.queryObject<{ vote_choice: string }>(
+        `SELECT vote_choice FROM baby_shower.game_votes WHERE scenario_id = $1`,
+        [body.scenario_id]
+      )
 
-      if (countError) {
-        console.error('[game-vote] Failed to get vote counts:', countError.message)
-        throw new Error(`Database error: ${countError.message}`)
-      }
-
-      const momVotes = allVotes?.filter(v => v.vote_choice === 'mom').length ?? 0
-      const dadVotes = allVotes?.filter(v => v.vote_choice === 'dad').length ?? 0
+      const momVotes = allVotesResult.rows.filter(v => v.vote_choice === 'mom').length
+      const dadVotes = allVotesResult.rows.filter(v => v.vote_choice === 'dad').length
       const voteCounts = calculatePercentages(momVotes, dadVotes)
 
-      // Broadcast realtime update
-      await broadcastRealtimeUpdate(supabase, {
-        type: 'vote_update',
-        scenario_id: body.scenario_id,
-        vote_counts: voteCounts,
-      })
+      // Note: Realtime broadcast would need to be implemented differently with direct Postgres
+      // This is a limitation of bypassing PostgREST
 
       return new Response(
         JSON.stringify({
@@ -378,25 +336,30 @@ serve(async (req: Request) => {
 
       console.log(`[game-vote] POST: ${body.parent} locking answer for scenario ${body.scenario_id}`)
 
-      // Get scenario and verify admin code
-      const { data: scenario, error: scenarioError } = await supabase
-        .from('baby_shower.game_scenarios')
-        .select(`
-          id,
-          session_id,
-          baby_shower.game_sessions!inner (admin_code, status, mom_name, dad_name)
-        `)
-        .eq('id', body.scenario_id)
-        .single()
+      // Get scenario and verify admin code using direct SQL
+      const scenarioResult = await client.queryObject<{
+        session_id: string
+        baby_shower: { game_sessions: { admin_code: string; status: string; mom_name: string; dad_name: string }[] }
+      }>(
+        `SELECT s.session_id, 
+                (SELECT json_agg(json_build_object('admin_code', gs.admin_code, 'status', gs.status, 
+                         'mom_name', gs.mom_name, 'dad_name', gs.dad_name))
+                 FROM baby_shower.game_sessions gs
+                 WHERE gs.id = s.session_id) as baby_shower
+         FROM baby_shower.game_scenarios s
+         WHERE s.id = $1`,
+        [body.scenario_id]
+      )
 
-      if (scenarioError || !scenario) {
-        console.error('[game-vote] Scenario not found:', scenarioError?.message)
+      if (scenarioResult.rows.length === 0) {
+        console.error('[game-vote] Scenario not found')
         return new Response(
           JSON.stringify({ error: 'Scenario not found' } as ErrorResponse),
           { status: 404, headers }
         )
       }
 
+      const scenario = scenarioResult.rows[0]
       const sessionData = scenario.baby_shower?.game_sessions?.[0]
       if (!sessionData) {
         console.error('[game-vote] Failed to get session data')
@@ -428,63 +391,61 @@ serve(async (req: Request) => {
       }
 
       // Check if game_answers record exists for this scenario
-      let { data: gameAnswer, error: answerError } = await supabase
-        .from('baby_shower.game_answers')
-        .select('*')
-        .eq('scenario_id', body.scenario_id)
-        .maybeSingle()
+      const gameAnswerResult = await client.queryObject<{
+        id: string
+        mom_locked: boolean
+        dad_locked: boolean
+        mom_answer: string
+        dad_answer: string
+      }>(
+        `SELECT id, mom_locked, dad_locked, mom_answer, dad_answer 
+         FROM baby_shower.game_answers WHERE scenario_id = $1`,
+        [body.scenario_id]
+      )
 
-      if (answerError) {
-        console.error('[game-vote] Failed to check game answers:', answerError.message)
-        throw new Error(`Database error: ${answerError.message}`)
-      }
+      let gameAnswer = gameAnswerResult.rows[0]
 
       // Prepare update data
-      const updateData: Record<string, unknown> = {}
+      let momLocked = gameAnswer?.mom_locked ?? false
+      let dadLocked = gameAnswer?.dad_locked ?? false
+      let momAnswer = gameAnswer?.mom_answer
+      let dadAnswer = gameAnswer?.dad_answer
+
       if (body.parent === 'mom') {
-        updateData.mom_answer = body.answer
-        updateData.mom_locked = true
+        momLocked = true
+        momAnswer = body.answer
       } else {
-        updateData.dad_answer = body.answer
-        updateData.dad_locked = true
+        dadLocked = true
+        dadAnswer = body.answer
       }
 
       let lockStatus: LockStatus
 
       if (gameAnswer) {
         // Update existing record
-        const { error: updateError } = await supabase
-          .from('baby_shower.game_answers')
-          .update(updateData)
-          .eq('id', gameAnswer.id)
-
-        if (updateError) {
-          console.error('[game-vote] Failed to update game answer:', updateError.message)
-          throw new Error(`Database error: ${updateError.message}`)
-        }
+        await client.queryObject(
+          `UPDATE baby_shower.game_answers 
+           SET mom_locked = $1, dad_locked = $2, mom_answer = $3, dad_answer = $4
+           WHERE scenario_id = $5`,
+          [momLocked, dadLocked, momAnswer, dadAnswer, body.scenario_id]
+        )
 
         lockStatus = {
           locked: true,
-          both_locked: (updateData.mom_locked ? true : gameAnswer.mom_locked) && 
-                       (updateData.dad_locked ? true : gameAnswer.dad_locked),
-          mom_locked: updateData.mom_locked ? true : gameAnswer.mom_locked,
-          dad_locked: updateData.dad_locked ? true : gameAnswer.dad_locked,
-          mom_answer: updateData.mom_answer as string ?? gameAnswer.mom_answer,
-          dad_answer: updateData.dad_answer as string ?? gameAnswer.dad_answer,
+          both_locked: momLocked && dadLocked,
+          mom_locked: momLocked,
+          dad_locked: dadLocked,
+          mom_answer: momAnswer ?? null,
+          dad_answer: dadAnswer ?? null,
         }
       } else {
         // Create new record
-        const { error: insertError } = await supabase
-          .from('baby_shower.game_answers')
-          .insert({
-            scenario_id: body.scenario_id,
-            ...updateData,
-          })
-
-        if (insertError) {
-          console.error('[game-vote] Failed to insert game answer:', insertError.message)
-          throw new Error(`Database error: ${insertError.message}`)
-        }
+        await client.queryObject(
+          `INSERT INTO baby_shower.game_answers 
+           (scenario_id, mom_locked, dad_locked, mom_answer, dad_answer)
+           VALUES ($1, $2, $3, $4, $5)`,
+          [body.scenario_id, momLocked, dadLocked, momAnswer, dadAnswer]
+        )
 
         lockStatus = {
           locked: true,
@@ -498,12 +459,7 @@ serve(async (req: Request) => {
 
       console.log(`[game-vote] ${body.parent} successfully locked answer: ${body.answer}`)
 
-      // Broadcast realtime update
-      await broadcastRealtimeUpdate(supabase, {
-        type: 'answer_locked',
-        scenario_id: body.scenario_id,
-        lock_status: lockStatus,
-      })
+      // Note: Realtime broadcast would need to be implemented differently with direct Postgres
 
       return new Response(
         JSON.stringify({
@@ -528,5 +484,13 @@ serve(async (req: Request) => {
       JSON.stringify({ error: errorMessage } as ErrorResponse),
       { status: 500, headers }
     )
+  } finally {
+    if (client) {
+      try {
+        await client.end()
+      } catch (e) {
+        console.error('[game-vote] Error closing database connection:', e)
+      }
+    }
   }
 })
