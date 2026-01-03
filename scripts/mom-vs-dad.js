@@ -18,11 +18,58 @@
     let userRole = 'guest'; // 'guest' or 'admin'
     let userName = '';
     let voted = false;
+    let selectedTheme = 'general';
     let realtimeSubscription = null;
     let votePollingInterval = null;
     let chibiMom = null;
     let chibiDad = null;
     let tugOfWarBar = null;
+
+    // Theme configuration with emojis and colors
+    const GAME_THEMES = {
+        farm: {
+            icon: '🐄',
+            name: 'Farm Life',
+            color: '#9CAF88',
+            description: 'Cute barnyard adventures'
+        },
+        funny: {
+            icon: '😂',
+            name: 'Funny & Silly',
+            color: '#F4E4BC',
+            description: 'Hilarious baby moments'
+        },
+        sleep: {
+            icon: '😴',
+            name: 'Sleep Struggles',
+            color: '#A8D8EA',
+            description: 'Nighttime parenting chaos'
+        },
+        feeding: {
+            icon: '🍼',
+            name: 'Feeding Time',
+            color: '#E8C4A0',
+            description: 'Mealtime madness'
+        },
+        messy: {
+            icon: '💩',
+            name: 'Messy Moments',
+            color: '#FCBAD3',
+            description: 'Diaper disasters galore'
+        },
+        emotional: {
+            icon: '💕',
+            name: 'Emotional Journey',
+            color: '#AA96DA',
+            description: 'Heartfelt parenting moments'
+        },
+        general: {
+            icon: '🎮',
+            name: 'General Mix',
+            color: '#4ECDC4',
+            description: 'A bit of everything'
+        }
+    };
 
     // Game state constants
     const GAME_STATES = {
@@ -352,24 +399,96 @@
     }
 
     /**
-     * Handle new scenario
+     * Handle new scenario with enhanced UI updates
      */
     function handleNewScenario(payload) {
         console.log('[MomVsDad] New scenario:', payload);
         currentScenario = payload;
 
-        // Update voting screen
+        // Update voting screen with animation
+        const scenarioCard = document.querySelector('.game-scenario-card');
+        if (scenarioCard) {
+            scenarioCard.classList.add('scenario-reveal');
+            setTimeout(() => {
+                scenarioCard.classList.remove('scenario-reveal');
+            }, 600);
+        }
+
+        // Update scenario text with fade
         const scenarioText = document.querySelector('.game-scenario-text');
+        if (scenarioText) {
+            scenarioText.style.opacity = '0';
+            setTimeout(() => {
+                scenarioText.textContent = payload.scenario_text || '';
+                scenarioText.style.opacity = '1';
+            }, 200);
+        }
+
+        // Update vote options with animations
         const momOption = document.querySelector('.game-option-mom');
         const dadOption = document.querySelector('.game-option-dad');
 
-        if (scenarioText) scenarioText.textContent = payload.scenario_text || '';
         if (momOption) momOption.textContent = payload.mom_option || '';
         if (dadOption) dadOption.textContent = payload.dad_option || '';
+
+        // Update scenario intensity if available
+        const intensityFill = document.getElementById('scenario-intensity-fill');
+        const intensityValue = document.getElementById('scenario-intensity-value');
+        if (intensityFill && intensityValue && payload.intensity !== undefined) {
+            const intensity = Math.round((payload.intensity || 0.5) * 100);
+            intensityFill.style.width = `${intensity}%`;
+            intensityValue.textContent = `${intensity}%`;
+        }
+
+        // Update round information
+        const currentRoundEl = document.querySelector('.current-round');
+        const totalRoundsEl = document.querySelector('.total-rounds');
+        if (currentRoundEl && currentSession) {
+            currentRoundEl.textContent = currentSession.current_round + 1;
+        }
+        if (totalRoundsEl && currentSession) {
+            totalRoundsEl.textContent = currentSession.total_rounds || 5;
+        }
+
+        // Update theme badge
+        const themeBadge = document.querySelector('.theme-badge');
+        if (themeBadge) {
+            themeBadge.innerHTML = `
+                <span class="theme-icon">${GAME_THEMES[selectedTheme].icon}</span>
+                <span class="theme-name">${GAME_THEMES[selectedTheme].name}</span>
+            `;
+        }
 
         // Reset voted state
         voted = false;
         updateVoteButtons();
+
+        // Reset vote buttons
+        const btnMom = document.getElementById('btn-vote-mom');
+        const btnDad = document.getElementById('btn-vote-dad');
+
+        if (btnMom) {
+            btnMom.classList.remove('vote-selected', 'voting-animation');
+            btnMom.innerHTML = `
+                <span class="vote-icon">👩</span>
+                <span class="vote-label game-option-mom">${payload.mom_option || "Mom's option"}</span>
+            `;
+        }
+
+        if (btnDad) {
+            btnDad.classList.remove('vote-selected', 'voting-animation');
+            btnDad.innerHTML = `
+                <span class="vote-icon">👨</span>
+                <span class="vote-label game-option-dad">${payload.dad_option || "Dad's option"}</span>
+            `;
+        }
+
+        // Hide vote status
+        const voteStatus = document.getElementById('vote-status');
+        if (voteStatus) {
+            voteStatus.classList.add('hidden');
+            voteStatus.classList.remove('fade-in');
+        }
     }
 
     /**
@@ -432,6 +551,21 @@
     // =====================================================
 
     /**
+     * Create theme selection HTML
+     */
+    function createThemeSelection() {
+        let themesHtml = '';
+        for (const [key, theme] of Object.entries(GAME_THEMES)) {
+            themesHtml += `
+                <option value="${key}" ${key === 'general' ? 'selected' : ''}>
+                    ${theme.icon} ${theme.name}
+                </option>
+            `;
+        }
+        return themesHtml;
+    }
+
+    /**
      * Create join screen HTML
      */
     function createJoinScreen() {
@@ -475,6 +609,27 @@
                                 required
                                 maxlength="50"
                             />
+                        </div>
+
+                        <div class="form-group">
+                            <label for="game-theme" class="form-label">
+                                <span>🎨 Game Theme</span>
+                                <span class="theme-description" id="theme-description">
+                                    ${GAME_THEMES.general.description}
+                                </span>
+                            </label>
+                            <div class="theme-select-wrapper">
+                                <select
+                                    id="game-theme"
+                                    name="theme"
+                                    class="form-input theme-select"
+                                >
+                                    ${createThemeSelection()}
+                                </select>
+                                <span class="theme-icon-preview" id="theme-preview">
+                                    ${GAME_THEMES.general.icon}
+                                </span>
+                            </div>
                         </div>
 
                         <div class="form-actions">
@@ -544,6 +699,27 @@
                             />
                         </div>
 
+                        <div class="form-group">
+                            <label for="admin-theme" class="form-label">
+                                <span>🎨 Create Theme</span>
+                                <span class="theme-description" id="admin-theme-description">
+                                    ${GAME_THEMES.general.description}
+                                </span>
+                            </label>
+                            <div class="theme-select-wrapper">
+                                <select
+                                    id="admin-theme"
+                                    name="theme"
+                                    class="form-input theme-select"
+                                >
+                                    ${createThemeSelection()}
+                                </select>
+                                <span class="theme-icon-preview" id="admin-theme-preview">
+                                    ${GAME_THEMES.general.icon}
+                                </span>
+                            </div>
+                        </div>
+
                         <div class="form-actions">
                             <button type="submit" class="btn btn-primary btn-block">
                                 🔓 Login as Parent
@@ -570,6 +746,18 @@
         return `
             <div id="game-voting-screen" class="game-screen">
                 <div class="game-voting-container">
+                    <!-- Round Counter & Theme Badge -->
+                    <div class="game-status-bar">
+                        <div class="round-counter">
+                            <span class="round-icon">🎯</span>
+                            <span class="round-text">Round <span class="current-round">1</span> of <span class="total-rounds">5</span></span>
+                        </div>
+                        <div class="theme-badge">
+                            <span class="theme-icon">${GAME_THEMES[selectedTheme].icon}</span>
+                            <span class="theme-name">${GAME_THEMES[selectedTheme].name}</span>
+                        </div>
+                    </div>
+
                     <!-- Chibi Avatars -->
                     <div class="game-chibis">
                         <div class="chibi-avatar chibi-avatar-mom">
@@ -585,11 +773,33 @@
                         </div>
                     </div>
 
-                    <!-- Scenario Card -->
+                    <!-- Enhanced Scenario Card -->
                     <div class="game-scenario-card fade-in-up">
-                        <div class="scenario-icon">❓</div>
+                        <div class="scenario-illustrations">
+                            <div class="scenario-chibi-left">
+                                <div class="chibi-placeholder">
+                                    <span class="placeholder-emoji">👩</span>
+                                </div>
+                            </div>
+                            <div class="scenario-divider">
+                                <span class="divider-icon">⚡</span>
+                            </div>
+                            <div class="scenario-chibi-right">
+                                <div class="chibi-placeholder">
+                                    <span class="placeholder-emoji">👨</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="scenario-icon">${GAME_THEMES[selectedTheme].icon}</div>
                         <div class="game-scenario-text">
                             Loading scenario...
+                        </div>
+                        <div class="scenario-intensity">
+                            <span class="intensity-label">Intensity:</span>
+                            <div class="intensity-bar">
+                                <div class="intensity-fill" id="scenario-intensity-fill" style="width: 50%"></div>
+                            </div>
+                            <span class="intensity-value" id="scenario-intensity-value">50%</span>
                         </div>
                     </div>
 
@@ -685,10 +895,6 @@
                             <span class="info-label">Session:</span>
                             <span class="info-value game-session-code">---</span>
                         </div>
-                        <div class="info-item">
-                            <span class="info-label">Round:</span>
-                            <span class="info-value game-round">1/5</span>
-                        </div>
                     </div>
                 </div>
             </div>
@@ -696,20 +902,38 @@
     }
 
     /**
-     * Create results screen HTML
+     * Create results screen HTML with enhanced animations
      */
     function createResultsScreen() {
         return `
             <div id="game-results-screen" class="game-screen hidden">
                 <div class="game-results-container">
+                    <!-- Curtain Overlay for Reveal Animation -->
+                    <div id="reveal-curtain" class="reveal-curtain">
+                        <div class="curtain-left"></div>
+                        <div class="curtain-center">
+                            <div class="curtain-icon">🎭</div>
+                            <div class="curtain-text">Revealing...</div>
+                        </div>
+                        <div class="curtain-right"></div>
+                    </div>
+
+                    <!-- Scenario Reminder -->
+                    <div id="scenario-reminder" class="scenario-reminder hidden">
+                        <div class="reminder-icon">💭</div>
+                        <div class="reminder-text scenario-text-reminder">
+                            Loading scenario...
+                        </div>
+                    </div>
+
                     <!-- Results Header -->
-                    <div class="results-header fade-in">
+                    <div class="results-header fade-in hidden" id="results-header">
                         <div class="results-icon">🎯</div>
                         <h2 class="results-title">The Truth Revealed!</h2>
                     </div>
 
                     <!-- Crowd vs Reality Split -->
-                    <div class="results-split-view slide-in">
+                    <div class="results-split-view slide-in hidden" id="results-split-view">
                         <!-- Crowd's Choice -->
                         <div class="result-card crowd-choice">
                             <div class="result-card-header">
@@ -723,16 +947,27 @@
                             <div class="result-choice crowd-choice-text">
                                 ---
                             </div>
+                            <div class="vote-breakdown">
+                                <div class="vote-stat mom-votes">
+                                    <span class="vote-icon">👩</span>
+                                    <span class="vote-count mom-count">0</span>
+                                </div>
+                                <div class="vote-stat dad-votes">
+                                    <span class="vote-icon">👨</span>
+                                    <span class="vote-count dad-count">0</span>
+                                </div>
+                            </div>
                         </div>
 
                         <!-- VS Badge -->
                         <div class="results-vs">VS</div>
 
                         <!-- Reality -->
-                        <div class="result-card reality-choice">
+                        <div class="result-card reality-choice winner-highlight">
                             <div class="result-card-header">
                                 <span class="result-icon">🏠</span>
                                 <h3 class="result-title">Reality</h3>
+                                <div class="winner-badge hidden">👑 WINNER!</div>
                             </div>
                             <div class="result-percentage">
                                 <span class="percentage-label">Actual answer:</span>
@@ -740,27 +975,36 @@
                             <div class="result-choice reality-choice-text">
                                 ---
                             </div>
+                            <div class="correct-answer-icon hidden">✅</div>
                         </div>
                     </div>
 
                     <!-- Perception Gap -->
-                    <div class="perception-gap-section fade-in-up">
+                    <div class="perception-gap-section fade-in-up hidden" id="perception-gap-section">
                         <div class="gap-icon">📊</div>
                         <h3 class="gap-title">Perception Gap</h3>
                         <div class="gap-value perception-gap-value">---</div>
                         <div class="gap-description">
                             How wrong (or right!) the crowd was
                         </div>
+                        <div class="gap-meter">
+                            <div class="gap-fill" id="gap-fill"></div>
+                        </div>
                     </div>
 
                     <!-- AI Roast Commentary -->
-                    <div class="roast-section fade-in-up">
+                    <div class="roast-section fade-in-up hidden" id="roast-section">
                         <div class="roast-header">
                             <span class="roast-icon">🔥</span>
                             <h3 class="roast-title">AI Roast Commentary</h3>
                         </div>
                         <div class="roast-content roast-commentary">
                             Loading roast...
+                        </div>
+                        <div class="roast-sparkles">
+                            <span class="sparkle">✨</span>
+                            <span class="sparkle">✨</span>
+                            <span class="sparkle">✨</span>
                         </div>
                     </div>
 
@@ -773,7 +1017,7 @@
                     </div>
 
                     <!-- Next Round Button -->
-                    <div class="results-actions">
+                    <div class="results-actions hidden" id="results-actions">
                         <button
                             type="button"
                             id="btn-next-round"
@@ -788,7 +1032,7 @@
                         <div class="final-results-header">
                             <div class="final-icon">🏆</div>
                             <h2 class="final-title">Game Complete!</h2>
-                            <p class="final-subtitle">Final Results</h2>
+                            <p class="final-subtitle">Final Results</p>
                         </div>
 
                         <div class="final-scores">
@@ -823,13 +1067,13 @@
             if (voted) {
                 btnMom.disabled = true;
                 btnDad.disabled = true;
-                btnMom.classList.add('voted');
+                btnMom.classList.add('voted', 'vote-selected');
                 btnDad.classList.add('voted');
             } else if (currentScenario) {
                 btnMom.disabled = false;
                 btnDad.disabled = false;
-                btnMom.classList.remove('voted');
-                btnDad.classList.remove('voted');
+                btnMom.classList.remove('voted', 'vote-selected', 'voting-animation');
+                btnDad.classList.remove('voted', 'vote-selected', 'voting-animation');
             } else {
                 btnMom.disabled = true;
                 btnDad.disabled = true;
@@ -901,6 +1145,12 @@
             adminLoginBtn.addEventListener('click', showAdminLoginScreen);
         }
 
+        // Theme selection event listeners
+        const themeSelect = document.getElementById('game-theme');
+        if (themeSelect) {
+            themeSelect.addEventListener('change', handleThemeChange);
+        }
+
         console.log('[MomVsDad] Join screen displayed');
     }
 
@@ -969,6 +1219,27 @@
     }
 
     /**
+     * Handle theme selection change
+     */
+    function handleThemeChange(event) {
+        const theme = event.target.value;
+        selectedTheme = theme;
+
+        // Update preview icon and description
+        const preview = event.target.parentElement.querySelector('.theme-icon-preview');
+        const description = event.target.parentElement.querySelector('.theme-description');
+
+        if (preview && description) {
+            preview.textContent = GAME_THEMES[theme].icon;
+            description.textContent = GAME_THEMES[theme].description;
+            preview.classList.add('pop');
+            setTimeout(() => preview.classList.remove('pop'), 300);
+        }
+
+        console.log('[MomVsDad] Theme changed to:', theme);
+    }
+
+    /**
      * Display admin login UI
      */
     function showAdminLoginScreen() {
@@ -991,7 +1262,34 @@
             backBtn.addEventListener('click', showJoinScreen);
         }
 
+        // Theme selection event listeners for admin
+        const adminThemeSelect = document.getElementById('admin-theme');
+        if (adminThemeSelect) {
+            adminThemeSelect.addEventListener('change', handleAdminThemeChange);
+        }
+
         console.log('[MomVsDad] Admin login screen displayed');
+    }
+
+    /**
+     * Handle admin theme selection change
+     */
+    function handleAdminThemeChange(event) {
+        const theme = event.target.value;
+        selectedTheme = theme;
+
+        // Update preview icon and description
+        const preview = event.target.parentElement.querySelector('.theme-icon-preview');
+        const description = event.target.parentElement.querySelector('.theme-description');
+
+        if (preview && description) {
+            preview.textContent = GAME_THEMES[theme].icon;
+            description.textContent = GAME_THEMES[theme].description;
+            preview.classList.add('pop');
+            setTimeout(() => preview.classList.remove('pop'), 300);
+        }
+
+        console.log('[MomVsDad] Admin theme changed to:', theme);
     }
 
     /**
@@ -1130,7 +1428,7 @@
     }
 
     /**
-     * Submit a vote
+     * Submit a vote with enhanced animations
      */
     async function submitVote(choice) {
         console.log('[MomVsDad] Submitting vote:', choice);
@@ -1150,6 +1448,24 @@
             throw new Error('Supabase not configured');
         }
 
+        // Get the clicked button for animation
+        const btn = document.getElementById(`btn-vote-${choice}`);
+        if (btn) {
+            // Add voting animation class
+            btn.classList.add('voting-animation');
+
+            // Create ripple effect
+            const ripple = document.createElement('span');
+            ripple.className = 'vote-ripple';
+            ripple.style.left = '50%';
+            ripple.style.top = '50%';
+            btn.appendChild(ripple);
+
+            setTimeout(() => {
+                ripple.remove();
+            }, 600);
+        }
+
         try {
             const response = await apiFetch(
                 `${config.url}/functions/v1/game-vote`,
@@ -1166,25 +1482,87 @@
             voted = true;
             updateVoteButtons();
 
-            // Animate the chosen chibi
+            // Animate the chosen chibi with enhanced bounce
             if (choice === 'mom' && chibiMom) {
                 animateChibi(chibiMom, 'bounce');
+                chibiMom.classList.add('chibi-glow');
+                setTimeout(() => chibiMom.classList.remove('chibi-glow'), 1000);
             } else if (choice === 'dad' && chibiDad) {
                 animateChibi(chibiDad, 'bounce');
+                chibiDad.classList.add('chibi-glow');
+                setTimeout(() => chibiDad.classList.remove('chibi-glow'), 1000);
             }
+
+            // Trigger vote success feedback
+            triggerVoteSuccessFeedback(choice);
 
             // Update tug of war
             if (response && tugOfWarBar) {
                 updateTugOfWar(response.mom_pct || 50, response.dad_pct || 50);
             }
 
-            showSuccess('Vote submitted! Waiting for results...');
+            showSuccess(`You voted for ${choice === 'mom' ? 'Mom' : 'Dad'}! Waiting for results...`);
 
             console.log('[MomVsDad] Vote submitted successfully:', response);
 
         } catch (error) {
             console.error('[MomVsDad] Submit vote error:', error.message);
+            // Remove voting animation on error
+            if (btn) {
+                btn.classList.remove('voting-animation');
+            }
             throw error;
+        }
+    }
+
+    /**
+     * Trigger vote success visual feedback
+     */
+    function triggerVoteSuccessFeedback(choice) {
+        // Create success particles
+        const particlesContainer = document.createElement('div');
+        particlesContainer.className = 'vote-particles';
+        document.body.appendChild(particlesContainer);
+
+        // Create particle burst
+        for (let i = 0; i < 12; i++) {
+            const particle = document.createElement('div');
+            particle.className = `vote-particle vote-particle-${choice}`;
+            particle.style.left = '50%';
+            particle.style.top = '50%';
+            particle.style.setProperty('--angle', `${(i * 30)}deg`);
+            particle.style.setProperty('--delay', `${i * 0.05}s`);
+            particlesContainer.appendChild(particle);
+        }
+
+        // Clean up particles after animation
+        setTimeout(() => {
+            document.body.removeChild(particlesContainer);
+        }, 1500);
+
+        // Update vote status with animation
+        const voteStatus = document.getElementById('vote-status');
+        if (voteStatus) {
+            voteStatus.classList.remove('hidden');
+            voteStatus.classList.add('fade-in');
+        }
+
+        // Update vote buttons to show selection
+        const btnMom = document.getElementById('btn-vote-mom');
+        const btnDad = document.getElementById('btn-vote-dad');
+
+        if (choice === 'mom' && btnMom) {
+            btnMom.classList.add('vote-selected');
+            btnMom.innerHTML = `
+                <span class="vote-icon">✅</span>
+                <span class="vote-label">You chose Mom!</span>
+            `;
+        } else if (choice === 'dad' && btnDad) {
+            btnDad.classList.add('vote-selected');
+            btnDad.innerHTML = `
+                <span class="vote-icon">✅</span>
+                <span class="vote-label">You chose Dad!</span>
+            `;
         }
     }
 
@@ -1278,7 +1656,7 @@
     }
 
     /**
-     * Display vote comparison + roast results
+     * Display vote comparison + roast results with enhanced animations
      */
     function showResults(result) {
         console.log('[MomVsDad] Showing results:', result);
@@ -1301,17 +1679,129 @@
         }
 
         resultsScreen.classList.remove('hidden');
-        resultsScreen.classList.add('fade-in');
 
-        // Populate results
+        // Start reveal curtain animation sequence
+        animateRevealSequence(result);
+    }
+
+    /**
+     * Animate the reveal sequence with curtain and staggered reveals
+     */
+    function animateRevealSequence(result) {
+        const curtain = document.getElementById('reveal-curtain');
+        const scenarioReminder = document.getElementById('scenario-reminder');
+        const resultsHeader = document.getElementById('results-header');
+        const resultsSplitView = document.getElementById('results-split-view');
+        const perceptionGapSection = document.getElementById('perception-gap-section');
+        const roastSection = document.getElementById('roast-section');
+        const resultsActions = document.getElementById('results-actions');
+
+        // Step 1: Show curtain (it's already visible from createResultsScreen)
+        if (curtain) {
+            setTimeout(() => {
+                curtain.classList.add('opening');
+            }, 100);
+        }
+
+        // Step 2: Show scenario reminder (0.5s)
+        setTimeout(() => {
+            if (scenarioReminder && currentScenario) {
+                scenarioReminder.classList.remove('hidden');
+                scenarioReminder.querySelector('.scenario-text-reminder').textContent =
+                    `💭 ${currentScenario.scenario_text}`;
+            }
+        }, 600);
+
+        // Step 3: Close curtain (1.5s)
+        setTimeout(() => {
+            if (curtain) {
+                curtain.classList.remove('opening');
+                curtain.classList.add('closing');
+                setTimeout(() => {
+                    curtain.classList.add('hidden');
+                }, 1500);
+            }
+        }, 1000);
+
+        // Step 4: Show results header (2s)
+        setTimeout(() => {
+            if (resultsHeader) {
+                resultsHeader.classList.remove('hidden');
+            }
+        }, 2500);
+
+        // Step 5: Show split view with animated data (2.5s)
+        setTimeout(() => {
+            if (resultsSplitView) {
+                resultsSplitView.classList.remove('hidden');
+            }
+            populateResultData(result);
+        }, 2800);
+
+        // Step 6: Show perception gap with animated meter (3s)
+        setTimeout(() => {
+            if (perceptionGapSection) {
+                perceptionGapSection.classList.remove('hidden');
+            }
+            populatePerceptionGap(result);
+        }, 3200);
+
+        // Step 7: Show roast with typewriter effect (3.5s)
+        setTimeout(() => {
+            if (roastSection) {
+                roastSection.classList.remove('hidden');
+            }
+            populateRoastCommentary(result);
+        }, 3500);
+
+        // Step 8: Show next round button (4s)
+        setTimeout(() => {
+            if (resultsActions) {
+                resultsActions.classList.remove('hidden');
+            }
+        }, 4000);
+
+        // Step 9: Trigger particles based on perception gap (3.5s)
+        setTimeout(() => {
+            if (result && result.perception_gap) {
+                triggerGapParticles(result.perception_gap);
+            }
+        }, 3500);
+
+        // Step 10: Check vote match feedback
+        setTimeout(() => {
+            checkVoteMatch(result);
+        }, 4200);
+
+        // Attach next round button listener
+        const btnNextRound = document.getElementById('btn-next-round');
+        if (btnNextRound) {
+            btnNextRound.onclick = () => {
+                // Reset voted state and show voting screen
+                voted = false;
+                resultsScreen.classList.add('hidden');
+                showVotingScreen();
+            };
+        }
+
+        console.log('[MomVsDad] Results displayed with animations');
+    }
+
+    /**
+     * Populate result data with animated counters
+     */
+    function populateResultData(result) {
         const crowdPct = document.querySelector('.crowd-pct');
         const crowdChoice = document.querySelector('.crowd-choice-text');
         const realityChoice = document.querySelector('.reality-choice-text');
-        const perceptionGap = document.querySelector('.perception-gap-value');
-        const roastCommentary = document.querySelector('.roast-commentary');
+        const momCount = document.querySelector('.mom-count');
+        const dadCount = document.querySelector('.dad-count');
+        const winnerBadge = document.querySelector('.winner-badge');
+        const correctIcon = document.querySelector('.correct-answer-icon');
 
+        // Animate percentage counter
         if (crowdPct && result.mom_percentage) {
-            crowdPct.textContent = `${result.mom_percentage}% ${result.crowd_choice || ''}`;
+            animateCounter(crowdPct, 0, result.mom_percentage, '%', 1000);
         }
 
         if (crowdChoice) {
@@ -1322,10 +1812,42 @@
             realityChoice.textContent = result.actual_choice_text || '---';
         }
 
+        // Show vote breakdown
+        if (momCount && result.mom_votes) {
+            momCount.textContent = result.mom_votes;
+        }
+
+        if (dadCount && result.dad_votes) {
+            dadCount.textContent = result.dad_votes;
+        }
+
+        // Highlight winner
+        if (winnerBadge && result.actual_choice) {
+            setTimeout(() => {
+                winnerBadge.classList.remove('hidden');
+            }, 500);
+        }
+
+        if (correctIcon) {
+            setTimeout(() => {
+                correctIcon.classList.remove('hidden');
+            }, 600);
+        }
+    }
+
+    /**
+     * Populate perception gap with animated meter
+     */
+    function populatePerceptionGap(result) {
+        const perceptionGap = document.querySelector('.perception-gap-value');
+        const gapFill = document.getElementById('gap-fill');
+
         if (perceptionGap && result.perception_gap) {
-            perceptionGap.textContent = `${result.perception_gap}%`;
+            // Animate counter
+            animateCounter(perceptionGap, 0, result.perception_gap, '%', 800);
 
             // Add visual styling based on gap size
+            perceptionGap.className = 'gap-value perception-gap-value';
             if (result.perception_gap > 50) {
                 perceptionGap.classList.add('gap-huge');
             } else if (result.perception_gap > 30) {
@@ -1337,31 +1859,140 @@
             }
         }
 
+        // Animate gap meter
+        if (gapFill && result.perception_gap) {
+            setTimeout(() => {
+                gapFill.style.setProperty('--gap-width', `${result.perception_gap}%`);
+                gapFill.style.width = `${result.perception_gap}%`;
+            }, 200);
+        }
+    }
+
+    /**
+     * Populate roast commentary with typewriter effect
+     */
+    function populateRoastCommentary(result) {
+        const roastCommentary = document.querySelector('.roast-commentary');
+
         if (roastCommentary && result.roast_commentary) {
-            roastCommentary.textContent = result.roast_commentary;
+            typewriterEffect(roastCommentary, result.roast_commentary, 30);
+        }
+    }
+
+    /**
+     * Trigger particles based on perception gap size
+     */
+    function triggerGapParticles(gap) {
+        let particleType = 'star';
+        let particleCount = 10;
+
+        if (gap > 50) {
+            particleType = 'gap-huge';
+            particleCount = 25;
+        } else if (gap > 30) {
+            particleType = 'gap-large';
+            particleCount = 20;
+        } else if (gap > 10) {
+            particleType = 'gap-medium';
+            particleCount = 15;
+        } else {
+            particleType = 'gap-small';
+            particleCount = 10;
         }
 
-        // Show vote match feedback if user voted correctly
-        if (voted && result.crowd_choice === result.actual_choice) {
-            const feedback = document.getElementById('vote-match-feedback');
-            if (feedback) {
-                feedback.classList.remove('hidden');
-                triggerConfetti();
+        const particlesContainer = document.createElement('div');
+        particlesContainer.className = 'game-particles';
+        document.body.appendChild(particlesContainer);
+
+        for (let i = 0; i < particleCount; i++) {
+            const particle = document.createElement('div');
+            particle.className = `${particleType}-particle`;
+            particle.textContent = getParticleEmoji(particleType);
+            particle.style.left = `${Math.random() * 100}%`;
+            particle.style.top = `${Math.random() * 50}%`;
+            particle.style.animationDelay = `${i * 0.1}s`;
+            particlesContainer.appendChild(particle);
+        }
+
+        // Clean up particles after animation
+        setTimeout(() => {
+            if (document.body.contains(particlesContainer)) {
+                document.body.removeChild(particlesContainer);
+            }
+        }, 3500);
+    }
+
+    /**
+     * Get emoji for particle type
+     */
+    function getParticleEmoji(type) {
+        const emojis = {
+            'gap-huge': ['🌟', '💥', '🎉', '✨', '🎊', '🎪'],
+            'gap-large': ['⭐', '💫', '🎆', '🔮'],
+            'gap-medium': ['✨', '💎', '🎯'],
+            'gap-small': ['🌟', '🎨', '🎁']
+        };
+        const list = emojis[type] || emojis['gap-small'];
+        return list[Math.floor(Math.random() * list.length)];
+    }
+
+    /**
+     * Animate a counter from start to end value
+     */
+    function animateCounter(element, start, end, suffix = '', duration = 1000) {
+        const startTime = performance.now();
+        const difference = end - start;
+
+        function update(currentTime) {
+            const elapsed = currentTime - startTime;
+            const progress = Math.min(elapsed / duration, 1);
+            const current = Math.floor(start + (difference * progress));
+            element.textContent = `${current}${suffix}`;
+
+            if (progress < 1) {
+                requestAnimationFrame(update);
             }
         }
 
-        // Attach next round button
-        const btnNextRound = document.getElementById('btn-next-round');
-        if (btnNextRound) {
-            btnNextRound.addEventListener('click', () => {
-                // Reset voted state and show voting screen
-                voted = false;
-                resultsScreen.classList.add('hidden');
-                showVotingScreen();
-            });
+        requestAnimationFrame(update);
+    }
+
+    /**
+     * Typewriter effect for text
+     */
+    function typewriterEffect(element, text, speed = 50) {
+        element.textContent = '';
+        let index = 0;
+
+        function type() {
+            if (index < text.length) {
+                element.textContent += text.charAt(index);
+                index++;
+                setTimeout(type, speed);
+            }
         }
 
-        console.log('[MomVsDad] Results displayed');
+        type();
+    }
+
+    /**
+     * Check if user voted correctly and show feedback
+     */
+    function checkVoteMatch(result) {
+        if (!voted) return;
+
+        const feedback = document.getElementById('vote-match-feedback');
+        if (!feedback) return;
+
+        if (result.crowd_choice === result.actual_choice) {
+            // Correct prediction
+            feedback.classList.remove('hidden');
+            triggerConfetti();
+        } else {
+            // Wrong prediction - show a gentle message
+            feedback.querySelector('.match-message').textContent =
+                'Better luck next time!';
+        }
     }
 
     // =====================================================

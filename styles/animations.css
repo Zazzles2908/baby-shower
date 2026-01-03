@@ -1354,3 +1354,753 @@
         opacity: 0;
     }
 }
+
+/* ========================================
+   REVEAL SCREEN ANIMATIONS
+   ======================================== */
+
+/* Curtain Reveal Animation */
+@keyframes curtainOpen {
+    0% {
+        width: 50%;
+        opacity: 1;
+    }
+    100% {
+        width: 0%;
+        opacity: 0;
+    }
+}
+
+@keyframes curtainIconPulse {
+    0%, 100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+    50% {
+        transform: scale(1.3);
+        opacity: 0.8;
+    }
+}
+
+.reveal-curtain {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    z-index: 10000;
+    pointer-events: none;
+}
+
+.reveal-curtain.opening {
+    animation: curtainFadeOut 1.5s ease-out forwards;
+}
+
+@keyframes curtainFadeOut {
+    0% {
+        opacity: 1;
+    }
+    70% {
+        opacity: 1;
+    }
+    100% {
+        opacity: 0;
+        pointer-events: none;
+    }
+}
+
+.curtain-left,
+.curtain-right {
+    flex: 1;
+    background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
+    height: 100%;
+    transition: width 1.5s ease-out, opacity 1.5s ease-out;
+}
+
+.curtain-left {
+    border-right: 2px solid rgba(255, 255, 255, 0.2);
+}
+
+.curtain-right {
+    border-left: 2px solid rgba(255, 255, 255, 0.2);
+}
+
+.curtain-center {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 10;
+    text-align: center;
+    color: white;
+    padding: 20px;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 15px;
+    backdrop-filter: blur(10px);
+}
+
+.curtain-icon {
+    font-size: 3rem;
+    display: block;
+    margin-bottom: 10px;
+    animation: curtainIconPulse 1s ease-in-out infinite;
+}
+
+.curtain-text {
+    font-size: 1.2rem;
+    font-weight: 700;
+    font-family: 'Nunito', 'Quicksand', sans-serif;
+}
+
+/* Scenario Reminder Animation */
+@keyframes reminderSlideDown {
+    0% {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.scenario-reminder {
+    background: linear-gradient(135deg, rgba(244, 228, 188, 0.9) 0%, rgba(232, 196, 160, 0.9) 100%);
+    border: 2px dashed var(--color-accent);
+    border-radius: 15px;
+    padding: 20px 25px;
+    margin-bottom: 25px;
+    text-align: center;
+    animation: reminderSlideDown 0.5s ease-out;
+    box-shadow: 0 4px 12px rgba(232, 196, 160, 0.2);
+}
+
+.reminder-icon {
+    font-size: 2rem;
+    display: block;
+    margin-bottom: 10px;
+    filter: drop-shadow(0 2px 4px rgba(232, 196, 160, 0.3));
+}
+
+.reminder-text {
+    font-size: 1.1rem;
+    color: var(--color-text);
+    font-weight: 600;
+    font-style: italic;
+    line-height: 1.5;
+}
+
+/* Winner Highlight Animation */
+@keyframes winnerPulse {
+    0%, 100% {
+        box-shadow: 0 4px 12px rgba(156, 175, 136, 0.2);
+        border-color: var(--color-beige);
+    }
+    50% {
+        box-shadow: 0 0 30px rgba(156, 175, 136, 0.6);
+        border-color: var(--color-primary);
+    }
+}
+
+.winner-highlight {
+    animation: winnerPulse 2s ease-in-out 3;
+}
+
+.winner-badge {
+    display: inline-block;
+    padding: 8px 16px;
+    background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+    color: white;
+    border-radius: 20px;
+    font-weight: 700;
+    font-size: 0.9rem;
+    margin-left: 10px;
+    animation: victoryCrown 0.6s ease-out;
+}
+
+.correct-answer-icon {
+    font-size: 2rem;
+    display: block;
+    margin-top: 10px;
+    animation: victoryCrown 0.8s ease-out;
+}
+
+/* Vote Breakdown */
+.vote-breakdown {
+    display: flex;
+    justify-content: space-around;
+    padding: 15px;
+    background: var(--color-cream);
+    border-radius: 10px;
+    margin-top: 15px;
+}
+
+.vote-stat {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 600;
+    font-size: 0.95rem;
+}
+
+.vote-icon {
+    font-size: 1.5rem;
+}
+
+.vote-count {
+    font-size: 1.2rem;
+    color: var(--color-primary);
+}
+
+/* Gap Meter Animation */
+.gap-meter {
+    width: 100%;
+    height: 8px;
+    background: var(--color-beige);
+    border-radius: 4px;
+    margin-top: 15px;
+    overflow: hidden;
+}
+
+.gap-fill {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 1s cubic-bezier(0.4, 0, 0.2, 1);
+    animation: gapGrow 1s ease-out;
+}
+
+@keyframes gapGrow {
+    0% {
+        width: 0%;
+    }
+    100% {
+        width: var(--gap-width, 100%);
+    }
+}
+
+.gap-huge .gap-fill {
+    background: linear-gradient(90deg, #E07A5F 0%, #FF6B6B 100%);
+    box-shadow: 0 0 10px rgba(224, 122, 95, 0.5);
+}
+
+.gap-large .gap-fill {
+    background: linear-gradient(90deg, #E8C4A0 0%, #F4A261 100%);
+}
+
+.gap-medium .gap-fill {
+    background: linear-gradient(90deg, #F4E4BC 0%, #FFE66D 100%);
+}
+
+.gap-small .gap-fill {
+    background: linear-gradient(90deg, #9CAF88 0%, #B8E6D0 100%);
+}
+
+/* Roast Sparkles Animation */
+.roast-sparkles {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    margin-top: 15px;
+}
+
+.roast-sparkles .sparkle {
+    font-size: 1.5rem;
+    animation: sparkle 1.5s ease-in-out infinite;
+}
+
+.roast-sparkles .sparkle:nth-child(1) {
+    animation-delay: 0s;
+}
+
+.roast-sparkles .sparkle:nth-child(2) {
+    animation-delay: 0.5s;
+}
+
+.roast-sparkles .sparkle:nth-child(3) {
+    animation-delay: 1s;
+}
+
+/* Perception Gap Text Animations */
+.perception-gap-value.gap-huge {
+    color: #E07A5F;
+    font-size: 2.5rem;
+    animation: gapShake 0.5s ease-out;
+}
+
+.perception-gap-value.gap-large {
+    color: #E8C4A0;
+    font-size: 2.2rem;
+}
+
+.perception-gap-value.gap-medium {
+    color: #FFE66D;
+    font-size: 1.9rem;
+}
+
+.perception-gap-value.gap-small {
+    color: #9CAF88;
+    font-size: 1.8rem;
+}
+
+@keyframes gapShake {
+    0%, 100% {
+        transform: translateX(0) scale(1);
+    }
+    25% {
+        transform: translateX(-8px) scale(1.1);
+    }
+    50% {
+        transform: translateX(8px) scale(1.05);
+    }
+    75% {
+        transform: translateX(-4px) scale(1.1);
+    }
+}
+
+/* Sequential Reveal Animations */
+.results-header.fade-in {
+    animation-delay: 1.6s;
+}
+
+.results-split-view.slide-in {
+    animation-delay: 1.8s;
+}
+
+.scenario-reminder {
+    animation-delay: 1s;
+}
+
+.perception-gap-section.fade-in-up {
+    animation-delay: 2s;
+}
+
+.roast-section.fade-in-up {
+    animation-delay: 2.2s;
+}
+
+.results-actions {
+    animation-delay: 2.5s;
+}
+
+/* Particle Effects Container */
+.game-particles {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 9999;
+    overflow: hidden;
+}
+
+.game-particles .star {
+    position: absolute;
+    font-size: 2rem;
+    animation: starBurst 2s ease-out forwards;
+}
+
+.game-particles .heart {
+    position: absolute;
+    font-size: 1.5rem;
+    animation: heartFloat 3s ease-out forwards;
+}
+
+@keyframes starBurst {
+    0% {
+        transform: scale(0) rotate(0deg);
+        opacity: 1;
+    }
+    50% {
+        transform: scale(1.2) rotate(180deg);
+        opacity: 0.8;
+    }
+    100% {
+        transform: scale(0.8) rotate(360deg);
+        opacity: 0;
+    }
+}
+
+@keyframes heartFloat {
+    0% {
+        transform: translateY(0) scale(0);
+        opacity: 1;
+    }
+    100% {
+        transform: translateY(-100px) scale(1);
+        opacity: 0;
+    }
+}
+
+/* Particle Effects for Different Gap Sizes */
+.game-particles .gap-huge-particle {
+    font-size: 3rem;
+    animation: rainbowParticle 2.5s ease-out forwards;
+}
+
+.game-particles .gap-large-particle {
+    font-size: 2.5rem;
+    animation: confettiBurst 2s ease-out forwards;
+}
+
+.game-particles .gap-medium-particle {
+    font-size: 2rem;
+    animation: starBurst 1.5s ease-out forwards;
+}
+
+.game-particles .gap-small-particle {
+    font-size: 1.5rem;
+    animation: heartFloat 2s ease-out forwards;
+}
+
+@keyframes rainbowParticle {
+    0% {
+        transform: scale(0) translateY(0) rotate(0deg);
+        opacity: 1;
+        filter: hue-rotate(0deg);
+    }
+    50% {
+        transform: scale(1.5) translateY(-50px) rotate(180deg);
+        opacity: 0.8;
+        filter: hue-rotate(180deg);
+    }
+    100% {
+        transform: scale(1) translateY(-100px) rotate(360deg);
+        opacity: 0;
+        filter: hue-rotate(360deg);
+    }
+}
+
+/* Responsive Adjustments */
+@media (max-width: 600px) {
+    .curtain-icon {
+        font-size: 2.5rem;
+    }
+
+    .curtain-text {
+        font-size: 1rem;
+    }
+
+    .scenario-reminder {
+        padding: 15px 20px;
+    }
+
+    .reminder-text {
+        font-size: 1rem;
+    }
+
+    .vote-breakdown {
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .perception-gap-value.gap-huge {
+        font-size: 2rem;
+    }
+
+    .roast-sparkles {
+        gap: 10px;
+    }
+}
+
+/* ========================================
+   MOM VS DAD GAME UI ENHANCEMENTS
+   ======================================== */
+
+/* Theme Preview Animation */
+@keyframes themePreviewPop {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.3); }
+}
+
+/* Vote Button Ripple Effect */
+@keyframes voteRipple {
+    0% {
+        transform: translate(-50%, -50%) scale(0);
+        opacity: 0.6;
+    }
+    100% {
+        transform: translate(-50%, -50%) scale(4);
+        opacity: 0;
+    }
+}
+
+/* Vote Particle Burst */
+@keyframes voteParticleBurst {
+    0% {
+        transform: translate(-50%, -50%) rotate(var(--angle)) translateY(0) scale(0);
+        opacity: 1;
+    }
+    100% {
+        transform: translate(-50%, -50%) rotate(var(--angle)) translateY(-100px) scale(1);
+        opacity: 0;
+    }
+}
+
+/* Vote Success Checkmark */
+@keyframes voteCheckmark {
+    0% {
+        transform: scale(0) rotate(-180deg);
+        opacity: 0;
+    }
+    50% {
+        transform: scale(1.2) rotate(0deg);
+        opacity: 1;
+    }
+    100% {
+        transform: scale(1) rotate(0deg);
+        opacity: 1;
+    }
+}
+
+/* Intensity Bar Fill Animation */
+@keyframes intensityFill {
+    from {
+        width: 0%;
+    }
+    to {
+        width: var(--intensity);
+    }
+}
+
+/* Vote Particles Container */
+.vote-particles {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 10000;
+    overflow: hidden;
+}
+
+.vote-particle {
+    position: absolute;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    animation: voteParticleBurst 1s ease-out forwards;
+}
+
+.vote-particle-mom {
+    background: linear-gradient(135deg, #FF69B4, #FF1493);
+}
+
+.vote-particle-dad {
+    background: linear-gradient(135deg, #4169E1, #1E90FF);
+}
+
+/* Vote Ripple Effect */
+.vote-ripple {
+    position: absolute;
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.5);
+    pointer-events: none;
+    animation: voteRipple 0.6s ease-out forwards;
+}
+
+/* Theme Selection Styles */
+.theme-select-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.theme-select {
+    flex: 1;
+    padding-right: 50px;
+    cursor: pointer;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%234A4238' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 15px center;
+}
+
+.theme-icon-preview {
+    position: absolute;
+    right: 15px;
+    font-size: 1.5rem;
+    transition: transform 0.2s ease;
+}
+
+.theme-description {
+    display: block;
+    font-size: 0.85rem;
+    color: var(--color-text-light);
+    margin-top: 4px;
+    font-style: italic;
+}
+
+/* Game Status Bar */
+.game-status-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+    background: linear-gradient(135deg, rgba(156, 175, 136, 0.1) 0%, rgba(244, 228, 188, 0.1) 100%);
+    border-radius: 12px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.round-counter {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 600;
+    color: var(--color-primary);
+}
+
+.round-icon {
+    font-size: 1.2rem;
+}
+
+.round-text {
+    font-size: 0.95rem;
+}
+
+.theme-badge {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    background: var(--color-cream);
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.theme-icon {
+    font-size: 1rem;
+}
+
+.theme-name {
+    color: var(--color-text);
+}
+
+/* Enhanced Scenario Card */
+.scenario-illustrations {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 15px;
+}
+
+.scenario-chibi-left,
+.scenario-chibi-right {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+}
+
+.chibi-placeholder {
+    width: 60px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--color-cream);
+    border-radius: 50%;
+    box-shadow: 0 4px 12px rgba(156, 175, 136, 0.2);
+    position: relative;
+    overflow: hidden;
+}
+
+.chibi-placeholder::before {
+    content: '';
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, rgba(156, 175, 136, 0.1) 0%, rgba(244, 228, 188, 0.1) 100%);
+    border-radius: 50%;
+    animation: float 3s ease-in-out infinite;
+}
+
+.placeholder-emoji {
+    font-size: 2rem;
+    position: relative;
+    z-index: 1;
+}
+
+.scenario-divider {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    background: var(--color-cream);
+    border-radius: 50%;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.divider-icon {
+    font-size: 1.2rem;
+}
+
+.scenario-intensity {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px solid rgba(156, 175, 136, 0.2);
+}
+
+.intensity-label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--color-text-light);
+}
+
+.intensity-bar {
+    flex: 1;
+    height: 8px;
+    background: var(--color-cream);
+    border-radius: 4px;
+    overflow: hidden;
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.intensity-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--color-primary), var(--color-accent));
+    border-radius: 4px;
+    transition: width 0.8s ease-out;
+}
+
+.intensity-value {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--color-primary);
+    min-width: 40px;
+}
+
+/* Vote Button Enhancements */
+.voting-animation {
+    animation: voteButtonPulse 0.3s ease-out;
+}
+
+.vote-selected {
+    background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-accent) 100%) !important;
+    color: white !important;
+    border: none !important;
+    transform: scale(1.02);
+}
+
+/* Reduced motion support for new animations */
+@media (prefers-reduced-motion: reduce) {
+    .vote-particle,
+    .vote-ripple {
+        animation: none;
+    }
+
+    .vote-particles {
+        display: none;
+    }
+}
