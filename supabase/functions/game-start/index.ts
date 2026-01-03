@@ -337,9 +337,9 @@ async function generateScenarios(
           intensity: s.intensity || intensity
         }))
       }
-    } catch parseError {
-      console.warn('Generate Scenarios - Failed to parse Z.AI response, using defaults:', parseError)
-    }
+     } catch {
+       console.warn('Generate Scenarios - Failed to parse Z.AI response, using defaults')
+     }
     
     return getDefaultScenarios(count, intensity)
     

@@ -413,7 +413,7 @@
                 <!-- Player List -->
                 <div class="player-list-container">
                     <div class="player-list-header">
-                        <span class="player-count">${GameState.players.length}/8 Players</span>
+                        <span class="player-count">${GameState.players.length}/6 Players</span>
                     </div>
 
                     <div class="player-list" id="player-list">
