@@ -44,14 +44,14 @@ Be clever, funny, and family-friendly. Keep it under 100 characters. Return only
     const controller = new AbortController()
     const timeoutId = setTimeout(() => controller.abort(), 3000) // 3 second timeout
 
-    const response = await fetch('https://api.minimax.chat/v1/text/chatcompletion_v2', {
+    const response = await fetch('https://api.minimax.chat/v1/chat/completions', {  // UPDATED: OpenAI-compatible endpoint
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
-        model: 'abab6.5s-chat',
+        model: 'MiniMax-M2.1',  // UPDATED from abab6.5s-chat
         messages: [
           {
             role: 'user',

@@ -152,15 +152,15 @@ async function handleAIRoast(supabase: any, name: string, topic: string, headers
   }
 
   try {
-    // Call MiniMax API for AI-generated roast
-    const response = await fetch('https://api.minimax.chat/v1/text/chatcompletion_v2', {
+    // Call MiniMax API for AI-generated roast - UPDATED 2026-01-03
+    const response = await fetch('https://api.minimax.chat/v1/chat/completions', {  // OpenAI-compatible endpoint
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${minimaxApiKey}`,
       },
       body: JSON.stringify({
-        model: 'abab6.5s-chat',
+        model: 'MiniMax-M2.1',  // UPDATED from abab6.5s-chat
         messages: [
           {
             role: 'system',
