@@ -64,6 +64,27 @@
         "Who is the better baby whisperer?"
     ];
 
+    // Question emotion mapping - categorize questions for appropriate avatars
+    const QUESTION_EMOTIONS = [
+        'think',  // Wakes up first, changes diapers, sings lullabies, reads books
+        'happy',  // Handles baby vomit, packs diaper bag, handles visits, celebrates milestones
+        'think',  // Does bath time, cooks dinner, 2AM feeding, handles laundry
+        'surprise', // Loses temper, better at something unexpected
+        'love',    // Plans parties, emotional about milestones, better photos, calming baby
+        'think',   // Researches parenting, does bath time
+        'happy'    // Default fallback
+    ];
+
+    // Get emotion for current question index
+    function getQuestionEmotion(questionIndex) {
+        return QUESTION_EMOTIONS[questionIndex % QUESTION_EMOTIONS.length] || 'neutral';
+    }
+
+    // Get avatar URLs based on emotion
+    function getAvatarUrls(emotion) {
+        return AVATAR_EMOTIONS[emotion] || AVATAR_EMOTIONS.neutral;
+    }
+
     let currentQuestionIndex = 0;
     let userName = '';
     let votes = []; // Store all votes
@@ -91,6 +112,8 @@
      */
     function createGameScreen() {
         const question = QUESTIONS[currentQuestionIndex];
+        const emotion = getQuestionEmotion(currentQuestionIndex);
+        const avatarUrls = getAvatarUrls(emotion);
         
         return `
             <div id="shoe-game-container" class="shoe-game-container fade-in">
@@ -108,7 +131,7 @@
                     <h2 class="question-text">${question}</h2>
                 </div>
 
-                <!-- Avatars - Tap to Vote -->
+                <!-- Avatars - Tap to Vote with emotion-based images -->
                 <div class="shoe-game-avatars">
                     <!-- Michelle (Left) -->
                     <button 
@@ -116,8 +139,9 @@
                         id="btn-michelle"
                         class="shoe-avatar-btn shoe-avatar-left"
                         onclick="window.ShoeGame.vote('michelle')"
+                        aria-label="Vote for Michelle"
                     >
-                        <img src="${AVATAR_URLS.michelle}" alt="Michelle" class="shoe-avatar-img">
+                        <img src="${avatarUrls.michelle}" alt="Michelle" class="shoe-avatar-img">
                         <span class="shoe-avatar-name">Michelle</span>
                         <span class="shoe-tap-hint">Tap if you!</span>
                     </button>
@@ -131,8 +155,9 @@
                         id="btn-jazeel"
                         class="shoe-avatar-btn shoe-avatar-right"
                         onclick="window.ShoeGame.vote('jazeel')"
+                        aria-label="Vote for Jazeel"
                     >
-                        <img src="${AVATAR_URLS.jazeel}" alt="Jazeel" class="shoe-avatar-img">
+                        <img src="${avatarUrls.jazeel}" alt="Jazeel" class="shoe-avatar-img">
                         <span class="shoe-avatar-name">Jazeel</span>
                         <span class="shoe-tap-hint">Tap if you!</span>
                     </button>

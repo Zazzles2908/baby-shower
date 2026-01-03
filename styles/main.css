@@ -502,13 +502,13 @@ h2 {
     height: 100px;
 }
 
-/* Back Button */
+/* Back Button - Touch Targets (48x48px minimum) */
 .back-btn {
     background: transparent;
     color: var(--color-text);
     border: 2px solid var(--color-beige);
     border-radius: 25px;
-    padding: 10px 24px;
+    padding: 14px 28px;
     font-size: 0.95rem;
     cursor: pointer;
     margin-bottom: 25px;
@@ -519,6 +519,8 @@ h2 {
     align-items: center;
     gap: 8px;
     box-shadow: var(--shadow-card);
+    min-height: 48px;
+    min-width: 48px;
 }
 
 .back-btn:hover {
@@ -531,6 +533,31 @@ h2 {
 
 .back-btn:active {
     transform: translateY(0);
+}
+
+/* Navigation Focus Improvements */
+.back-btn:focus {
+    outline: 3px solid var(--color-primary);
+    outline-offset: 2px;
+}
+
+.back-btn:focus-visible {
+    outline: 3px solid var(--color-primary);
+    outline-offset: 2px;
+}
+
+/* Section Transitions */
+section {
+    transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+section.active {
+    animation: sectionSlideIn 0.4s ease-out;
+}
+
+@keyframes sectionSlideIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
 }
 
 /* Forms */
@@ -608,13 +635,13 @@ form {
     box-shadow: var(--shadow-soft);
 }
 
-/* Submit Button */
+/* Submit Button - Touch Targets (48x48px minimum) */
 .submit-btn {
     background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
     color: var(--color-white);
     border: none;
     border-radius: 15px;
-    padding: 16px 30px;
+    padding: 18px 32px;
     font-size: 1.1rem;
     cursor: pointer;
     width: 100%;
@@ -626,6 +653,8 @@ form {
     box-shadow: 0 4px 12px rgba(156, 175, 136, 0.35);
     position: relative;
     overflow: hidden;
+    min-height: 48px;
+    min-width: 48px;
 }
 
 .submit-btn::before {
