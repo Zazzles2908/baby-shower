@@ -144,29 +144,11 @@ serve(async (req: Request) => {
         return await handleJoinSession(client, body, headers)
       case 'update':
         return await handleUpdateSession(client, body, headers)
-      case 'join_as_admin':
-        return await handleJoinAsAdmin(client, body, headers)
+      case 'admin_login':
+        return await handleAdminLogin(client, body, headers)
       default:
         return new Response(
-          JSON.stringify({ error: 'Invalid action. Must be create, join, join_as_admin, or update' }),
-          { status: 400, headers }
-        )
-    }
-
-    const body = await req.json()
-    const action = body.action
-
-    // Route to appropriate handler
-    switch (action) {
-      case 'create':
-        return await handleCreateSession(client, body, headers)
-      case 'join':
-        return await handleJoinSession(client, body, headers)
-      case 'update':
-        return await handleUpdateSession(client, body, headers)
-      default:
-        return new Response(
-          JSON.stringify({ error: 'Invalid action. Must be create, join, or update' }),
+          JSON.stringify({ error: 'Invalid action. Must be create, join, admin_login, or update' }),
           { status: 400, headers }
         )
     }
@@ -529,6 +511,98 @@ async function handleUpdateSession(
         status: updatedSession.status,
         current_round: updatedSession.current_round,
         total_rounds: updatedSession.total_rounds,
+      }
+    }),
+    { status: 200, headers }
+  )
+}
+
+/**
+ * Handle admin login to manage game session
+ */
+async function handleAdminLogin(
+  client: Client,
+  body: { session_code: string; admin_code: string },
+  headers: Headers
+): Promise<Response> {
+  const { session_code, admin_code } = body
+
+  // Validation
+  const errors: string[] = []
+  if (!session_code || session_code.trim().length === 0) {
+    errors.push('Session code is required')
+  }
+  if (session_code && session_code.length !== 6) {
+    errors.push('Session code must be 6 characters')
+  }
+  if (!admin_code || admin_code.trim().length === 0) {
+    errors.push('Admin code is required')
+  }
+  if (admin_code && (admin_code.length !== 4 || !/^\d{4}$/.test(admin_code))) {
+    errors.push('Admin code must be a 4-digit PIN')
+  }
+
+  if (errors.length > 0) {
+    return new Response(
+      JSON.stringify({ error: 'Validation failed', details: errors }),
+      { status: 400, headers }
+    )
+  }
+
+  const normalizedCode = session_code.trim().toUpperCase()
+
+  console.log(`[game-session] Admin login attempt for session: ${normalizedCode}`)
+
+  // Get session with admin code verification
+  const result = await client.queryObject<{
+    id: string
+    session_code: string
+    admin_code: string
+    mom_name: string
+    dad_name: string
+    status: string
+    current_round: number
+    total_rounds: number
+  }>(
+    `SELECT id, session_code, admin_code, mom_name, dad_name, status, current_round, total_rounds
+     FROM baby_shower.game_sessions 
+     WHERE session_code = $1`,
+    [normalizedCode]
+  )
+
+  if (result.rows.length === 0) {
+    console.error('[game-session] Session not found:', normalizedCode)
+    return new Response(
+      JSON.stringify({ error: 'Session not found' }),
+      { status: 404, headers }
+    )
+  }
+
+  const session = result.rows[0]
+
+  // Verify admin code
+  if (session.admin_code !== admin_code) {
+    console.warn(`[game-session] Invalid admin code for session: ${normalizedCode}`)
+    return new Response(
+      JSON.stringify({ error: 'Invalid admin code' }),
+      { status: 401, headers }
+    )
+  }
+
+  console.log(`[game-session] Admin login successful for session: ${normalizedCode}`)
+
+  return new Response(
+    JSON.stringify({
+      success: true,
+      message: 'Admin login successful',
+      data: {
+        session_id: session.id,
+        session_code: session.session_code,
+        mom_name: session.mom_name,
+        dad_name: session.dad_name,
+        status: session.status,
+        current_round: session.current_round,
+        total_rounds: session.total_rounds,
       }
     }),
     { status: 200, headers }
