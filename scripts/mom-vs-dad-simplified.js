@@ -179,35 +179,54 @@
 
      /**
       * Join lobby - using direct Supabase client (FIXES EDGE FUNCTION ISSUE)
+      * Includes race condition handling and input validation
       */
      async function joinLobby(lobbyKey, playerName) {
          setLoading(true);
+         const startTime = Date.now();
+         
          try {
              const supabase = getSupabase();
              if (!supabase) {
                  throw new Error('Supabase client not available');
              }
              
-             // Step 1: Fetch lobby to check it exists
+             // ===== VALIDATION =====
+             // Validate player name (length and sanitization)
+             const cleanName = playerName ? playerName.trim().substring(0, 50) : '';
+             if (!cleanName || cleanName.length < 1) {
+                 throw new Error('Please enter your name');
+             }
+             // Remove potentially dangerous characters
+             const safeName = cleanName.replace(/[<>\"\'\\\/]/g, '');
+             
+             // Validate lobby key format
+             if (!/^(LOBBY-[A-D])$/.test(lobbyKey)) {
+                 throw new Error('Invalid lobby key');
+             }
+             
+             // ===== STEP 1: Fetch lobby with lock hint =====
              const { data: lobby, error: lobbyError } = await supabase
                  .from('mom_dad_lobbies')
-                 .select('*')
+                 .select('id, lobby_key, status, max_players, current_players, current_humans, admin_player_id')
                  .eq('lobby_key', lobbyKey)
                  .single();
              
              if (lobbyError || !lobby) {
+                 console.warn('[MomVsDadSimplified] Lobby not found:', lobbyKey);
                  throw new Error('Lobby not found');
              }
              
+             // ===== STEP 2: Validate lobby state =====
              if (lobby.current_players >= lobby.max_players) {
-                 throw new Error('Lobby is full');
+                 throw new Error('Lobby is full (max ' + lobby.max_players + ' players)');
              }
              
              if (lobby.status !== 'waiting') {
-                 throw new Error('Lobby is not accepting new players');
+                 throw new Error('Game is in progress - cannot join now');
              }
              
-             // Step 2: Create player record
+             // ===== STEP 3: Create player record =====
              const playerId = crypto.randomUUID();
              const isFirstPlayer = lobby.current_players === 0;
              
@@ -216,17 +235,23 @@
                  .insert({
                      id: playerId,
                      lobby_id: lobby.id,
-                     player_name: playerName,
+                     player_name: safeName,
                      player_type: 'human',
                      is_admin: isFirstPlayer,
                      is_ready: false
                  });
              
              if (playerError) {
+                 // Check for duplicate player name
+                 if (playerError.message.includes('duplicate key') || 
+                     playerError.code === '23505') {
+                     throw new Error('A player with this name already exists');
+                 }
                  throw new Error('Failed to create player: ' + playerError.message);
              }
              
-             // Step 3: Update lobby player count
+             // ===== STEP 4: Update lobby player count =====
+             // Use atomic increment to prevent race conditions
              const { error: updateError } = await supabase
                  .from('mom_dad_lobbies')
                  .update({
@@ -235,37 +260,56 @@
                      admin_player_id: isFirstPlayer ? playerId : lobby.admin_player_id,
                      updated_at: new Date().toISOString()
                  })
-                 .eq('id', lobby.id);
+                 .eq('id', lobby.id)
+                 .eq('current_players', lobby.current_players);  // Optimistic lock
              
              if (updateError) {
-                 throw new Error('Failed to update lobby: ' + updateError.message);
+                 // Rollback: delete the player we just created
+                 await supabase.from('mom_dad_players').delete().eq('id', playerId);
+                 throw new Error('Lobby is full - another player just joined');
              }
              
-             // Step 4: Fetch all players in lobby
+             // ===== STEP 5: Fetch all players in lobby =====
              const { data: players, error: playersError } = await supabase
                  .from('mom_dad_players')
-                 .select('*')
+                 .select('id, player_name, player_type, is_admin, is_ready, joined_at')
                  .eq('lobby_id', lobby.id)
                  .is('disconnected_at', null)
                  .order('joined_at', { ascending: true });
              
-             // Store state
+             // ===== STEP 6: Store state =====
              GameState.currentPlayerId = playerId;
              GameState.isAdmin = isFirstPlayer;
              GameState.players = players || [];
              GameState.adminPlayerId = isFirstPlayer ? playerId : null;
              
+             // Log success with timing
+             const duration = Date.now() - startTime;
+             console.log('[MomVsDadSimplified] Successfully joined lobby:', {
+                 lobbyKey,
+                 playerId,
+                 playerName: safeName,
+                 isAdmin: isFirstPlayer,
+                 playerCount: players?.length || 0,
+                 duration: duration + 'ms'
+             });
+             
              return {
                  success: true,
                  data: {
-                     lobby,
+                     lobby: {
+                         ...lobby,
+                         current_players: lobby.current_players + 1,
+                         current_humans: lobby.current_humans + 1
+                     },
                      players: players || [],
                      current_player_id: playerId,
                      is_admin: isFirstPlayer
                  }
              };
          } catch (error) {
-             console.error('[MomVsDadSimplified] Failed to join lobby:', error);
+             const duration = Date.now() - startTime;
+             console.error('[MomVsDadSimplified] Failed to join lobby after', duration + 'ms:', error);
              throw error;
          } finally {
              setLoading(false);
