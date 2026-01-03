@@ -122,7 +122,7 @@
      */
     async function fetchLobbyStatus(lobbyKey) {
         try {
-            // Create Supabase client using global supabase object (same as main.js)
+            // Create Supabase client using window.supabase (global Supabase library)
             let supabase = window.supabaseClient;
             
             // If no cached client, try to create one
@@ -131,27 +131,28 @@
                 let attempts = 0;
                 const maxAttempts = 50; // 50 * 100ms = 5 seconds
                 
-                while (attempts < maxAttempts && (typeof supabase === 'undefined' || !supabase.createClient)) {
-                    await new Promise(resolve => setTimeout(resolve, 100));
-                    attempts++;
-                    
-                    // Re-check both global supabase and window.supabaseClient
-                    if (typeof supabase !== 'undefined') {
-                        supabase = supabase;
+                while (attempts < maxAttempts) {
+                    // Check if window.supabase is available with createClient
+                    if (typeof window.supabase !== 'undefined' && window.supabase.createClient) {
+                        break;
                     }
+                    // Check if window.supabaseClient was created by other scripts
                     if (window.supabaseClient) {
                         supabase = window.supabaseClient;
                         break;
                     }
+                    
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                    attempts++;
                 }
                 
-                // If still no client, try to create one
+                // If still no client, try to create one using window.supabase
                 if (!supabase) {
                     const supabaseUrl = root.CONFIG?.SUPABASE?.URL || '';
                     const supabaseKey = root.CONFIG?.SUPABASE?.ANON_KEY || '';
                     
-                    if (typeof supabase !== 'undefined' && supabaseUrl && supabaseKey) {
-                        supabase = supabase.createClient(supabaseUrl, supabaseKey);
+                    if (typeof window.supabase !== 'undefined' && supabaseUrl && supabaseKey) {
+                        supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
                         window.supabaseClient = supabase;
                     }
                 }
