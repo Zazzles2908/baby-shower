@@ -11,10 +11,27 @@ const path = require('path');
 const indexPath = path.join(__dirname, 'index.html');
 let html = fs.readFileSync(indexPath, 'utf8');
 
-// Get environment variables
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+// Parse .env.local manually
+const envContent = fs.readFileSync(path.join(__dirname, '.env.local'), 'utf8');
+const envVars = {};
+envContent.split('\n').forEach(line => {
+    const trimmedLine = line.trim();
+    if (trimmedLine && !trimmedLine.startsWith('#')) {
+        const eqIndex = trimmedLine.indexOf('=');
+        if (eqIndex > 0) {
+            const key = trimmedLine.substring(0, eqIndex).trim();
+            const value = trimmedLine.substring(eqIndex + 1).trim();
+            envVars[key] = value;
+        }
+    }
+});
+
+// Support both NEXT_PUBLIC and standard naming
+const supabaseUrl = envVars.NEXT_PUBLIC_SUPABASE_URL ||
+                    envVars.SUPABASE_URL || '';
+const supabaseAnonKey = envVars.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
+                        envVars.SUPABASE_ANON_KEY || '';
+const supabaseServiceKey = envVars.SUPABASE_SERVICE_ROLE_KEY || '';
 
 // Inject environment variables before the closing </body> tag
 const envScript = `

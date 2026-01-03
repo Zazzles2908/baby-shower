@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Test</title>
+    <script src="scripts/config.js"></script>
+</head>
+<body>
+    <h1>API Connection Test</h1>
+    <pre id="results"></pre>
+    
+    <script>
+        const results = document.getElementById('results');
+        
+        async function runTests() {
+            const supabaseUrl = window.CONFIG?.SUPABASE?.URL;
+            const supabaseKey = window.CONFIG?.SUPABASE?.ANON_KEY;
+            
+            results.textContent = `Testing API connection...\n`;
+            results.textContent += `URL: ${supabaseUrl}\n`;
+            results.textContent += `Key: ${supabaseKey ? supabaseKey.substring(0, 20) + '...' : 'MISSING'}\n\n`;
+            
+            if (!supabaseUrl || !supabaseKey) {
+                results.textContent += '❌ CONFIG not loaded properly';
+                return;
+            }
+            
+            // Test 1: Direct REST API to fetch lobby
+            results.textContent += 'Test 1: Fetching lobby via REST API...\n';
+            try {
+                const response = await fetch(`${supabaseUrl}/rest/v1/mom_dad_lobbies?lobby_key=eq.LOBBY-A`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'apikey': supabaseKey,
+                        'Accept-Profile': 'baby_shower'
+                    }
+                });
+                
+                const data = await response.json();
+                results.textContent += `Status: ${response.status}\n`;
+                results.textContent += `Data: ${JSON.stringify(data, null, 2)}\n\n`;
+                
+                if (response.ok && data && data.length > 0) {
+                    results.textContent += '✅ REST API working! Lobby found.\n';
+                } else {
+                    results.textContent += `❌ REST API failed: ${response.status}\n`;
+                }
+            } catch (error) {
+                results.textContent += `❌ REST API error: ${error.message}\n`;
+            }
+            
+            // Test 2: Check if Edge Function works
+            results.textContent += '\nTest 2: Testing Edge Function...\n';
+            try {
+                const response = await fetch(`${supabaseUrl}/functions/v1/lobby-status`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'apikey': supabaseKey
+                    },
+                    body: JSON.stringify({ lobby_key: 'LOBBY-A' })
+                });
+                
+                const data = await response.json();
+                results.textContent += `Status: ${response.status}\n`;
+                results.textContent += `Data: ${JSON.stringify(data, null, 2)}\n`;
+                
+                if (response.ok) {
+                    results.textContent += '✅ Edge Function working!\n';
+                } else {
+                    results.textContent += `❌ Edge Function failed: ${data.error || response.status}\n`;
+                }
+            } catch (error) {
+                results.textContent += `❌ Edge Function error: ${error.message}\n`;
+            }
+        }
+        
+        runTests();
+    </script>
+</body>
+</html>
