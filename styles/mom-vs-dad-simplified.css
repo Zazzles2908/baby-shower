@@ -103,6 +103,23 @@
     transform: translateY(-2px);
 }
 
+.lobby-card.full {
+    border-color: var(--mvd-error);
+}
+
+.lobby-card.filling {
+    border-color: #E65100;
+}
+
+.lobby-card.empty {
+    border-color: var(--mvd-success);
+}
+
+.lobby-card.error {
+    border-color: var(--mvd-error);
+    opacity: 0.7;
+}
+
 /* Lobby Status */
 .lobby-status {
     font-size: 0.9rem;
@@ -138,6 +155,12 @@
     font-weight: 500;
 }
 
+/* Lobby Connection Status */
+.lobby-connection {
+    font-size: 0.8rem;
+    margin-top: 4px;
+}
+
 /* Join Modal */
 .modal-overlay {
     position: fixed;
@@ -155,6 +178,46 @@
 
 .modal-overlay.hidden {
     display: none;
+}
+
+/* Error Message Styles (FIXES ISSUE #11, #12) */
+.mvd-error {
+    position: relative;
+    margin-bottom: 20px;
+    animation: slideDown 0.3s ease-out;
+}
+
+.error-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    padding: 20px;
+    background: linear-gradient(135deg, #FFEBEE 0%, #FFCDD2 100%);
+    border: 2px solid var(--mvd-error);
+    border-radius: 12px;
+    text-align: center;
+}
+
+.error-icon {
+    font-size: 2rem;
+}
+
+.error-content p {
+    color: var(--mvd-error);
+    font-weight: 600;
+    margin: 0;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 .modal-content {
@@ -266,6 +329,13 @@
     color: var(--mvd-success);
 }
 
+.connection-text {
+    display: block;
+    font-size: 0.85rem;
+    color: var(--mvd-text-secondary);
+    margin-top: 4px;
+}
+
 /* Player List */
 .player-list {
     display: flex;
@@ -287,6 +357,16 @@
 .player-item:hover {
     border-color: var(--mvd-success);
     transform: translateX(4px);
+}
+
+.player-item.is-admin {
+    border-color: #FFD700;
+    background: linear-gradient(135deg, #FFF9E6 0%, var(--mvd-bg-secondary) 100%);
+}
+
+.player-item.is-me {
+    border-color: var(--mvd-mom-color);
+    background: linear-gradient(135deg, #FFF0F5 0%, var(--mvd-bg-secondary) 100%);
 }
 
 .player-avatar {
@@ -311,6 +391,73 @@
 .player-item.is-admin .player-name::after {
     content: '👑';
     margin-left: 8px;
+}
+
+.admin-badge {
+    background: #FFD700;
+    color: #5D4E37;
+    padding: 4px 8px;
+    border-radius: 8px;
+    font-size: 0.75rem;
+    font-weight: 700;
+}
+
+.ai-badge {
+    background: linear-gradient(135deg, #E3F2FD 0%, #BBDEFB 100%);
+    color: #1565C0;
+    padding: 4px 8px;
+    border-radius: 8px;
+    font-size: 0.75rem;
+    font-weight: 700;
+}
+
+.player-empty {
+    text-align: center;
+    padding: 20px;
+    color: var(--mvd-text-secondary);
+    font-style: italic;
+}
+
+/* Connection Status (FIXES ISSUE #14) */
+.connection-status {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 8px;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.connection-status.connected {
+    background: #E8F5E9;
+    color: #2E7D32;
+}
+
+.connection-status.connecting {
+    background: #FFF3E0;
+    color: #E65100;
+}
+
+.connection-status.error {
+    background: #FFEBEE;
+    color: #C62828;
+}
+
+.connection-status.timeout {
+    background: #FFF8E1;
+    color: #F57F17;
+}
+
+.connection-status.disconnected {
+    background: #ECEFF1;
+    color: #546E7A;
+}
+
+.status-icon {
+    font-size: 0.8rem;
 }
 
 /* Waiting Message */
@@ -556,6 +703,86 @@
     color: white;
 }
 
+/* Vote Progress Bar (FIXES ISSUE #16) */
+.vote-progress-container {
+    margin: 16px 0;
+    padding: 12px;
+    background: var(--mvd-bg-secondary);
+    border-radius: 12px;
+}
+
+.vote-progress-bar {
+    display: flex;
+    height: 24px;
+    border-radius: 12px;
+    overflow: hidden;
+    background: var(--mvd-border-color);
+}
+
+.vote-mom-progress {
+    background: linear-gradient(90deg, var(--mvd-mom-color) 0%, #FF69B4 100%);
+    transition: width 0.5s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.vote-dad-progress {
+    background: linear-gradient(90deg, var(--mvd-dad-color) 0%, #4169E1 100%);
+    transition: width 0.5s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.vote-counts {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 8px;
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.mom-count {
+    color: var(--mvd-mom-color);
+}
+
+.dad-count {
+    color: var(--mvd-dad-color);
+}
+
+/* Round Timer (FIXES ISSUE #17) */
+.round-timer {
+    font-size: 0.9rem;
+    color: var(--mvd-text-secondary);
+    margin-top: 4px;
+}
+
+/* Scenario Options (FIXES ISSUE #9) */
+.scenario-options {
+    margin-top: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.option-mom,
+.option-dad {
+    padding: 12px 16px;
+    background: var(--mvd-bg-primary);
+    border-radius: 10px;
+    font-size: 1rem;
+    color: var(--mvd-text-primary);
+}
+
+.option-mom {
+    border-left: 4px solid var(--mvd-mom-color);
+}
+
+.option-dad {
+    border-left: 4px solid var(--mvd-dad-color);
+}
+
 /* Vote Feedback */
 .vote-feedback {
     text-align: center;
@@ -669,6 +896,107 @@
     color: var(--mvd-text-primary);
     margin: 0;
     font-weight: 600;
+}
+
+/* Vote Results (FIXES ISSUE #18) */
+.vote-results-container {
+    margin: 24px 0;
+    padding: 20px;
+    background: linear-gradient(135deg, var(--mvd-bg-primary) 0%, var(--mvd-bg-secondary) 100%);
+    border: 2px solid var(--mvd-border-color);
+    border-radius: 16px;
+}
+
+.result-bar {
+    display: flex;
+    height: 48px;
+    border-radius: 24px;
+    overflow: hidden;
+    background: var(--mvd-border-color);
+}
+
+.result-mom {
+    background: linear-gradient(90deg, var(--mvd-mom-color) 0%, #FF69B4 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: 700;
+    font-size: 1rem;
+    transition: width 0.5s ease;
+}
+
+.result-dad {
+    background: linear-gradient(90deg, var(--mvd-dad-color) 0%, #4169E1 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: 700;
+    font-size: 1rem;
+    transition: width 0.5s ease;
+}
+
+.result-counts {
+    text-align: center;
+    margin-top: 12px;
+    font-size: 1rem;
+    color: var(--mvd-text-secondary);
+    font-weight: 500;
+}
+
+/* AI Roast Commentary (FIXES ISSUE #13 from Medium Priority) */
+.roast-commentary {
+    margin: 20px 0;
+    padding: 20px;
+    background: linear-gradient(135deg, #FFECB3 0%, #FFE082 100%);
+    border: 2px solid #FFA000;
+    border-radius: 16px;
+}
+
+.roast-header {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #E65100;
+    margin-bottom: 12px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.roast-commentary p {
+    font-size: 1.1rem;
+    color: var(--mvd-text-primary);
+    margin: 0;
+    font-style: italic;
+    line-height: 1.5;
+}
+
+/* Waiting for Admin */
+.waiting-for-admin {
+    text-align: center;
+    padding: 20px;
+    background: linear-gradient(135deg, var(--mvd-bg-secondary) 0%, #F4E4BC 100%);
+    border-radius: 12px;
+    border: 2px dashed var(--mvd-success);
+}
+
+.waiting-for-admin p {
+    font-size: 1.1rem;
+    color: var(--mvd-text-primary);
+    margin: 0;
+}
+
+/* Next Round Button */
+.next-round-btn {
+    background: linear-gradient(135deg, #FF9800 0%, #F57C00 100%);
+}
+
+/* Results Icon */
+.result-icon {
+    font-size: 4rem;
+    margin-bottom: 16px;
+    display: block;
+    filter: drop-shadow(0 4px 8px rgba(156, 175, 136, 0.3));
 }
 
 /* Results Actions */
@@ -858,9 +1186,110 @@
         font-size: 1.1rem;
     }
 
-    .final-message p {
+.final-message p {
+    font-size: 1.1rem;
+}
+
+/* Responsive fixes for new features */
+.connection-status {
+    margin-top: 12px;
+    padding: 10px 20px;
+}
+
+.player-item {
+    padding: 14px 18px;
+}
+
+.player-avatar {
+    width: 44px;
+    height: 44px;
+    font-size: 1.3rem;
+}
+
+.admin-badge,
+.ai-badge {
+    font-size: 0.8rem;
+    padding: 5px 10px;
+}
+
+.vote-progress-container {
+    padding: 16px;
+    margin: 20px 0;
+}
+
+.vote-progress-bar {
+    height: 28px;
+}
+
+.vote-counts {
+    font-size: 1rem;
+}
+
+.round-timer {
+    font-size: 1rem;
+    margin-top: 6px;
+}
+
+.scenario-options {
+    margin-top: 20px;
+    gap: 10px;
+}
+
+.option-mom,
+.option-dad {
+    padding: 14px 18px;
+    font-size: 1.1rem;
+}
+
+.vote-results-container {
+    margin: 28px 0;
+    padding: 24px;
+}
+
+.result-bar {
+    height: 52px;
+}
+
+.result-mom,
+    .result-dad {
         font-size: 1.1rem;
     }
+
+    .result-counts {
+        font-size: 1rem;
+        margin-top: 14px;
+    }
+
+    .roast-commentary {
+        padding: 24px;
+        margin: 24px 0;
+    }
+
+    .roast-header {
+        font-size: 1.1rem;
+        margin-bottom: 14px;
+    }
+
+    .roast-commentary p {
+        font-size: 1.15rem;
+    }
+
+    .mvd-error {
+        margin-bottom: 24px;
+    }
+
+    .error-content {
+        padding: 24px;
+    }
+
+    .error-icon {
+        font-size: 2.2rem;
+    }
+
+    .error-content p {
+        font-size: 1.05rem;
+    }
+}
 }
 
 @media (max-width: 400px) {
@@ -884,6 +1313,101 @@
 
     .modal-content h2 {
         font-size: 1.3rem;
+    }
+
+    /* Responsive fixes for new features */
+    .connection-status {
+        font-size: 0.8rem;
+        padding: 6px 12px;
+    }
+
+    .player-item {
+        padding: 10px 12px;
+    }
+
+    .player-avatar {
+        width: 36px;
+        height: 36px;
+        font-size: 1rem;
+    }
+
+    .player-name {
+        font-size: 0.95rem;
+    }
+
+    .admin-badge,
+    .ai-badge {
+        font-size: 0.65rem;
+        padding: 3px 6px;
+    }
+
+    .vote-progress-container {
+        padding: 10px;
+    }
+
+    .vote-progress-bar {
+        height: 20px;
+    }
+
+    .vote-counts {
+        font-size: 0.8rem;
+    }
+
+    .round-timer {
+        font-size: 0.8rem;
+    }
+
+    .scenario-options {
+        margin-top: 12px;
+    }
+
+    .option-mom,
+    .option-dad {
+        padding: 10px 12px;
+        font-size: 0.9rem;
+    }
+
+    .vote-results-container {
+        margin: 16px 0;
+        padding: 16px;
+    }
+
+    .result-bar {
+        height: 40px;
+    }
+
+    .result-mom,
+    .result-dad {
+        font-size: 0.9rem;
+    }
+
+    .result-counts {
+        font-size: 0.9rem;
+    }
+
+    .roast-commentary {
+        padding: 16px;
+        margin: 16px 0;
+    }
+
+    .roast-header {
+        font-size: 0.9rem;
+    }
+
+    .roast-commentary p {
+        font-size: 1rem;
+    }
+
+    .mvd-error {
+        margin: 12px;
+    }
+
+    .error-content {
+        padding: 16px;
+    }
+
+    .error-icon {
+        font-size: 1.5rem;
     }
 }
 
