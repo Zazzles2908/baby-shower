@@ -27,16 +27,20 @@ interface GameScenario {
 }
 
 /**
- * Call Z.AI (GLM-4.7) via OpenRouter to generate a funny scenario
+ * Call Z.AI (GLM-4.7) directly or via OpenRouter to generate a funny scenario
  */
 async function generateScenario(
   momName: string,
   dadName: string,
   theme: string = 'general'
 ): Promise<{ scenario: string; momOption: string; dadOption: string; intensity: number } | null> {
-  const apiKey = Deno.env.get('OPENROUTER_API_KEY')
-  if (!apiKey) {
-    console.warn('OPENROUTER_API_KEY not configured')
+  // Check for Z.AI API key first (note the period in the name)
+  const zaiApiKey = Deno.env.get('Z.AI_API_KEY')
+  // Fall back to OpenRouter API key
+  const openrouterApiKey = Deno.env.get('OPENROUTER_API_KEY')
+  
+  if (!zaiApiKey && !openrouterApiKey) {
+    console.warn('No AI API keys configured (Z.AI_API_KEY or OPENROUTER_API_KEY)')
     return null
   }
 
@@ -77,41 +81,72 @@ Do not include any other text or formatting.`
     const controller = new AbortController()
     const timeoutId = setTimeout(() => controller.abort(), 10000) // 10 second timeout
 
-    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`,
-        'HTTP-Referer': 'https://baby-shower.app',
-        'X-Title': 'Baby Shower Game',
-      },
-      body: JSON.stringify({
-        model: 'thudoglm/glm-4:free',
-        messages: [
-          {
-            role: 'user',
-            content: prompt,
-          },
-        ],
-        max_tokens: 500,
-        temperature: 0.8,
-      }),
-      signal: controller.signal,
-    })
+    let response: Response
+    
+    // Try Z.AI direct API first if available
+    if (zaiApiKey) {
+      console.log('[game-scenario] Using Z.AI API directly')
+      response = await fetch('https://open.bigmodel.cn/api/paas/v3/modelapi/chatglm_pro/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${zaiApiKey}`,
+        },
+        body: JSON.stringify({
+          prompt: prompt,
+          temperature: 0.8,
+          max_tokens: 500,
+        }),
+        signal: controller.signal,
+      })
+    } else {
+      // Fall back to OpenRouter
+      console.log('[game-scenario] Using OpenRouter API')
+      response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${openrouterApiKey}`,
+          'HTTP-Referer': 'https://baby-shower.app',
+          'X-Title': 'Baby Shower Game',
+        },
+        body: JSON.stringify({
+          model: 'thudoglm/glm-4:free',
+          messages: [
+            {
+              role: 'user',
+              content: prompt,
+            },
+          ],
+          max_tokens: 500,
+          temperature: 0.8,
+        }),
+        signal: controller.signal,
+      })
+    }
 
     clearTimeout(timeoutId)
 
     if (!response.ok) {
       const errorText = await response.text()
-      console.error('OpenRouter API error:', response.status, errorText)
+      console.error('AI API error:', response.status, errorText)
       return null
     }
 
     const data = await response.json()
-    const content = data.choices?.[0]?.message?.content?.trim()
+    let content: string
+
+    // Handle different response formats
+    if (zaiApiKey) {
+      // Z.AI direct response format
+      content = data.data?.choices?.[0]?.message?.content || data.choices?.[0]?.message?.content || ''
+    } else {
+      // OpenRouter response format
+      content = data.choices?.[0]?.message?.content?.trim() || ''
+    }
 
     if (!content) {
-      console.error('Empty response from OpenRouter')
+      console.error('Empty response from AI API')
       return null
     }
 

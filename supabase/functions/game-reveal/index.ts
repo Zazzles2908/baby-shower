@@ -56,7 +56,7 @@ function determineParticleEffect(perceptionGap: number, accuracy: boolean): stri
   return 'confetti'
 }
 
-// Generate roast commentary using MiniMax AI (primary) with Moonshot fallback
+// Generate roast commentary using available AI providers
 async function generateRoastCommentary(
   scenarioText: string,
   momOption: string,
@@ -66,9 +66,14 @@ async function generateRoastCommentary(
   momName: string,
   dadName: string
 ): Promise<string> {
-  // Try MiniMax first (primary provider for roasts)
+  // Check for available AI providers
   const minimaxApiKey = Deno.env.get('MINIMAX_API_KEY')
-  const moonshotApiKey = Deno.env.get('KIMI_API_KEY')
+  const moonshotApiKey = Deno.env.get('KIMI_CODING_API_KEY')
+  
+  console.log('[game-reveal] AI providers available:', {
+    minimax: !!minimaxApiKey,
+    moonshot: !!moonshotApiKey
+  })
   
   const crowdChoice = voteCounts.mom_pct > voteCounts.dad_pct ? 'mom' : 'dad'
   const crowdPct = Math.max(voteCounts.mom_pct, voteCounts.dad_pct)
@@ -91,9 +96,10 @@ Reality: ${winner} did it!
 Crowd was ${crowdChoice} with ${crowdPct}% confidence.
 Roast them playfully!`
 
-  // Try MiniMax first
+  // Try MiniMax first (primary provider)
   if (minimaxApiKey) {
     try {
+      console.log('[game-reveal] Attempting MiniMax API')
       const roast = await callMiniMaxAPI(minimaxApiKey, systemPrompt, userPrompt)
       if (roast) {
         console.log('[game-reveal] MiniMax roast generated successfully')
@@ -107,6 +113,7 @@ Roast them playfully!`
   // Try Moonshot/Kimi as fallback
   if (moonshotApiKey) {
     try {
+      console.log('[game-reveal] Attempting Moonshot/Kimi API')
       const roast = await callMoonshotAPI(moonshotApiKey, systemPrompt, userPrompt)
       if (roast) {
         console.log('[game-reveal] Moonshot/Kimi roast generated successfully')
