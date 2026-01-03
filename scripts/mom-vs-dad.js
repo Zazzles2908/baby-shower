@@ -1099,22 +1099,16 @@
     function init() {
         console.log('[MomVsDad] Initializing game module...');
 
-        // Find or create game container
-        let gameContainer = document.getElementById('mom-vs-dad-game');
+        // Use the existing game-container from index.html
+        let gameContainer = document.getElementById('game-container');
 
         if (!gameContainer) {
-            gameContainer = document.createElement('section');
-            gameContainer.id = 'mom-vs-dad-game';
-            gameContainer.className = 'game-section';
-
-            // Add to main content
-            const mainContent = document.querySelector('main');
-            if (mainContent) {
-                mainContent.appendChild(gameContainer);
-            } else {
-                document.body.appendChild(gameContainer);
-            }
+            console.error('[MomVsDad] game-container not found in index.html');
+            return;
         }
+
+        // Clear any existing content
+        gameContainer.innerHTML = '';
 
         // Show join screen
         showJoinScreen();
@@ -1129,7 +1123,7 @@
         // Stop vote polling when leaving voting screen
         stopVotePolling();
 
-        const gameContainer = document.getElementById('mom-vs-dad-game');
+        const gameContainer = document.getElementById('game-container');
         if (!gameContainer) return;
 
         gameContainer.innerHTML = createJoinScreen();
@@ -1246,7 +1240,7 @@
         // Stop vote polling when leaving voting screen
         stopVotePolling();
 
-        const gameContainer = document.getElementById('mom-vs-dad-game');
+        const gameContainer = document.getElementById('game-container');
         if (!gameContainer) return;
 
         gameContainer.innerHTML = createAdminLoginScreen();
@@ -1357,7 +1351,7 @@
      * Display voting interface
      */
     function showVotingScreen(scenario) {
-        const gameContainer = document.getElementById('mom-vs-dad-game');
+        const gameContainer = document.getElementById('game-container');
         if (!gameContainer) return;
 
         // Stop any existing vote polling
@@ -1664,7 +1658,7 @@
         // Stop vote polling when showing results
         stopVotePolling();
 
-        const gameContainer = document.getElementById('mom-vs-dad-game');
+        const gameContainer = document.getElementById('game-container');
         if (!gameContainer) return;
 
         // Check if results screen exists
