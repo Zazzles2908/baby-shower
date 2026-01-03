@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Service Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        .test-result {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+        }
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .loading {
+            background-color: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeeba;
+        }
+        #image-tests {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 20px;
+            margin-top: 30px;
+        }
+        .image-card {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 10px;
+            text-align: center;
+        }
+        .image-card img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 4px;
+        }
+        .image-card.error img {
+            display: none;
+        }
+        .image-card.error::before {
+            content: '🖼️';
+            font-size: 48px;
+            display: block;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>Baby Shower Image Service Test</h1>
+    
+    <div id="test-results"></div>
+    
+    <h2>Image Loading Tests</h2>
+    <div id="image-tests"></div>
+
+    <script src="scripts/image-service.js"></script>
+    <script src="scripts/gallery.js"></script>
+    
+    <script>
+        // Test results container
+        const resultsContainer = document.getElementById('test-results');
+        const imagesContainer = document.getElementById('image-tests');
+        
+        // Test function
+        function addTestResult(name, success, message) {
+            const div = document.createElement('div');
+            div.className = `test-result ${success ? 'success' : 'error'}`;
+            div.textContent = `${name}: ${message}`;
+            resultsContainer.appendChild(div);
+        }
+        
+        // Run tests
+        function runTests() {
+            // Test 1: ImageService exists
+            const serviceExists = typeof window.ImageService !== 'undefined';
+            addTestResult('ImageService exists', serviceExists, serviceExists ? 'Found' : 'Missing');
+            
+            // Test 2: Gallery exists
+            const galleryExists = typeof window.Gallery !== 'undefined';
+            addTestResult('Gallery exists', galleryExists, galleryExists ? 'Found' : 'Missing');
+            
+            // Test 3: ImageService methods exist
+            const hasGetImageUrl = typeof ImageService.getImageUrl === 'function';
+            const hasGetNamedImage = typeof ImageService.getNamedImage === 'function';
+            const hasSetupLazyLoading = typeof ImageService.setupLazyLoading === 'function';
+            
+            addTestResult('getImageUrl method', hasGetImageUrl, hasGetImageUrl ? 'Available' : 'Missing');
+            addTestResult('getNamedImage method', hasGetNamedImage, hasGetNamedImage ? 'Available' : 'Missing');
+            addTestResult('setupLazyLoading method', hasSetupLazyLoading, hasSetupLazyLoading ? 'Available' : 'Missing');
+            
+            // Test 4: Image URL generation
+            const testImageUrl = ImageService.getImageUrl('hero/chibi_couple_expecting.png', 'hero');
+            const urlValid = testImageUrl && testImageUrl.includes('/baby_content/Pictures/');
+            addTestResult('Image URL generation', urlValid, testImageUrl || 'Failed');
+            
+            // Test 5: Named image lookup
+            const namedImage = ImageService.getNamedImage('couple', 'expecting', 'hero');
+            const namedValid = namedImage && namedImage.length > 0;
+            addTestResult('Named image lookup', namedValid, namedValid ? 'Success' : 'Failed');
+            
+            // Test 6: Gallery items can be resolved
+            const galleryItems = window.Gallery?.GALLERY_ITEMS;
+            let itemsResolved = 0;
+            if (galleryItems) {
+                galleryItems.forEach(item => {
+                    const url = ImageService.getImageUrl(item.image, 'medium');
+                    if (url && url.includes('/baby_content/Pictures/')) {
+                        itemsResolved++;
+                    }
+                });
+            }
+            addTestResult('Gallery items', itemsResolved === galleryItems?.length, 
+                `${itemsResolved}/${galleryItems?.length || 0} resolved`);
+            
+            // Test 7: Background images can be resolved
+            const bgItems = window.Gallery?.ACTIVITY_BACKGROUNDS;
+            let bgResolved = 0;
+            if (bgItems) {
+                Object.values(bgItems).forEach(path => {
+                    const url = ImageService.getImageUrl(path, 'medium');
+                    if (url && url.includes('/baby_content/Pictures/')) {
+                        bgResolved++;
+                    }
+                });
+            }
+            addTestResult('Background images', bgResolved === Object.keys(bgItems || {}).length, 
+                `${bgResolved}/${Object.keys(bgItems || {}).length} resolved`);
+            
+            // Display sample images
+            if (galleryItems) {
+                galleryItems.slice(0, 4).forEach(item => {
+                    const imageUrl = ImageService.getImageUrl(item.image, 'medium');
+                    const card = document.createElement('div');
+                    card.className = 'image-card';
+                    card.innerHTML = `
+                        <img src="${imageUrl}" alt="${item.alt}" 
+                             onload="this.parentElement.classList.remove('error')"
+                             onerror="this.parentElement.classList.add('error')">
+                        <p><strong>${item.title}</strong></p>
+                        <p><small>${item.date}</small></p>
+                        <p><small>${imageUrl}</small></p>
+                    `;
+                    imagesContainer.appendChild(card);
+                });
+            }
+            
+            console.log('[Test] All tests completed');
+        }
+        
+        // Run tests after everything loads
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', runTests);
+        } else {
+            runTests();
+        }
+    </script>
+</body>
+</html>
