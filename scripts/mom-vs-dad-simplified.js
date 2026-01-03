@@ -124,18 +124,41 @@
         try {
             // Create Supabase client using global supabase object (same as main.js)
             let supabase = window.supabaseClient;
+            
+            // If no cached client, try to create one
             if (!supabase) {
-                const supabaseUrl = root.CONFIG?.SUPABASE?.URL || '';
-                const supabaseKey = root.CONFIG?.SUPABASE?.ANON_KEY || '';
+                // Wait for supabase library to be available (max 5 seconds)
+                let attempts = 0;
+                const maxAttempts = 50; // 50 * 100ms = 5 seconds
                 
-                if (typeof supabase !== 'undefined' && supabaseUrl && supabaseKey) {
-                    supabase = supabase.createClient(supabaseUrl, supabaseKey);
-                    window.supabaseClient = supabase;
+                while (attempts < maxAttempts && (typeof supabase === 'undefined' || !supabase.createClient)) {
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                    attempts++;
+                    
+                    // Re-check both global supabase and window.supabaseClient
+                    if (typeof supabase !== 'undefined') {
+                        supabase = supabase;
+                    }
+                    if (window.supabaseClient) {
+                        supabase = window.supabaseClient;
+                        break;
+                    }
+                }
+                
+                // If still no client, try to create one
+                if (!supabase) {
+                    const supabaseUrl = root.CONFIG?.SUPABASE?.URL || '';
+                    const supabaseKey = root.CONFIG?.SUPABASE?.ANON_KEY || '';
+                    
+                    if (typeof supabase !== 'undefined' && supabaseUrl && supabaseKey) {
+                        supabase = supabase.createClient(supabaseUrl, supabaseKey);
+                        window.supabaseClient = supabase;
+                    }
                 }
             }
             
             if (!supabase) {
-                console.warn('[MomVsDadSimplified] No Supabase client available');
+                console.warn('[MomVsDadSimplified] No Supabase client available after waiting');
                 return null;
             }
 
