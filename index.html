@@ -10,6 +10,7 @@
         <link rel="stylesheet" href="styles/cute-enhancements.css">
         <link rel="stylesheet" href="styles/animations.css">
         <link rel="stylesheet" href="styles/main.css">
+        <link rel="stylesheet" href="styles/who-would-rather.css">
         <link rel="icon" type="image/x-icon" href="baby_content\Pictures\Jazeel_Icon\asset_chibi_avatar_f.png">
         <link rel="icon" type="image/x-icon" href="baby_content\Pictures\Michelle_Icon\asset_chibi_avatar_m.png">
         <link rel="icon" type="image/x-icon" href="favicon.png">
@@ -26,17 +27,29 @@
                     </div>
                 </div>
                 <div class="hero-content">
-                    <h1 class="hero-title">Welcome to Our Baby Shower 🌸🐸</h1>
-                    <!-- Partner Icons -->
-                    <div class="partner-icons" style="display: flex; gap: 20px; margin-bottom: 15px;">
-                        <div>
-                            <span style="font-size: 1.5rem;">🌸 Michelle</span>
-                        <span style="font-size: 1.5rem;">🐸 Jazeel</span>
+                    <div class="partner-avatars">
+                        <div class="partner-avatar">
+                            <img src="https://bkszmvfsfgvdwzacgmfz.supabase.co/storage/v1/object/public/baby-shower-pictures/Pictures/Michelle_Icon/asset_chibi_avatar_f.png" alt="Michelle" class="partner-avatar-img">
+                            <span class="partner-name">Michelle</span>
+                        </div>
+                        <div class="couple-heart">
+                            <img src="https://bkszmvfsfgvdwzacgmfz.supabase.co/storage/v1/object/public/baby-shower-pictures/Pictures/Jazeel&Michelle_Icon/asset_chibi_heart.png" alt="Love" class="heart-icon">
+                        </div>
+                        <div class="partner-avatar">
+                            <img src="https://bkszmvfsfgvdwzacgmfz.supabase.co/storage/v1/object/public/baby-shower-pictures/Pictures/Jazeel_Icon/asset_chibi_avatar_m.png" alt="Jazeel" class="partner-avatar-img">
+                            <span class="partner-name">Jazeel</span>
+                        </div>
                     </div>
+                    <h1 class="hero-title">Welcome to Our Baby Shower</h1>
                     <p class="subtitle">Celebrating our little girl arriving March 2026</p>
                     <div class="event-info">
                         <p>📅 Sunday January 4th @ 11AM - 2PM</p>
                         <p>📍 Myuna Farm, Doveton</p>
+                    </div>
+                    <!-- Baby Photo Decoration -->
+                    <div class="baby-photo-decoration">
+                        <img src="https://bkszmvfsfgvdwzacgmfz.supabase.co/storage/v1/object/public/baby-shower-pictures/Pictures/Michelle_Baby/chibi_michelle_1st_birthday.png" alt="Baby Michelle" class="deco-baby-photo left">
+                        <img src="https://bkszmvfsfgvdwzacgmfz.supabase.co/storage/v1/object/public/baby-shower-pictures/Pictures/Jazeel_Baby/chibi_jazeel_newborn_edit.png" alt="Baby Jazeel" class="deco-baby-photo right">
                     </div>
                 </div>
             </div>
@@ -52,9 +65,6 @@
                 </div>
                 
                 <div class="activities" id="activities-container">
-                    <!-- Decorative floating elements -->
-                    <div class="floating-decoration floating-decoration-1">🐰</div>
-                    <div class="floating-decoration floating-decoration-2">🐻</div>
                     <h2 class="activities-heading">Choose an Activity</h2>
                     <div class="activity-buttons">
                         <button class="activity-card" data-section="guestbook" aria-label="Guestbook - Leave your wishes for baby">
@@ -93,6 +103,12 @@
                             <span class="card-title">Mom vs Dad</span>
                             <span class="card-subtitle">The Truth Revealed</span>
                         </button>
+                        <button class="activity-card" data-section="who-would-rather" aria-label="Who Would Rather - 24 Fun Questions">
+                            <div class="card-background-image"></div>
+                            <span class="card-icon">🎯</span>
+                            <span class="card-title">Who Would Rather</span>
+                            <span class="card-subtitle">24 Fun Questions</span>
+                        </button>
                     </div>
                 </div>
             </div>
@@ -120,10 +136,18 @@
             <div class="container">
                 <button class="back-btn">← Back to Activities</button>
                 <div class="section-decoration">
-                    <div class="corner-decoration top-left">🐷</div>
-                    <div class="corner-decoration top-right">🐔</div>
-                    <div class="corner-decoration bottom-left">🐄</div>
-                    <div class="corner-decoration bottom-right">🐑</div>
+                    <div class="corner-decoration top-left">
+                        <img src="https://bkszmvfsfgvdwzacgmfz.supabase.co/storage/v1/object/public/baby-shower-pictures/Pictures/Theme/chibi_farm_animals.png" alt="Farm decoration" class="corner-decoration-img">
+                    </div>
+                    <div class="corner-decoration top-right">
+                        <img src="https://bkszmvfsfgvdwzacgmfz.supabase.co/storage/v1/object/public/baby-shower-pictures/Pictures/Jazeel&Michelle_Icon/asset_chibi_win.png" alt="Win" class="corner-decoration-img">
+                    </div>
+                    <div class="corner-decoration bottom-left">
+                        <img src="https://bkszmvfsfgvdwzacgmfz.supabase.co/storage/v1/object/public/baby-shower-pictures/Pictures/Jazeel&Michelle_Icon/asset_chibi_think.png" alt="Think" class="corner-decoration-img">
+                    </div>
+                    <div class="corner-decoration bottom-right">
+                        <img src="https://bkszmvfsfgvdwzacgmfz.supabase.co/storage/v1/object/public/baby-shower-pictures/Pictures/Jazeel&Michelle_Icon/asset_chibi_heart.png" alt="Heart" class="corner-decoration-img">
+                    </div>
                 </div>
                 <h1>💬 Leave a Wish</h1>
                 <p class="subtitle">Share your message for baby!</p>
@@ -158,9 +182,15 @@
             <div class="container">
                 <button class="back-btn">← Back to Activities</button>
                 <div class="section-decoration">
-                    <div class="corner-decoration top-center">🦢</div>
-                    <div class="corner-decoration bottom-left">🌸</div>
-                    <div class="corner-decoration bottom-right">🌸</div>
+                    <div class="corner-decoration top-center">
+                        <img src="https://bkszmvfsfgvdwzacgmfz.supabase.co/storage/v1/object/public/baby-shower-pictures/Pictures/Michelle_Jazeel/app_hero_chibi.png" alt="Couple" class="corner-decoration-img">
+                    </div>
+                    <div class="corner-decoration bottom-left">
+                        <img src="https://bkszmvfsfgvdwzacgmfz.supabase.co/storage/v1/object/public/baby-shower-pictures/Pictures/Michelle_Baby/chibi_michelle_garden.png" alt="Baby Michelle" class="corner-decoration-img">
+                    </div>
+                    <div class="corner-decoration bottom-right">
+                        <img src="https://bkszmvfsfgvdwzacgmfz.supabase.co/storage/v1/object/public/baby-shower-pictures/Pictures/Jazeel_Baby/chibi_jazeel_dad_couch_edit.png" alt="Baby Jazeel" class="corner-decoration-img">
+                    </div>
                 </div>
                 <h1>🎯 Guess Baby's Stats</h1>
                 <p class="subtitle">Predict when and how big baby will be!</p>
@@ -200,9 +230,15 @@
             <div class="container">
                 <button class="back-btn">← Back to Activities</button>
                 <div class="section-decoration">
-                    <div class="corner-decoration top-left">🦊</div>
-                    <div class="corner-decoration top-right">🐰</div>
-                    <div class="corner-decoration bottom-center">🐻</div>
+                    <div class="corner-decoration top-left">
+                        <img src="https://bkszmvfsfgvdwzacgmfz.supabase.co/storage/v1/object/public/baby-shower-pictures/Pictures/Michelle_Icon/img1_chibi.png" alt="Michelle" class="corner-decoration-img">
+                    </div>
+                    <div class="corner-decoration top-right">
+                        <img src="https://bkszmvfsfgvdwzacgmfz.supabase.co/storage/v1/object/public/baby-shower-pictures/Pictures/Michelle_Icon/img2_chibi.png" alt="Michelle" class="corner-decoration-img">
+                    </div>
+                    <div class="corner-decoration bottom-center">
+                        <img src="https://bkszmvfsfgvdwzacgmfz.supabase.co/storage/v1/object/public/baby-shower-pictures/Pictures/Michelle_Baby/chibi_michelle_sisters.png" alt="Sisters" class="corner-decoration-img">
+                    </div>
                 </div>
                 <h1>🧩 Baby Emoji Pictionary</h1>
                 <p class="subtitle">Guess baby-related phrases from emojis!</p>
@@ -313,10 +349,18 @@
             <div class="container">
                 <button class="back-btn">← Back to Activities</button>
                 <div class="section-decoration">
-                    <div class="corner-decoration top-left">💕</div>
-                    <div class="corner-decoration top-right">💕</div>
-                    <div class="corner-decoration bottom-left">❤️</div>
-                    <div class="corner-decoration bottom-right">❤️</div>
+                    <div class="corner-decoration top-left">
+                        <img src="https://bkszmvfsfgvdwzacgmfz.supabase.co/storage/v1/object/public/baby-shower-pictures/Pictures/Jazeel&Michelle_Icon/asset_chibi_heart.png" alt="Heart" class="corner-decoration-img">
+                    </div>
+                    <div class="corner-decoration top-right">
+                        <img src="https://bkszmvfsfgvdwzacgmfz.supabase.co/storage/v1/object/public/baby-shower-pictures/Pictures/Jazeel&Michelle_Icon/asset_chibi_heart.png" alt="Heart" class="corner-decoration-img">
+                    </div>
+                    <div class="corner-decoration bottom-left">
+                        <img src="https://bkszmvfsfgvdwzacgmfz.supabase.co/storage/v1/object/public/baby-shower-pictures/Pictures/Michelle_Jazeel/app_hero_pixar.png" alt="Couple" class="corner-decoration-img">
+                    </div>
+                    <div class="corner-decoration bottom-right">
+                        <img src="https://bkszmvfsfgvdwzacgmfz.supabase.co/storage/v1/object/public/baby-shower-pictures/Pictures/Michelle_Jazeel/app_hero_illustration.png" alt="Illustration" class="corner-decoration-img">
+                    </div>
                 </div>
                 <h1>❤️ Vote for Baby Names</h1>
                 <p class="subtitle">Heart up to 3 names you like!</p>
@@ -334,16 +378,50 @@
             <div class="container">
                 <button class="back-btn">← Back to Activities</button>
                 <div class="section-decoration">
-                    <div class="corner-decoration top-left">🐷</div>
-                    <div class="corner-decoration top-right">🐔</div>
-                    <div class="corner-decoration bottom-left">🐮</div>
-                    <div class="corner-decoration bottom-right">🐑</div>
+                    <div class="corner-decoration top-left">
+                        <img src="https://bkszmvfsfgvdwzacgmfz.supabase.co/storage/v1/object/public/baby-shower-pictures/Pictures/Jazeel_Baby/chibi_jazeel_cake.png" alt="Baby Jazeel" class="corner-decoration-img">
+                    </div>
+                    <div class="corner-decoration top-right">
+                        <img src="https://bkszmvfsfgvdwzacgmfz.supabase.co/storage/v1/object/public/baby-shower-pictures/Pictures/Michelle_Jazeel/asset_anime_portrait.png" alt="Couple" class="corner-decoration-img">
+                    </div>
+                    <div class="corner-decoration bottom-left">
+                        <img src="https://bkszmvfsfgvdwzacgmfz.supabase.co/storage/v1/object/public/baby-shower-pictures/Pictures/Jazeel_Baby/chibi_jazeel_birthday_edit.png" alt="Baby Jazeel" class="corner-decoration-img">
+                    </div>
+                    <div class="corner-decoration bottom-right">
+                        <img src="https://bkszmvfsfgvdwzacgmfz.supabase.co/storage/v1/object/public/baby-shower-pictures/Pictures/Michelle_Jazeel/app_hero_anime.png" alt="Couple" class="corner-decoration-img">
+                    </div>
                 </div>
                 <h1>🎮 Mom vs Dad: The Truth Revealed</h1>
                 <p class="subtitle">Guess who would rather... then watch the chaos unfold!</p>
-                
+
                 <!-- Game content will be populated by JavaScript -->
                 <div id="game-container"></div>
+            </div>
+        </section>
+
+        <!-- Who Would Rather Game Section -->
+        <section id="who-would-rather-section" class="hidden">
+            <div class="container">
+                <button class="back-btn">← Back to Activities</button>
+                <div class="section-decoration">
+                    <div class="corner-decoration top-left">
+                        <img src="https://bkszmvfsfgvdwzacgmfz.supabase.co/storage/v1/object/public/baby-shower-pictures/Pictures/Michelle_Jazeel/app_hero_chibi.png" alt="Couple" class="corner-decoration-img">
+                    </div>
+                    <div class="corner-decoration top-right">
+                        <img src="https://bkszmvfsfgvdwzacgmfz.supabase.co/storage/v1/object/public/baby-shower-pictures/Pictures/Michelle_Baby/chibi_michelle_garden.png" alt="Baby Michelle" class="corner-decoration-img">
+                    </div>
+                    <div class="corner-decoration bottom-left">
+                        <img src="https://bkszmvfsfgvdwzacgmfz.supabase.co/storage/v1/object/public/baby-shower-pictures/Pictures/Jazeel_Baby/chibi_jazeel_dad_couch_edit.png" alt="Baby Jazeel" class="corner-decoration-img">
+                    </div>
+                    <div class="corner-decoration bottom-right">
+                        <img src="https://bkszmvfsfgvdwzacgmfz.supabase.co/storage/v1/object/public/baby-shower-pictures/Pictures/Michelle_Jazeel/app_hero_illustration.png" alt="Couple" class="corner-decoration-img">
+                    </div>
+                </div>
+                <h1>🎯 Who Would Rather?</h1>
+                <p class="subtitle">24 fun questions - vote Mom or Dad!</p>
+
+                <!-- Game container -->
+                <div id="who-would-rather-container"></div>
             </div>
         </section>
 
@@ -391,7 +469,8 @@
     <script src="scripts/voting.js"></script>
     <script src="scripts/mom-vs-dad-enhanced.js"></script>
     <script src="scripts/mom-vs-dad.js"></script>
-    
+    <script src="scripts/who-would-rather.js"></script>
+
     <!-- Activity Ticker -->
     <div id="activity-ticker" class="activity-ticker hidden" role="status" aria-live="polite" aria-atomic="true">
         <div class="ticker-content">
@@ -412,6 +491,21 @@
             <img id="lightbox-image" src="" alt="Enlarged image">
             <div class="lightbox-caption"></div>
         </div>
+
+        <!-- Personalized Footer -->
+        <footer class="personalized-footer">
+            <div class="footer-content">
+                <div class="footer-title">From Our Family to Yours</div>
+                <div class="footer-subtitle">Thank you for celebrating with us!</div>
+                <div class="footer-gallery">
+                    <img src="https://bkszmvfsfgvdwzacgmfz.supabase.co/storage/v1/object/public/baby-shower-pictures/Pictures/Jazeel_Baby/chibi_jazeel_newborn_edit.png" alt="Baby Jazeel" class="footer-photo">
+                    <img src="https://bkszmvfsfgvdwzacgmfz.supabase.co/storage/v1/object/public/baby-shower-pictures/Pictures/Michelle_Baby/chibi_michelle_1st_birthday.png" alt="Baby Michelle" class="footer-photo">
+                    <img src="https://bkszmvfsfgvdwzacgmfz.supabase.co/storage/v1/object/public/baby-shower-pictures/Pictures/Michelle_Jazeel/app_hero_chibi.png" alt="Couple" class="footer-photo">
+                    <img src="https://bkszmvfsfgvdwzacgmfz.supabase.co/storage/v1/object/public/baby-shower-pictures/Pictures/Michelle_Baby/chibi_michelle_garden.png" alt="Baby Michelle" class="footer-photo">
+                    <img src="https://bkszmvfsfgvdwzacgmfz.supabase.co/storage/v1/object/public/baby-shower-pictures/Pictures/Jazeel_Baby/chibi_jazeel_dad_couch_edit.png" alt="Baby Jazeel" class="footer-photo">
+                </div>
+            </div>
+        </footer>
     </div>
 </body>
 </html>

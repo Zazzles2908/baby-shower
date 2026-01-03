@@ -1,10 +1,10 @@
 {
-  "buildCommand": "echo 'Building Baby Shower App'",
+  "buildCommand": "node inject-env.js && echo 'Building Baby Shower App'",
   "outputDirectory": ".",
   "framework": null,
   "env": {
-    "NEXT_PUBLIC_SUPABASE_URL": "@supabase_url",
-    "NEXT_PUBLIC_SUPABASE_ANON_KEY": "@supabase_anon_key"
+    "NEXT_PUBLIC_SUPABASE_URL": "process.env.NEXT_PUBLIC_SUPABASE_URL",
+    "NEXT_PUBLIC_SUPABASE_ANON_KEY": "process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY"
   },
   "headers": [
     {

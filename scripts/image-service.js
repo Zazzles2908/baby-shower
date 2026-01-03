@@ -14,14 +14,14 @@
   // Configuration - Updated to support both local files and Supabase Storage
   const CONFIG = {
     // Local file configuration
-    USE_LOCAL_FILES: true,
+    USE_LOCAL_FILES: false,  // Changed to false to use Supabase Storage by default
     LOCAL_BASE_PATH: '/baby_content/Pictures',
     
     // Supabase configuration (for fallback or mixed usage)
-    SUPABASE_URL: import.meta.env?.VITE_SUPABASE_URL || 'https://bkszmvfsfgvdwzacgmfz.supabase.co',
-    SUPABASE_ANON_KEY: import.meta.env?.VITE_SUPABASE_ANON_KEY || '',
+    SUPABASE_URL: window.ENV?.NEXT_PUBLIC_SUPABASE_URL || 'https://bkszmvfsfgvdwzacgmfz.supabase.co',
+    SUPABASE_ANON_KEY: window.ENV?.NEXT_PUBLIC_SUPABASE_ANON_KEY || '',
     BUCKET_NAME: 'baby-shower-pictures',
-    CDN_ENABLED: false, // Set to true if using Supabase CDN
+    CDN_ENABLED: true, // Set to true for Supabase CDN
     IMAGE_SIZES: {
       thumbnail: { width: 150, height: 150, suffix: 'thumb' },
       small: { width: 400, height: 400, suffix: 'small' },
@@ -44,24 +44,33 @@
   function mapPathToActualLocation(path) {
     if (!path) return path;
 
-    // Define path mappings from expected paths to actual locations
+    // Define path mappings from expected paths to actual Supabase Storage paths
+    // Maps application paths to Supabase Storage structure (Pictures/Icon_Name/)
     const pathMappings = {
-      // Hero images: hero/* -> Michelle_Jazeel/*
-      'hero/': 'Michelle_Jazeel/',
+      // Hero images: hero/* -> Pictures/Michelle_Jazeel/*
+      'hero/': 'Pictures/Michelle_Jazeel/',
       
       // Gallery baby images
-      'gallery/jazeel_baby/': 'Jazeel_Baby/',
-      'gallery/michelle_baby/': 'Michelle_Baby/',
+      'gallery/jazeel_baby/': 'Pictures/Jazeel_Baby/',
+      'gallery/michelle_baby/': 'Pictures/Michelle_Baby/',
       
-      // Icons mapping for avatar files
-      'icons/avatar_m.png': 'Jazeel_Icon/asset_chibi_avatar_m.png',
-      'icons/avatar_f.png': 'Michelle_Icon/asset_chibi_avatar_f.png',
-      'icons/heart.png': 'Jazeel&Michelle_Icon/asset_chibi_heart.png',
+      // Icons mapping for avatar files (app paths -> Supabase storage paths)
+      'icons/avatar_m.png': 'Pictures/Jazeel_Icon/asset_chibi_avatar_m.png',
+      'icons/avatar_f.png': 'Pictures/Michelle_Icon/asset_chibi_avatar_f.png',
+      'icons/heart.png': 'Pictures/Jazeel&Michelle_Icon/asset_chibi_heart.png',
+      'icons/think.png': 'Pictures/Jazeel&Michelle_Icon/asset_chibi_think.png',
+      'icons/win.png': 'Pictures/Jazeel&Michelle_Icon/asset_chibi_win.png',
       
       // Handle icon subdirectories used in IMAGE_PATHS
-      'icons/jazeel_avatar/': 'Jazeel_Icon/',
-      'icons/michelle_avatar/': 'Michelle_Icon/',
-      'icons/shared/': 'Jazeel&Michelle_Icon/'
+      'icons/jazeel_avatar/': 'Pictures/Jazeel_Icon/',
+      'icons/michelle_avatar/': 'Pictures/Michelle_Icon/',
+      'icons/shared/': 'Pictures/Jazeel&Michelle_Icon/',
+      
+      // Theme images
+      'theme/': 'Pictures/Theme/',
+      
+      // Map subdirectory (for event location)
+      'map/': 'Pictures/Map/'
     };
 
     // Check for exact matches first, then prefix matches

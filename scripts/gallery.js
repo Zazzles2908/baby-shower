@@ -9,15 +9,16 @@
     'use strict';
 
     /**
-     * Gallery timeline data - Jazeel and Michelle's journey
+     * Gallery timeline items
+     * Updated to use correct Supabase Storage paths
      */
     const GALLERY_ITEMS = [
         {
             id: 'jazeel-newborn',
-            title: 'Welcome Baby Jazeel!',
-            date: 'Newborn Days',
-            caption: 'The moment we first held you in our arms',
-            image: 'hero/chibi_couple_expecting.png',
+            title: 'Welcome to the World',
+            date: 'Newborn',
+            caption: 'Your very first hello to the world',
+            image: 'Pictures/Jazeel_Baby/chibi_jazeel_newborn_edit.png',
             alt: 'Baby Jazeel as newborn'
         },
         {
@@ -25,7 +26,7 @@
             title: 'First Birthday!',
             date: '1st Birthday',
             caption: 'Celebrating your very first milestone',
-            image: 'gallery/jazeel_baby/chibi_jazeel_birthday_edit.png',
+            image: 'Pictures/Jazeel_Baby/chibi_jazeel_birthday_edit.png',
             alt: 'Baby Jazeel first birthday'
         },
         {
@@ -33,7 +34,7 @@
             title: 'Cake Time',
             date: 'Cake Smash',
             caption: 'Sweet memories of your cake adventure',
-            image: 'gallery/jazeel_baby/chibi_jazeel_cake.png',
+            image: 'Pictures/Jazeel_Baby/chibi_jazeel_cake.png',
             alt: 'Baby Jazeel with birthday cake'
         },
         {
@@ -41,7 +42,7 @@
             title: 'Daddy\'s Little Helper',
             date: 'Quality Time',
             caption: 'Helping Daddy on the couch',
-            image: 'gallery/jazeel_baby/chibi_jazeel_dad_couch_edit.png',
+            image: 'Pictures/Jazeel_Baby/chibi_jazeel_dad_couch_edit.png',
             alt: 'Baby Jazeel with dad'
         },
         {
@@ -49,7 +50,7 @@
             title: 'Big Girl\'s Day',
             date: '1st Birthday',
             caption: 'A beautiful day filled with love and joy',
-            image: 'gallery/michelle_baby/chibi_michelle_1st_birthday.png',
+            image: 'Pictures/Michelle_Baby/chibi_michelle_1st_birthday.png',
             alt: 'Baby Michelle first birthday'
         },
         {
@@ -57,7 +58,7 @@
             title: 'Garden Adventures',
             date: 'Outdoors',
             caption: 'Exploring the beautiful garden together',
-            image: 'gallery/michelle_baby/chibi_michelle_garden.png',
+            image: 'Pictures/Michelle_Baby/chibi_michelle_garden.png',
             alt: 'Baby Michelle in garden'
         },
         {
@@ -65,7 +66,7 @@
             title: 'Sisterly Love',
             date: 'Family Time',
             caption: 'Bonds that last a lifetime',
-            image: 'gallery/michelle_baby/chibi_michelle_sisters.png',
+            image: 'Pictures/Michelle_Baby/chibi_michelle_sisters.png',
             alt: 'Baby Michelle with sisters'
         },
         {
@@ -73,20 +74,23 @@
             title: 'Our Love Story',
             date: 'Together',
             caption: 'Jazeel and Michelle expecting our little girl',
-            image: 'hero/asset_anime_portrait.png',
+            image: 'Pictures/Michelle_Jazeel/asset_anime_portrait.png',
             alt: 'Jazeel and Michelle portrait'
         }
     ];
 
     /**
      * Activity card background images
+     * Updated with better images showing clear character faces
+     * Fixing white/blank face issues and transparency problems
      */
     const ACTIVITY_BACKGROUNDS = {
-        guestbook: 'hero/asset_anime_scene.png',
-        pool: 'theme/chibi_farm_animals.png',
-        quiz: 'icons/shared/asset_chibi_think.png',
-        advice: 'icons/shared/asset_chibi_win.png',
-        voting: 'icons/shared/asset_chibi_heart.png'
+        guestbook: 'Pictures/Michelle_Jazeel/app_hero_chibi.png',
+        pool: 'Pictures/Theme/chibi_farm_animals.png',
+        quiz: 'Pictures/Michelle_Icon/img2_chibi.png',
+        advice: 'Pictures/Jazeel&Michelle_Icon/asset_chibi_win.png',
+        voting: 'Pictures/Michelle_Icon/img3_chibi.png',
+        'mom-vs-dad': 'Pictures/Michelle_Jazeel/asset_anime_portrait.png'
     };
 
     /**
@@ -123,14 +127,13 @@
         const heroContainer = document.getElementById('hero-image-container');
         if (!heroContainer) return;
 
-        // Use the chibi couple expecting image for hero (from GALLERY_ITEMS)
-        const heroData = GALLERY_ITEMS.find(item => item.id === 'couple-portrait') || GALLERY_ITEMS[0];
-        const heroImage = ImageService.getImageUrl(heroData.image, 'hero');
+        // Use a specific hero image for better presentation
+        const heroImageUrl = ImageService.getImageUrl('Pictures/Michelle_Jazeel/chibi_couple_expecting.png', 'hero');
         
-        if (heroImage) {
+        if (heroImageUrl) {
             heroContainer.innerHTML = `
                 <img 
-                    src="${heroImage}" 
+                    src="${heroImageUrl}" 
                     alt="Jazeel and Michelle expecting their baby girl"
                     class="hero-img"
                     loading="eager"

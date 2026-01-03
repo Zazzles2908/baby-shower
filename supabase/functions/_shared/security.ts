@@ -60,7 +60,17 @@ export function validateEnvironmentVariables(
 }
 
 /**
- * Create standardized error response
+ * CORS Headers Configuration
+ */
+export const CORS_HEADERS = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization, apikey',
+  'Access-Control-Max-Age': '86400'
+}
+
+/**
+ * Create standardized error response with CORS headers
  * @param message - Error message
  * @param status - HTTP status code
  * @param details - Additional error details (optional)
@@ -72,6 +82,7 @@ export function createErrorResponse(
   details?: unknown
 ): Response {
   const headers = new Headers({
+    ...CORS_HEADERS,
     'Content-Type': 'application/json',
     'X-Content-Type-Options': 'nosniff',
     'X-Frame-Options': 'DENY',
@@ -95,7 +106,7 @@ export function createErrorResponse(
 }
 
 /**
- * Create standardized success response
+ * Create standardized success response with CORS headers
  * @param data - Response data
  * @param status - HTTP status code (default 200)
  * @returns Response object
@@ -105,6 +116,7 @@ export function createSuccessResponse(
   status: number = 200
 ): Response {
   const headers = new Headers({
+    ...CORS_HEADERS,
     'Content-Type': 'application/json',
     'X-Content-Type-Options': 'nosniff',
     'X-Frame-Options': 'DENY',

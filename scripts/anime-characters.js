@@ -46,8 +46,8 @@
             // Add floating characters
             this.addFloatingCharacters();
 
-            // Enhance activity cards
-            this.enhanceActivityCards();
+            // Disabled: enhance activity cards - keeping simple emoji icons per user request
+            // this.enhanceActivityCards();
 
             // Add mom vs dad game characters
             this.addMomVsDadCharacters();
@@ -68,6 +68,20 @@
             if (!charConfig) {
                 console.warn('[AnimeCharacters] character not found:', characterId);
                 return '';
+            }
+
+            // Check if avatarImage exists and use it instead of SVG
+            if (charConfig.avatarImage) {
+                console.log('[AnimeCharacters] Using avatar image for', characterId, ':', charConfig.avatarImage);
+                return `
+                    <div class="anime-character ${size} emotion-${emotion}" data-character="${characterId}" data-emotion="${emotion}">
+                        <img src="${charConfig.avatarImage}" alt="${charConfig.name}" class="anime-character-image" />
+                        <div class="anime-sparkle">✨</div>
+                        <div class="anime-sparkle">✨</div>
+                        <div class="anime-sparkle">✨</div>
+                        <div class="anime-sparkle">✨</div>
+                    </div>
+                `;
             }
 
             const colors = charConfig.colors || {};
