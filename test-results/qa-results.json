@@ -1,0 +1,91 @@
+{
+  "timestamp": "2026-01-04T04:51:52.948Z",
+  "url": "https://baby-shower-qr-app.vercel.app",
+  "results": {
+    "heroImage": {
+      "status": "PASS",
+      "heroSectionFound": true,
+      "heroImagesFound": 6,
+      "screenshot": "main-page.png"
+    },
+    "activityCards": {
+      "status": "PARTIAL",
+      "totalCards": 41,
+      "cardsWithVisuals": 5,
+      "details": [
+        {
+          "index": 0,
+          "hasImage": true,
+          "hasEmoji": false,
+          "textLength": 1821,
+          "visible": true
+        },
+        {
+          "index": 1,
+          "hasImage": true,
+          "hasEmoji": false,
+          "textLength": 238,
+          "visible": true
+        },
+        {
+          "index": 2,
+          "hasImage": false,
+          "hasEmoji": false,
+          "textLength": 0,
+          "visible": true
+        },
+        {
+          "index": 3,
+          "hasImage": true,
+          "hasEmoji": false,
+          "textLength": 62,
+          "visible": true
+        },
+        {
+          "index": 4,
+          "hasImage": false,
+          "hasEmoji": false,
+          "textLength": 9,
+          "visible": true
+        },
+        {
+          "index": 5,
+          "hasImage": false,
+          "hasEmoji": false,
+          "textLength": 26,
+          "visible": true
+        },
+        {
+          "index": 6,
+          "hasImage": true,
+          "hasEmoji": false,
+          "textLength": 231,
+          "visible": true
+        },
+        {
+          "index": 7,
+          "hasImage": false,
+          "hasEmoji": false,
+          "textLength": 0,
+          "visible": true
+        },
+        {
+          "index": 8,
+          "hasImage": true,
+          "hasEmoji": false,
+          "textLength": 62,
+          "visible": true
+        },
+        {
+          "index": 9,
+          "hasImage": false,
+          "hasEmoji": false,
+          "textLength": 9,
+          "visible": true
+        }
+      ],
+      "screenshot": "activity-cards.png"
+    }
+  },
+  "error": "elementHandle.scrollIntoViewIfNeeded: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - attempting scroll into view action\u001b[22m\n\u001b[2m    2 × waiting for element to be stable\u001b[22m\n\u001b[2m      - element is not visible\u001b[22m\n\u001b[2m    - retrying scroll into view action\u001b[22m\n\u001b[2m    - waiting 20ms\u001b[22m\n\u001b[2m    2 × waiting for element to be stable\u001b[22m\n\u001b[2m      - element is not visible\u001b[22m\n\u001b[2m    - retrying scroll into view action\u001b[22m\n\u001b[2m      - waiting 100ms\u001b[22m\n\u001b[2m    55 × waiting for element to be stable\u001b[22m\n\u001b[2m       - element is not visible\u001b[22m\n\u001b[2m     - retrying scroll into view action\u001b[22m\n\u001b[2m       - waiting 500ms\u001b[22m\n"
+}

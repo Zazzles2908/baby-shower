@@ -133,7 +133,8 @@
         console.log('[Gallery] Loading hero image...');
 
         // Use the new Duo high-five image for better presentation
-        const heroImageUrl = ImageService.getImageUrl('Pictures/New Images/Duo/chibi_duo_highfive.png', 'hero');
+        // Use 'original' size since we don't have sized variants
+        const heroImageUrl = ImageService.getImageUrl('Pictures/New Images/Duo/chibi_duo_highfive.png', 'original');
         
         if (heroImageUrl) {
             // Set loading state immediately
