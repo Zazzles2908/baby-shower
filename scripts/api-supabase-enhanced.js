@@ -240,8 +240,8 @@
             method: 'POST',
             body: JSON.stringify({
                 name: data.name?.trim() || '',
-                relationship: data.relationship?.trim() || '',
-                advice: data.advice?.trim() || '',
+                message: data.message?.trim() || '',
+                adviceType: data.adviceType?.trim() || 'For Parents',
             }),
         });
     }
