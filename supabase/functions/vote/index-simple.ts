@@ -1,33 +1,74 @@
 /**
- * Baby Shower Vote Function
- * Fixed: Schema configuration and permissions
+ * Baby Shower Vote Function - Fixed Schema Configuration
+ * Fixed: Now uses db: { schema: 'baby_shower' } to access correct table
  */
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-import { 
-  validateEnvironmentVariables, 
-  createErrorResponse, 
-  createSuccessResponse,
-  validateInput,
-  CORS_HEADERS,
-  SECURITY_HEADERS
-} from '../_shared/security.ts'
 
 interface VoteRequest {
   selected_names: string[]
 }
 
-interface VoteResult {
-  name: string
-  count: number
-  percentage: number
+// Security utilities (inlined to avoid import path issues)
+const CORS_HEADERS = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization, apikey',
+  'Access-Control-Max-Age': '86400'
 }
 
-interface VoteProgressData {
-  totalVotes: number
-  results: VoteResult[]
-  lastUpdated: string
+const SECURITY_HEADERS = {
+  'X-Content-Type-Options': 'nosniff',
+  'X-Frame-Options': 'DENY',
+  'X-XSS-Protection': '1; mode=block'
+}
+
+function createErrorResponse(message: string, status: number = 500): Response {
+  return new Response(JSON.stringify({
+    success: false,
+    error: message,
+    timestamp: new Date().toISOString()
+  }), {
+    status,
+    headers: { ...CORS_HEADERS, ...SECURITY_HEADERS, 'Content-Type': 'application/json' }
+  })
+}
+
+function createSuccessResponse(data: unknown, status: number = 200): Response {
+  return new Response(JSON.stringify({
+    success: true,
+    data,
+    timestamp: new Date().toISOString()
+  }), {
+    status,
+    headers: { ...CORS_HEADERS, ...SECURITY_HEADERS, 'Content-Type': 'application/json' }
+  })
+}
+
+function validateInput(input: Record<string, unknown>, rules: Record<string, { type: string; required?: boolean }>): { isValid: boolean; errors: string[]; sanitized: Record<string, unknown> } {
+  const errors: string[] = []
+  const sanitized: Record<string, unknown> = {}
+  
+  for (const [field, rule] of Object.entries(rules)) {
+    const value = input[field]
+    
+    if (rule.required && (value === undefined || value === null)) {
+      errors.push(`${field} is required`)
+      continue
+    }
+    
+    if (rule.type === 'array') {
+      if (!Array.isArray(value)) {
+        errors.push(`${field} must be an array`)
+        continue
+      }
+    }
+    
+    sanitized[field] = value
+  }
+  
+  return { isValid: errors.length === 0, errors, sanitized }
 }
 
 serve(async (req: Request) => {
@@ -41,21 +82,15 @@ serve(async (req: Request) => {
     return new Response(null, { status: 204, headers })
   }
 
-  // GET endpoint: Retrieve vote progress data with percentages
+  // GET endpoint
   if (req.method === 'GET') {
     try {
-      const envValidation = validateEnvironmentVariables([
-        'SUPABASE_URL',
-        'SUPABASE_SERVICE_ROLE_KEY'
-      ])
-
-      if (!envValidation.isValid) {
-        console.error('Environment validation failed:', envValidation.errors)
+      const supabaseUrl = Deno.env.get('SUPABASE_URL')
+      const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
+      
+      if (!supabaseUrl || !supabaseServiceKey) {
         return createErrorResponse('Server configuration error', 500)
       }
-
-      const supabaseUrl = Deno.env.get('SUPABASE_URL')!
-      const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 
       // ✅ FIXED: Added db: { schema: 'baby_shower' }
       const supabase = createClient(supabaseUrl, supabaseServiceKey, {
@@ -75,7 +110,6 @@ serve(async (req: Request) => {
         return createErrorResponse(`Database operation failed: ${error.message}`, 500)
       }
 
-      // Calculate vote counts with defensive data handling
       const nameCounts: Record<string, number> = {}
       let totalVotes = 0
 
@@ -89,7 +123,6 @@ serve(async (req: Request) => {
             try {
               selectedNames = JSON.parse(vote.selected_names)
             } catch (e) {
-              console.warn(`[vote] Failed to parse selected_names for vote ${vote.id}`)
               selectedNames = []
             }
           }
@@ -106,7 +139,7 @@ serve(async (req: Request) => {
         }
       }
 
-      const results: VoteResult[] = Object.entries(nameCounts)
+      const results = Object.entries(nameCounts)
         .map(([name, count]) => ({
           name,
           count,
@@ -114,13 +147,11 @@ serve(async (req: Request) => {
         }))
         .sort((a, b) => b.count - a.count)
 
-      const progressData: VoteProgressData = {
+      return createSuccessResponse({
         totalVotes,
         results,
         lastUpdated: new Date().toISOString(),
-      }
-
-      return createSuccessResponse(progressData, 200)
+      }, 200)
 
     } catch (err) {
       console.error('Edge Function error:', err)
@@ -128,24 +159,18 @@ serve(async (req: Request) => {
     }
   }
 
-  // POST endpoint: Submit a vote
+  // POST endpoint
   if (req.method !== 'POST') {
     return createErrorResponse('Method not allowed', 405)
   }
 
   try {
-    const envValidation = validateEnvironmentVariables([
-      'SUPABASE_URL',
-      'SUPABASE_SERVICE_ROLE_KEY'
-    ])
-
-    if (!envValidation.isValid) {
-      console.error('Environment validation failed:', envValidation.errors)
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
+    
+    if (!supabaseUrl || !supabaseServiceKey) {
       return createErrorResponse('Server configuration error', 500)
     }
-
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 
     // ✅ FIXED: Added db: { schema: 'baby_shower' }
     const supabase = createClient(supabaseUrl, supabaseServiceKey, {
@@ -164,41 +189,31 @@ serve(async (req: Request) => {
       selected_names: { type: 'array', required: true }
     })
 
-    const errors: string[] = [...validation.errors]
+    if (!validation.isValid) {
+      return createErrorResponse('Validation failed', 400, validation.errors)
+    }
+
     const names = validation.sanitized.selected_names as string[]
     
-    if (names.length === 0) {
-      errors.push('At least one name is required')
-    }
-    if (names.length > 4) {
-      errors.push('Maximum 4 names allowed')
-    }
-    
-    names.forEach((name: string, index: number) => {
-      if (!name || name.trim().length === 0) {
-        errors.push(`Name at index ${index} cannot be empty`)
-      }
-      if (name && name.length > 50) {
-        errors.push(`Name at index ${index} must be 50 characters or less`)
-      }
-    })
-
-    if (errors.length > 0) {
-      return createErrorResponse('Validation failed', 400, errors)
+    if (names.length === 0 || names.length > 4) {
+      return createErrorResponse('Between 1-4 names required', 400)
     }
 
     const sanitizedNames = names
       .map((n: string) => n.trim().slice(0, 50))
       .filter((n: string) => n.length > 0)
 
+    // Count before insert
     const { count: totalCount } = await supabase
       .from('votes')
       .select('*', { count: 'exact', head: true })
+    
     const currentCount = totalCount || 0
     const isMilestone = currentCount + 1 === 50
 
     console.log(`[vote] POST: Inserting into baby_shower.votes, count: ${currentCount}`)
 
+    // Insert
     const { data, error } = await supabase
       .from('votes')
       .insert({
