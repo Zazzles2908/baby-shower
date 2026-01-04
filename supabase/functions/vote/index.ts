@@ -56,6 +56,7 @@ serve(async (req: Request) => {
 
       const supabase = createClient(supabaseUrl, supabaseServiceKey, {
         auth: { autoRefreshToken: false, persistSession: false },
+        db: { schema: 'baby_shower' }
       })
 
       console.log('[vote] GET: Fetching all votes from baby_shower.votes')
@@ -82,9 +83,25 @@ serve(async (req: Request) => {
       let totalVotes = 0
 
       for (const vote of votes || []) {
-        const selectedNames = vote.selected_names as string[] | undefined
-        if (selectedNames && Array.isArray(selectedNames)) {
-          for (const name of selectedNames) {
+        // Safely handle selected_names with null checks
+        let selectedNames: string[] = []
+        
+        if (vote.selected_names) {
+          if (Array.isArray(vote.selected_names)) {
+            selectedNames = vote.selected_names
+          } else if (typeof vote.selected_names === 'string') {
+            // Handle JSON string stored as string (edge case)
+            try {
+              selectedNames = JSON.parse(vote.selected_names)
+            } catch (e) {
+              console.warn(`[vote] Failed to parse selected_names for vote ${vote.id}`)
+              selectedNames = []
+            }
+          }
+        }
+        
+        for (const name of selectedNames) {
+          if (name && typeof name === 'string') {
             const normalizedName = name.trim()
             if (normalizedName) {
               nameCounts[normalizedName] = (nameCounts[normalizedName] || 0) + 1
@@ -141,6 +158,7 @@ serve(async (req: Request) => {
 
       const supabase = createClient(supabaseUrl, supabaseServiceKey, {
         auth: { autoRefreshToken: false, persistSession: false },
+        db: { schema: 'baby_shower' }
       })
 
     // Parse and validate request body
@@ -230,18 +248,34 @@ serve(async (req: Request) => {
     const nameCounts: Record<string, number> = {}
     let totalVotes = 0
 
-    for (const vote of allVotes.data || []) {
-      const selectedNames = vote.selected_names as string[] | undefined
-      if (selectedNames && Array.isArray(selectedNames)) {
+      for (const vote of allVotes.data || []) {
+        // Safely handle selected_names with null checks
+        let selectedNames: string[] = []
+        
+        if (vote.selected_names) {
+          if (Array.isArray(vote.selected_names)) {
+            selectedNames = vote.selected_names
+          } else if (typeof vote.selected_names === 'string') {
+            // Handle JSON string stored as string (edge case)
+            try {
+              selectedNames = JSON.parse(vote.selected_names)
+            } catch (e) {
+              console.warn(`[vote] Failed to parse selected_names for vote ${vote.id}`)
+              selectedNames = []
+            }
+          }
+        }
+        
         for (const name of selectedNames) {
-          const normalizedName = name.trim()
-          if (normalizedName) {
-            nameCounts[normalizedName] = (nameCounts[normalizedName] || 0) + 1
-            totalVotes++
+          if (name && typeof name === 'string') {
+            const normalizedName = name.trim()
+            if (normalizedName) {
+              nameCounts[normalizedName] = (nameCounts[normalizedName] || 0) + 1
+              totalVotes++
+            }
           }
         }
       }
-    }
 
     const results: VoteResult[] = Object.entries(nameCounts)
       .map(([name, count]) => ({

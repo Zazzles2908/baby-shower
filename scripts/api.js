@@ -29,6 +29,7 @@
 
         // Add Supabase authorization header
         if (SUPABASE_ANON_KEY) {
+            headers['apikey'] = SUPABASE_ANON_KEY;
             headers['Authorization'] = `Bearer ${SUPABASE_ANON_KEY}`;
         }
 
@@ -169,7 +170,7 @@
      * Get current vote counts
      */
     async function getVoteCounts() {
-        const url = `${SUPABASE_URL}/functions/v1/vote`;
+        const url = `${SUPABASE_URL}/functions/vote`;
         
         return apiFetch(url, {
             method: 'GET',

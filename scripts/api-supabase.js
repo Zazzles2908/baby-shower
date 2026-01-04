@@ -252,7 +252,7 @@
      * Get current vote counts for baby names
      */
     async function getVoteCounts() {
-        const url = `${SUPABASE_URL}/functions/v1/vote`;
+        const url = `${SUPABASE_URL}/functions/vote`;
         
         return apiFetch(url, {
             method: 'GET',
