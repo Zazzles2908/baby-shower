@@ -90,7 +90,8 @@
         quiz: 'Pictures/New Images/Jazeel/chibi_jazeel_confused.png',
         advice: 'Pictures/New Images/Michelle/chibi_michelle_sweet_smile.png',
         voting: 'Pictures/New Images/Duo/chibi_duo_highfive.png',
-        'mom-vs-dad': 'Pictures/New Images/Duo/chibi_duo_highfive.png'
+        'mom-vs-dad': 'Pictures/New Images/Duo/chibi_duo_highfive.png',
+        'who-would-rather': 'Pictures/New Images/Duo/chibi_duo_highfive.png'
     };
 
     /**

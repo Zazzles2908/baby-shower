@@ -33,8 +33,50 @@
         preloadImages: preloadCriticalImages,
         getFallback: getFallbackImage,
         clearCache: clearImageCache,
-        getStats: getLoadingStats
+        getStats: getLoadingStats,
+        getImageUrl: getImageUrl
     };
+    
+    /**
+     * Get image URL for different image sources
+     * Provides backward compatibility for scripts expecting getImageUrl()
+     */
+    function getImageUrl(imagePath, size = 'original') {
+        // Handle empty or undefined paths
+        if (!imagePath) {
+            console.warn('[ImageService] getImageUrl called with empty path');
+            return null;
+        }
+        
+        // If it's already a full URL, return as-is
+        if (imagePath.startsWith('http')) {
+            return imagePath;
+        }
+        
+        // Map size variants to Supabase transform parameters
+        const sizeMap = {
+            'thumbnail': '?width=100&height=100',
+            'small': '?width=200&height=200',
+            'medium': '?width=400&height=400',
+            'large': '?width=800&height=800',
+            'original': ''
+        };
+        
+        const sizeSuffix = sizeMap[size] || '';
+        
+        // Handle Supabase storage paths
+        if (imagePath.includes('baby-shower-pictures')) {
+            return `https://bkszmvfsfgvdwzacgmfz.supabase.co/storage/v1/object/public/${imagePath}${sizeSuffix}`;
+        }
+        
+        // Local images (starting with /)
+        if (imagePath.startsWith('/')) {
+            return imagePath;
+        }
+        
+        // Default: return the path as-is
+        return imagePath;
+    }
     
     /**
      * Load image with comprehensive retry and fallback logic

@@ -940,7 +940,6 @@
 
         // Set up global error handlers
         setupGlobalErrorHandlers();
-        setupUnhandledRejectionHandler();
         setupFetchInterceptor();
         setupImageErrorHandler();
 
