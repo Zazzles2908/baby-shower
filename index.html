@@ -493,21 +493,35 @@
     </div>
     
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- Enhanced Error Monitoring (must load first) -->
+    <script src="scripts/error-monitor.js"></script>
+
+    <!-- Configuration -->
     <script src="scripts/config.js"></script>
     <script src="scripts/security.js"></script>
-    <script src="scripts/image-service.js"></script>
+
+    <!-- Enhanced Services (replacement for originals) -->
+    <script src="scripts/image-service-enhanced.js"></script>
     <script src="scripts/gallery.js"></script>
-    <script src="scripts/api-supabase.js"></script>
+    <script src="scripts/api-supabase-enhanced.js"></script>
+
+    <!-- Core Application -->
     <script src="scripts/surprises.js"></script>
     <script src="scripts/anime-characters.js"></script>
     <script src="scripts/main.js"></script>
+
+    <!-- Activity Scripts -->
     <script src="scripts/guestbook.js"></script>
     <script src="scripts/pool.js"></script>
     <script src="scripts/quiz.js"></script>
     <script src="scripts/advice.js"></script>
     <script src="scripts/voting.js"></script>
+
+    <!-- Enhanced Game Scripts -->
+    <script src="scripts/realtime-manager-enhanced.js"></script>
     <script src="scripts/mom-vs-dad-simplified.js"></script>
     <script src="scripts/who-would-rather.js"></script>
+    <script src="scripts/game-init-enhanced.js"></script>
 
     <!-- Activity Ticker -->
     <div id="activity-ticker" class="activity-ticker hidden" role="status" aria-live="polite" aria-atomic="true">
