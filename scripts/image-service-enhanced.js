@@ -421,7 +421,8 @@
             mutations.forEach((mutation) => {
                 mutation.addedNodes.forEach((node) => {
                     if (node.nodeType === 1) { // Element node
-                        const images = node.querySelectorAll ? node.querySelectorAll('img') : [];
+                        // Convert NodeList to Array for push support
+                        const images = node.querySelectorAll ? Array.from(node.querySelectorAll('img')) : [];
                         if (node.tagName === 'IMG') images.push(node);
                         
                         images.forEach(img => {
