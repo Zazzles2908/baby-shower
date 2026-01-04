@@ -31,7 +31,12 @@ try {
             const eqIndex = trimmedLine.indexOf('=');
             if (eqIndex > 0) {
                 const key = trimmedLine.substring(0, eqIndex).trim();
-                const value = trimmedLine.substring(eqIndex + 1).trim();
+                let value = trimmedLine.substring(eqIndex + 1).trim();
+                // Remove wrapping quotes if present
+                if ((value.startsWith('"') && value.endsWith('"')) || 
+                    (value.startsWith("'") && value.endsWith("'"))) {
+                    value = value.slice(1, -1);
+                }
                 envVars[key] = value;
             }
         }
@@ -62,21 +67,21 @@ if (!supabaseUrl || !supabaseAnonKey) {
     process.exit(1);
 }
 
-// Inject environment variables before the closing </head> tag
+// Inject environment variables before config.js
 const envScript = `
     <script>
         // Environment variables injected at build time
         window.ENV = window.ENV || {};
-        window.ENV.NEXT_PUBLIC_SUPABASE_URL = '${supabaseUrl}';
-        window.ENV.NEXT_PUBLIC_SUPABASE_ANON_KEY = '${supabaseAnonKey}';
-        window.ENV.SUPABASE_SERVICE_ROLE_KEY = '${supabaseServiceKey}';
+        window.ENV.NEXT_PUBLIC_SUPABASE_URL = ${supabaseUrl ? `'${supabaseUrl.replace(/'/g, "\\'")}'` : 'null'};
+        window.ENV.NEXT_PUBLIC_SUPABASE_ANON_KEY = ${supabaseAnonKey ? `'${supabaseAnonKey.replace(/'/g, "\\'")}'` : 'null'};
+        window.ENV.SUPABASE_SERVICE_ROLE_KEY = ${supabaseServiceKey ? `'${supabaseServiceKey.replace(/'/g, "\\'")}'` : 'null'};
         
         console.log('[ENV] Supabase URL configured:', window.ENV.NEXT_PUBLIC_SUPABASE_URL ? '***configured***' : 'missing');
         console.log('[ENV] Supabase Anon Key configured:', window.ENV.NEXT_PUBLIC_SUPABASE_ANON_KEY ? '***configured***' : 'missing');
     </script>
 `;
 
-html = html.replace('</head>', `${envScript}</head>`);
+html = html.replace('<script src="scripts/config.js"></script>', `${envScript}<script src="scripts/config.js"></script>`);
 
 // Write the modified HTML
 fs.writeFileSync(indexPath, html);

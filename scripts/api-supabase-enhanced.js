@@ -48,8 +48,8 @@
                 }
                 
                 // Check if @supabase/supabase-js is loaded via module
-                if (typeof root.SupabaseClient !== 'undefined') {
-                    supabaseClient = new root.SupabaseClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+                if (typeof root.supabase !== 'undefined' && typeof root.supabase.createClient === 'function') {
+                    supabaseClient = root.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
                         auth: {
                             autoRefreshToken: true,
                             persistSession: true,
@@ -72,7 +72,7 @@
                 if (attempt === 1) {
                     console.log('[API] Attempting to load Supabase client dynamically...');
                     await loadSupabaseClient();
-                    if (typeof root.SupabaseClient !== 'undefined') {
+                    if (typeof root.supabase !== 'undefined' && typeof root.supabase.createClient === 'function') {
                         continue; // Retry with newly loaded client
                     }
                 }
@@ -118,7 +118,7 @@
             }
 
             const script = document.createElement('script');
-            script.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js';
+            script.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';
             script.async = true;
             
             script.onload = () => {
@@ -166,7 +166,99 @@
      * Build Supabase Edge Function URL
      */
     function getSupabaseFunctionUrl(functionName) {
-        return `${SUPABASE_URL}/functions/${functionName}`;
+        return `${SUPABASE_URL}/functions/v1/${functionName}`;
+    }
+
+    /**
+     * Submit guestbook entry
+     */
+    async function submitGuestbook(data) {
+        const url = getSupabaseFunctionUrl('guestbook');
+        return apiFetch(url, {
+            method: 'POST',
+            body: JSON.stringify({
+                name: data.name?.trim() || '',
+                message: data.message?.trim() || '',
+                relationship: data.relationship?.trim() || '',
+            }),
+        });
+    }
+
+    /**
+     * Submit vote for baby name
+     */
+    async function submitVote(data) {
+        const url = getSupabaseFunctionUrl('vote');
+        return apiFetch(url, {
+            method: 'POST',
+            body: JSON.stringify({
+                name: data.name?.trim() || '',
+                votes: data.votes || [],
+            }),
+        });
+    }
+
+    /**
+     * Submit baby pool prediction
+     */
+    async function submitPool(data) {
+        const url = getSupabaseFunctionUrl('pool');
+        return apiFetch(url, {
+            method: 'POST',
+            body: JSON.stringify({
+                name: data.name?.trim() || '',
+                prediction: data.prediction || data.time || '',
+                dueDate: data.due_date || data.dateGuess || '',
+                weight: parseFloat(data.weight) || parseFloat(data.weightGuess) || 0,
+                length: parseFloat(data.length) || parseFloat(data.lengthGuess) || 0,
+            }),
+        });
+    }
+
+    /**
+     * Submit quiz answers
+     */
+    async function submitQuiz(data) {
+        const url = getSupabaseFunctionUrl('quiz');
+        return apiFetch(url, {
+            method: 'POST',
+            body: JSON.stringify({
+                name: data.name?.trim() || '',
+                score: data.score || 0,
+                totalQuestions: data.totalQuestions || 5,
+                answers: data.answers || {},
+            }),
+        });
+    }
+
+    /**
+     * Submit advice for parents
+     */
+    async function submitAdvice(data) {
+        const url = getSupabaseFunctionUrl('advice');
+        return apiFetch(url, {
+            method: 'POST',
+            body: JSON.stringify({
+                name: data.name?.trim() || '',
+                relationship: data.relationship?.trim() || '',
+                advice: data.advice?.trim() || '',
+            }),
+        });
+    }
+
+    /**
+     * Generic submit function for any activity
+     */
+    function submit(activityType, data) {
+        switch(activityType) {
+            case 'guestbook': return submitGuestbook(data);
+            case 'vote': return submitVote(data);
+            case 'baby_pool':
+            case 'pool': return submitPool(data);
+            case 'quiz': return submitQuiz(data);
+            case 'advice': return submitAdvice(data);
+            default: return Promise.reject(new Error(`Unknown activity type: ${activityType}`));
+        }
     }
 
     /**
@@ -356,7 +448,7 @@
         }
     }
 
-    // Create API object with all functions (rest of existing code)
+    // Create API object with functions actually defined in this file
     const API = {
         // Submit functions (via Edge Functions)
         submitGuestbook,
@@ -365,49 +457,9 @@
         submitQuiz,
         submitAdvice,
         submit,
-        
-        // Read functions (from baby_shower schema)
-        getVoteCounts,
-        getSubmissions,
-        getAllSubmissions,
-        getAllGuestbook,
-        getAllPool,
-        getAllQuiz,
-        getAllAdvice,
-        getAllVotes,
-        
-        // Realtime subscription functions
-        subscribeToGuestbook,
-        subscribeToPool,
-        subscribeToQuiz,
-        subscribeToAdvice,
-        subscribeToAllSubmissions,
-        
-        // Utility functions
-        getApiConfig,
-        initializeAPI,
-        performHealthCheck,
-        getSupabaseClient,
-        
-        // Expose transform function for external use
-        transformSubmission: transformSubmissionToFrontendFormat,
-        
-        // Expose query helper
-        queryBabyShower: queryBabyShowerSubmissions
     };
 
-    // Legacy function name for compatibility
-    function submit(activityType, data) {
-        switch(activityType) {
-            case 'guestbook': return submitGuestbook(data);
-            case 'vote': return submitVote(data);
-            case 'baby_pool':
-            case 'pool': return submitPool(data);
-            case 'quiz': return submitQuiz(data);
-            case 'advice': return submitAdvice(data);
-            default: return Promise.reject(new Error(`Unknown activity type: ${activityType}`));
-        }
-    }
+    // Legacy function name for compatibility (removed - functions now in main.js)
 
     // Attach to global scope
     if (typeof root !== 'undefined') {

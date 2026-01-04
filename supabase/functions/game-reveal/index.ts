@@ -1,15 +1,14 @@
 /**
- * Mom vs Dad Game - Game Reveal Function (Simplified Lobby Architecture)
+ * Mom vs Dad Game - Game Reveal Function (Unified Schema)
+ * Updated to use game_* tables from 20260103_mom_vs_dad_game_schema.sql
  * 
- * Purpose: Generate and display results for completed round, including AI roast commentary
+ * Purpose: Reveal round results and generate AI roast commentary
  * Trigger: POST /game-reveal
  * 
- * Logic Flow:
- * - Validates admin authorization
- * - Calculates vote percentages and determines crowd choice
- * - Generates Moonshot AI roast commentary
- * - Updates round status to revealed
- * - Broadcasts round_reveal event via Supabase
+ * Schema Mapping:
+ * - lobby_key → session_code
+ * - admin_player_id → admin_code (4-digit PIN)
+ * - round_id → scenario_id
  */
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
@@ -24,9 +23,9 @@ import {
 } from '../_shared/security.ts'
 
 interface GameRevealRequest {
-  lobby_key: string
-  admin_player_id: string
-  round_id: string
+  session_code: string
+  admin_code: string
+  scenario_id: string
 }
 
 serve(async (req: Request) => {
@@ -74,13 +73,9 @@ serve(async (req: Request) => {
 
     // Input validation
     const validation = validateInput(body, {
-      lobby_key: { 
-        type: 'string', 
-        required: true, 
-        pattern: /^(LOBBY-A|LOBBY-B|LOBBY-C|LOBBY-D)$/ 
-      },
-      admin_player_id: { type: 'string', required: true },
-      round_id: { type: 'string', required: true }
+      session_code: { type: 'string', required: true, minLength: 4, maxLength: 8 },
+      admin_code: { type: 'string', required: true, minLength: 4, maxLength: 4 },
+      scenario_id: { type: 'string', required: true }
     })
 
     if (!validation.isValid) {
@@ -88,156 +83,123 @@ serve(async (req: Request) => {
       return createErrorResponse('Validation failed', 400, validation.errors)
     }
 
-    const { lobby_key, admin_player_id, round_id } = validation.sanitized
+    const { session_code, admin_code, scenario_id } = validation.sanitized
 
-    // Fetch lobby
-    const { data: lobby, error: lobbyError } = await supabase
-      .from('baby_shower.mom_dad_lobbies')
+    // Fetch session
+    const { data: session, error: sessionError } = await supabase
+      .from('baby_shower.game_sessions')
       .select('*')
-      .eq('lobby_key', lobby_key)
+      .eq('session_code', session_code)
       .single()
 
-    if (lobbyError || !lobby) {
-      console.error('Game Reveal - Lobby not found:', lobby_key)
-      return createErrorResponse('Lobby not found', 404)
+    if (sessionError || !session) {
+      console.error('Game Reveal - Session not found:', session_code)
+      return createErrorResponse('Session not found', 404)
     }
 
     // Verify admin authorization
-    if (lobby.admin_player_id !== admin_player_id) {
-      console.error('Game Reveal - Unauthorized reveal attempt:', { 
-        lobby_admin: lobby.admin_player_id, 
-        request_admin: admin_player_id 
-      })
-      return createErrorResponse('Only admin can reveal round results', 403)
+    if (session.admin_code !== admin_code) {
+      console.error('Game Reveal - Invalid admin code')
+      return createErrorResponse('Invalid admin code', 403)
     }
 
-    // Fetch round
-    const { data: round, error: roundError } = await supabase
-      .from('baby_shower.mom_dad_game_sessions')
+    // Fetch scenario
+    const { data: scenario, error: scenarioError } = await supabase
+      .from('baby_shower.game_scenarios')
       .select('*')
-      .eq('id', round_id)
-      .eq('lobby_id', lobby.id)
+      .eq('id', scenario_id)
+      .eq('session_id', session.id)
       .single()
 
-    if (roundError || !round) {
-      console.error('Game Reveal - Round not found:', round_id)
-      return createErrorResponse('Round not found', 404)
+    if (scenarioError || !scenario) {
+      console.error('Game Reveal - Scenario not found:', scenario_id)
+      return createErrorResponse('Scenario not found', 404)
     }
 
-    if (round.status !== 'voting') {
-      console.error('Game Reveal - Round already revealed:', round.status)
-      return createErrorResponse('Round has already been revealed', 400)
+    // Get vote statistics
+    const { data: voteStats, error: statsError } = await supabase
+      .rpc('baby_shower.calculate_vote_stats', { scenario_id: scenario_id })
+      .single()
+
+    if (statsError) {
+      console.error('Game Reveal - Failed to get vote stats:', statsError)
+      throw statsError
     }
 
-    // Determine crowd choice based on vote percentages
-    const crowdChoice = round.mom_percentage > round.dad_percentage ? 'mom' : 
-                       (round.dad_percentage > round.mom_percentage ? 'dad' : 'tie')
+    // Determine crowd choice
+    const crowdChoice = voteStats.mom_percentage > voteStats.dad_percentage ? 'mom' : 
+                       (voteStats.dad_percentage > voteStats.mom_percentage ? 'dad' : 'tie')
 
-    // For simplified version, we use crowd choice as actual answer
-    // In a full implementation, this would come from parent input
-    const actualChoice = crowdChoice // Simplified: crowd's choice becomes reality
+    // For simplified version, use crowd choice as actual answer
+    // In full version, this would come from parent input in game_answers
+    const actualChoice = crowdChoice
+    const perceptionGap = Math.abs(voteStats.mom_percentage - voteStats.dad_percentage)
 
-    // Calculate perception gap (difference between expectation and reality)
-    // Since we're using crowd choice as actual, gap is 0 for now
-    // In full version: gap = abs(crowd_prediction - actual_answer)
-    const perceptionGap = 0
-
-    // Generate roast commentary using Moonshot AI or fallback
-    const roastCommentary = await generateRoastCommentary(
-      round.mom_percentage,
-      round.dad_percentage,
+    // Generate roast commentary (simplified - no AI in this version)
+    const roastCommentary = generateRoastCommentary(
+      voteStats.mom_percentage,
+      voteStats.dad_percentage,
       crowdChoice,
-      actualChoice,
-      perceptionGap,
-      round.scenario_text
+      perceptionGap
     )
 
-    // Determine particle effect based on vote distribution
-    const particleEffect = determineParticleEffect(round.mom_percentage, round.dad_percentage)
-
-    // Update round to revealed status
-    const { error: updateRoundError } = await supabase
-      .from('baby_shower.mom_dad_game_sessions')
-      .update({
-        status: 'revealed',
+    // Insert results
+    const { error: insertError } = await supabase
+      .from('baby_shower.game_results')
+      .insert({
+        scenario_id: scenario_id,
+        mom_votes: voteStats.mom_count,
+        dad_votes: voteStats.dad_count,
         crowd_choice: crowdChoice,
-        actual_mom_answer: actualChoice === 'mom' ? 'mom' : null,
-        actual_dad_answer: actualChoice === 'dad' ? 'dad' : null,
+        actual_choice: actualChoice,
         perception_gap: perceptionGap,
         roast_commentary: roastCommentary,
-        particle_effect: particleEffect,
+        roast_provider: 'fallback',
         revealed_at: new Date().toISOString()
       })
-      .eq('id', round_id)
 
-    if (updateRoundError) {
-      console.error('Game Reveal - Round update failed:', updateRoundError)
-      throw updateRoundError
+    if (insertError) {
+      console.error('Game Reveal - Failed to insert results:', insertError)
+      throw insertError
     }
 
-    // Fetch updated round
-    const { data: updatedRound } = await supabase
-      .from('baby_shower.mom_dad_game_sessions')
-      .select('*')
-      .eq('id', round_id)
-      .single()
+    // Deactivate scenario
+    await supabase
+      .from('baby_shower.game_scenarios')
+      .update({ is_active: false })
+      .eq('id', scenario_id)
 
-    // Check if this was the last round
-    const { data: allRounds } = await supabase
-      .from('baby_shower.mom_dad_game_sessions')
-      .select('id, status')
-      .eq('lobby_id', lobby.id)
-      .order('round_number', { ascending: true })
-
-    const remainingRounds = allRounds?.filter(r => r.status === 'voting' || r.status === 'revealed').length || 0
-    const isGameComplete = remainingRounds === 0 || (allRounds?.length === round.round_number && round.round_number === lobby.total_rounds)
-
-    // If game is complete, update lobby status
-    if (isGameComplete) {
-      await supabase
-        .from('baby_shower.mom_dad_lobbies')
-        .update({ 
-          status: 'completed',
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', lobby.id)
-    }
-
-    // Broadcast round reveal event
+    // Broadcast reveal event
     try {
-      await supabase.channel(`lobby:${lobby_key}`)
+      await supabase.channel(`game:${session_code}`)
         .send({
           type: 'broadcast',
           event: 'round_reveal',
           payload: {
-            round: updatedRound,
+            scenario_id,
+            scenario: scenario,
+            vote_stats: voteStats,
             crowd_choice: crowdChoice,
             actual_choice: actualChoice,
             perception_gap: perceptionGap,
-            roast_commentary: roastCommentary,
-            particle_effect: particleEffect,
-            is_game_complete: isGameComplete
+            roast_commentary: roastCommentary
           }
         })
       console.log('Game Reveal - Broadcasted round_reveal event')
     } catch (broadcastError) {
-      console.warn('Game Reveal - Round reveal broadcast failed:', broadcastError)
+      console.warn('Game Reveal - Reveal broadcast failed:', broadcastError)
     }
 
-    console.log('Game Reveal - Successfully revealed round:', { 
-      round_id, 
-      crowd_choice: crowdChoice,
-      is_game_complete: isGameComplete 
-    })
+    console.log('Game Reveal - Successfully revealed round:', { scenario_id, crowd_choice: crowdChoice })
 
     return createSuccessResponse({
       message: 'Round revealed successfully',
-      round: updatedRound,
+      scenario: scenario,
+      vote_stats: voteStats,
       crowd_choice: crowdChoice,
       actual_choice: actualChoice,
-      roast_commentary: roastCommentary,
-      particle_effect: particleEffect,
-      is_game_complete: isGameComplete
+      perception_gap: perceptionGap,
+      roast_commentary: roastCommentary
     }, 200)
 
   } catch (error) {
@@ -247,124 +209,16 @@ serve(async (req: Request) => {
 })
 
 /**
- * Generate roast commentary using Moonshot AI or fallback to defaults
+ * Generate roast commentary (fallback - replace with AI in production)
  */
-async function generateRoastCommentary(
-  momPercentage: number,
-  dadPercentage: number,
-  crowdChoice: string,
-  actualChoice: string,
-  perceptionGap: number,
-  scenarioText: string
-): Promise<string> {
-  const kimiKey = Deno.env.get('KIMI_API_KEY')
-  
-  if (!kimiKey) {
-    console.warn('Generate Roast - Moonshot not configured, using defaults')
-    return getDefaultRoast(momPercentage, dadPercentage, crowdChoice)
-  }
-
-  try {
-    const response = await fetch('https://api.moonshot.cn/v1/chat/completions', {
-      method: 'POST',
-      headers: { 
-        'Authorization': `Bearer ${kimiKey}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        model: 'kimi-k2-thinking',
-        messages: [
-          {
-            role: 'system',
-            content: `You are a sassy but loving barnyard host at a baby shower game.
-                     Your job is to roast the crowd's predictions playfully.
-                     Keep it family-friendly, funny, and short (1-2 sentences).
-                     Use a warm, teasing tone that makes everyone laugh.`
-          },
-          {
-            role: 'user',
-            content: `The crowd predicted: ${crowdChoice} would win (${Math.round(crowdChoice === 'mom' ? momPercentage : dadPercentage)}%).
-                     Reality: ${actualChoice} won!
-                     
-                     Scenario: ${scenarioText}
-                     
-                     Generate a short, playful roast teasing the crowd. Be funny but kind!`
-          }
-        ],
-        temperature: 0.8,
-        max_tokens: 100
-      })
-    })
-
-    if (!response.ok) {
-      const errorText = await response.text()
-      console.error('Generate Roast - Moonshot API error:', response.status, errorText)
-      throw new Error(`Moonshot API error: ${response.status}`)
-    }
-
-    const data = await response.json()
-    const roast = data.choices?.[0]?.message?.content?.trim()
-
-    if (roast && roast.length > 0) {
-      console.log('Generate Roast - Successfully generated roast from Moonshot')
-      return roast
-    }
-
-    return getDefaultRoast(momPercentage, dadPercentage, crowdChoice)
-    
-  } catch (error) {
-    console.error('Generate Roast - Moonshot request failed, using defaults:', error)
-    return getDefaultRoast(momPercentage, dadPercentage, crowdChoice)
-  }
-}
-
-/**
- * Default roast commentary when AI is unavailable
- */
-function getDefaultRoast(momPercentage: number, dadPercentage: number, crowdChoice: string): string {
-  const gap = Math.abs(momPercentage - dadPercentage)
-  
-  const defaultRoasts = [
-    { gap: 0, roast: "Well folks, looks like we're evenly split! Even the universe is undecided!" },
-    { gap: 10, roast: "The crowd thinks they know best, but plot twist: nobody knows anything about babies!" },
-    { gap: 30, roast: "Your parenting intuition score: needs work! Better luck next round, folks!" },
-    { gap: 50, roast: "Wow, that's a landslide! Either the crowd is brilliant or someone needs to rethink their life choices!" },
-    { gap: 70, roast: "The crystal ball was cloudy today, folks! Even grandma's intuition failed!" },
-    { gap: 100, roast: "100% consensus! Either you're all psychic or this was way too obvious!" }
-  ]
-
-  // Find appropriate roast based on gap
-  const applicableRoast = defaultRoasts
-    .sort((a, b) => b.gap - a.gap)
-    .find(r => gap >= r.gap) || defaultRoasts[0]
-
-  // Add scenario-specific flavor
-  const flavorTexts = [
-    " Time to call the parenting experts!",
-    " Someone's been watching too many parenting videos!",
-    " The baby is definitely judging your choices right now.",
-    " Remember this moment next time you're confident!",
-    " This is why we can't have nice things!"
-  ]
-
-  const randomFlavor = flavorTexts[Math.floor(Math.random() * flavorTexts.length)]
-
-  return applicableRoast.roast + randomFlavor
-}
-
-/**
- * Determine particle effect based on vote distribution
- */
-function determineParticleEffect(momPercentage: number, dadPercentage: number): string {
-  const gap = Math.abs(momPercentage - dadPercentage)
-  
-  if (gap > 60) {
-    return 'fireworks' // Landslide victory
-  } else if (gap > 40) {
-    return 'confetti' // Clear winner
-  } else if (gap > 20) {
-    return 'stars' // Close race
+function generateRoastCommentary(momPct: number, dadPct: number, crowdChoice: string, perceptionGap: number): string {
+  if (perceptionGap < 10) {
+    return "🎯 Spot on! The crowd knew exactly what would happen!"
+  } else if (perceptionGap < 30) {
+    return "🤔 Close, but the reality was a bit different..."
+  } else if (perceptionGap < 50) {
+    return "😱 Wow, the crowd was WAY off! What were you thinking?!"
   } else {
-    return 'hearts' // Very close race
+    return "🤡 Complete disaster! The crowd has NO idea how this family works!"
   }
 }

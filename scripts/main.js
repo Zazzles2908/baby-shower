@@ -1211,7 +1211,9 @@ async function submitQuiz(data) {
             puzzle3: data.puzzle3,
             puzzle4: data.puzzle4,
             puzzle5: data.puzzle5
-        }
+        },
+        score: data.score || 0,
+        totalQuestions: data.totalQuestions || 5
     });
 }
 

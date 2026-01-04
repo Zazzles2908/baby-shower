@@ -56,6 +56,9 @@ serve(async (req: Request) => {
         autoRefreshToken: false,
         persistSession: false,
       },
+      db: {
+        schema: 'baby_shower'
+      }
     })
 
     // Parse and validate request body
@@ -80,18 +83,18 @@ serve(async (req: Request) => {
     // Use sanitized data from validation
     const { name: sanitizedName, message: sanitizedMessage, relationship: sanitizedRelationship } = validation.sanitized
 
-    // Count total entries in baby_shower.guestbook BEFORE insert to check milestone
+    // Count total entries in guestbook BEFORE insert to check milestone
     const { count: totalCount } = await supabase
-      .from('baby_shower.guestbook')
+      .from('guestbook')
       .select('*', { count: 'exact', head: true })
     const currentCount = totalCount || 0
     const isMilestone = currentCount + 1 === 50
 
-    console.log(`[guestbook] Writing to baby_shower.guestbook, current count: ${currentCount}`)
+    console.log(`[guestbook] Writing to guestbook, current count: ${currentCount}`)
 
-    // Insert into baby_shower.guestbook table with dedicated columns
+    // Insert into guestbook table with dedicated columns
     const { data, error } = await supabase
-      .from('baby_shower.guestbook')
+      .from('guestbook')
       .insert({
         guest_name: sanitizedName,
         relationship: sanitizedRelationship,
@@ -102,8 +105,8 @@ serve(async (req: Request) => {
       .single()
 
     if (error) {
-      console.error('Supabase insert error:', error)
-      return createErrorResponse('Database operation failed', 500)
+      console.error('Supabase insert error:', JSON.stringify(error, null, 2))
+      return createErrorResponse('Database operation failed: ' + error.message, 500)
     }
 
     console.log(`[guestbook] Successfully inserted entry with id: ${data.id}`)

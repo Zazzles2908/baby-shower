@@ -24,6 +24,45 @@
 
 ---
 
+## 🔐 CRITICAL SECURITY RULES (Must Read)
+
+### Never Expose Sensitive Credentials
+
+**ABSOLUTELY FORBIDDEN:**
+- ❌ Never hardcode Supabase credentials in HTML/JS files
+- ❌ Never commit `.env.local` to git (already in `.gitignore`)
+- ❌ Never expose `SUPABASE_SERVICE_ROLE_KEY` to client-side code
+- ❌ Never commit API keys, tokens, or passwords to the repository
+
+**Correct Pattern:**
+```html
+<!-- ❌ WRONG - Never do this -->
+<script>
+  window.ENV.SUPABASE_SERVICE_ROLE_KEY = 'eyJ...secret...';
+</script>
+
+<!-- ✅ CORRECT - Let inject-env.js handle it -->
+<script src="inject-env.js"></script>
+```
+
+### If Credentials Are Exposed:
+1. **IMMEDIATELY rotate all exposed credentials** in respective services
+2. **Never rely on "it might not have been accessed"** - assume compromise
+3. **Update all environment variables** with new credentials
+4. **Review access logs** for unauthorized usage
+
+### Database Security
+- **All tables MUST have RLS enabled** (Row Level Security)
+- **Service role key stays server-side** - never in browser
+- **Validate all inputs** in Edge Functions (both client and server)
+- **Use anon key for public operations** - never service_role
+
+---
+
+## 🎯 Design Vision (Read First)
+
+---
+
 ## 🛠️ Development Commands
 
 ### Development Server
@@ -895,6 +934,43 @@ if (perceptionGap > 50) {
 
 ---
 
-**Document Version: 3.0**  
-**Purpose: Complete Development Guide with Game Implementation**  
-**Read this before implementing Mom vs Dad game features**
+## 📊 SCHEMA STANDARDS (2026-01-05 Update)
+
+### Unified Table Naming Convention
+
+**USE THESE TABLE NAMES (from `20260103_mom_vs_dad_game_schema.sql`):**
+- ✅ `baby_shower.game_sessions` (game sessions and state)
+- ✅ `baby_shower.game_scenarios` (AI-generated questions)
+- ✅ `baby_shower.game_votes` (guest votes)
+- ✅ `baby_shower.game_answers` (parent answers)
+- ✅ `baby_shower.game_results` (perception gap analysis)
+
+**DO NOT USE THESE (deprecated lobby system):**
+- ❌ `baby_shower.mom_dad_lobbies`
+- ❌ `baby_shower.mom_dad_players`
+- ❌ `baby_shower.mom_dad_game_sessions`
+
+### Schema Conflict Resolution
+
+**Issue Found (2026-01-05):** Two parallel implementations with incompatible schemas.
+
+**Resolution:** Use the NEW `game_*` tables from the migration. Update all Edge Functions to use these tables.
+
+**Functions Updated:**
+- ✅ `game-session/index.ts` - Uses `game_sessions`
+- ✅ `game-scenario/index.ts` - Uses `game_scenarios`
+
+**Functions Requiring Update:**
+- ⚠️ `game-vote/index.ts` - Change `mom_dad_lobbies` → `game_sessions`
+- ⚠️ `game-start/index.ts` - Change `mom_dad_*` → `game_*`
+- ⚠️ `game-reveal/index.ts` - Change `mom_dad_*` → `game_*`
+- ⚠️ `lobby-status/index.ts` - Change `mom_dad_*` → `game_*`
+- ⚠️ `lobby-create/index.ts` - Change `mom_dad_*` → `game_*`
+
+**Action Required:** Apply migration `20260103_mom_vs_dad_game_schema.sql` to database, then update the functions above.
+
+---
+
+**Document Version: 3.2**  
+**Purpose: Complete Development Guide with Game Implementation + Security Guidelines**  
+**Added: Security guidelines, schema conflict resolution, unified table naming**

@@ -1,15 +1,14 @@
 /**
- * Mom vs Dad Game - Game Vote Function (Simplified Lobby Architecture)
+ * Mom vs Dad Game - Game Vote Function (Unified Schema)
+ * Updated to use game_* tables from 20260103_mom_vs_dad_game_schema.sql
  * 
  * Purpose: Submit vote for current scenario, update vote counts in real-time
  * Trigger: POST /game-vote
  * 
- * Logic Flow:
- * - Validates player is in lobby and game is active
- * - Records player vote and updates player's ready status
- * - Updates vote counts in game session
- * - Checks if all players have voted
- * - Broadcasts vote_update event via Supabase
+ * Schema Mapping:
+ * - lobby_key → session_code (from game_sessions)
+ * - round_id → scenario_id (from game_scenarios)
+ * - player_id + current_vote → game_votes table
  */
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
@@ -24,10 +23,10 @@ import {
 } from '../_shared/security.ts'
 
 interface GameVoteRequest {
-  lobby_key: string
-  player_id: string
-  round_id: string
-  vote: 'mom' | 'dad'
+  session_code: string  // Changed from lobby_key
+  guest_name: string    // Changed from player_id
+  scenario_id: string   // Changed from round_id
+  vote_choice: 'mom' | 'dad'  // Changed from vote
 }
 
 serve(async (req: Request) => {
@@ -73,16 +72,17 @@ serve(async (req: Request) => {
       return createErrorResponse('Invalid JSON in request body', 400)
     }
 
-    // Input validation
+    // Input validation - updated for new schema
     const validation = validateInput(body, {
-      lobby_key: { 
+      session_code: { 
         type: 'string', 
         required: true, 
-        pattern: /^(LOBBY-A|LOBBY-B|LOBBY-C|LOBBY-D)$/ 
+        minLength: 4,
+        maxLength: 8
       },
-      player_id: { type: 'string', required: true },
-      round_id: { type: 'string', required: true },
-      vote: { type: 'string', required: true, pattern: /^(mom|dad)$/ }
+      guest_name: { type: 'string', required: true, minLength: 1, maxLength: 100 },
+      scenario_id: { type: 'string', required: true },  // UUID format
+      vote_choice: { type: 'string', required: true, pattern: /^(mom|dad)$/ }
     })
 
     if (!validation.isValid) {
@@ -90,142 +90,99 @@ serve(async (req: Request) => {
       return createErrorResponse('Validation failed', 400, validation.errors)
     }
 
-    const { lobby_key, player_id, round_id, vote } = validation.sanitized
+    const { session_code, guest_name, scenario_id, vote_choice } = validation.sanitized
 
-    // Fetch lobby
-    const { data: lobby, error: lobbyError } = await supabase
-      .from('baby_shower.mom_dad_lobbies')
+    // Fetch session (replaces lobby lookup)
+    const { data: session, error: sessionError } = await supabase
+      .from('baby_shower.game_sessions')
       .select('*')
-      .eq('lobby_key', lobby_key)
+      .eq('session_code', session_code)
       .single()
 
-    if (lobbyError || !lobby) {
-      console.error('Game Vote - Lobby not found:', lobby_key)
-      return createErrorResponse('Lobby not found', 404)
+    if (sessionError || !session) {
+      console.error('Game Vote - Session not found:', session_code)
+      return createErrorResponse('Session not found', 404)
     }
 
-    if (lobby.status !== 'active') {
-      console.error('Game Vote - Game not active:', lobby.status)
-      return createErrorResponse('Game is not active', 400)
+    if (session.status !== 'voting') {
+      console.error('Game Vote - Game not accepting votes:', session.status)
+      return createErrorResponse('Game is not accepting votes', 400)
     }
 
-    // Fetch player
-    const { data: player, error: playerError } = await supabase
-      .from('baby_shower.mom_dad_players')
+    // Fetch scenario (replaces round lookup)
+    const { data: scenario, error: scenarioError } = await supabase
+      .from('baby_shower.game_scenarios')
       .select('*')
-      .eq('id', player_id)
-      .eq('lobby_id', lobby.id)
-      .is('disconnected_at', null)
+      .eq('id', scenario_id)
+      .eq('session_id', session.id)
       .single()
 
-    if (playerError || !player) {
-      console.error('Game Vote - Player not found:', player_id)
-      return createErrorResponse('Player not found or not in lobby', 404)
+    if (scenarioError || !scenario) {
+      console.error('Game Vote - Scenario not found:', scenario_id)
+      return createErrorResponse('Scenario not found', 404)
     }
 
-    // Fetch game session (round)
-    const { data: round, error: roundError } = await supabase
-      .from('baby_shower.mom_dad_game_sessions')
-      .select('*')
-      .eq('id', round_id)
-      .eq('lobby_id', lobby.id)
-      .single()
-
-    if (roundError || !round) {
-      console.error('Game Vote - Round not found:', round_id)
-      return createErrorResponse('Round not found', 404)
+    if (!scenario.is_active) {
+      console.error('Game Vote - Scenario is not active')
+      return createErrorResponse('This scenario is no longer active', 400)
     }
 
-    if (round.status !== 'voting') {
-      console.error('Game Vote - Round not accepting votes:', round.status)
-      return createErrorResponse('Round is not accepting votes', 400)
+    // Check if guest already voted this scenario
+    const { data: existingVote, error: voteCheckError } = await supabase
+      .from('baby_shower.game_votes')
+      .select('id')
+      .eq('scenario_id', scenario_id)
+      .eq('guest_name', guest_name)
+      .maybeSingle()
+
+    if (voteCheckError) {
+      console.error('Game Vote - Vote check failed:', voteCheckError)
+      throw voteCheckError
     }
 
-    // Check if player already voted this round
-    if (player.current_vote) {
-      console.error('Game Vote - Player already voted:', player_id)
-      return createErrorResponse('You have already voted this round', 400)
+    if (existingVote) {
+      console.error('Game Vote - Guest already voted:', guest_name)
+      return createErrorResponse('You have already voted on this scenario', 400)
     }
 
-    // Update player with vote
-    const { error: updatePlayerError } = await supabase
-      .from('baby_shower.mom_dad_players')
-      .update({
-        current_vote: vote,
-        is_ready: true
+    // Insert vote into game_votes table
+    const { error: insertVoteError } = await supabase
+      .from('baby_shower.game_votes')
+      .insert({
+        scenario_id: scenario_id,
+        guest_name: guest_name,
+        vote_choice: vote_choice
       })
-      .eq('id', player_id)
 
-    if (updatePlayerError) {
-      console.error('Game Vote - Player update failed:', updatePlayerError)
-      throw updatePlayerError
+    if (insertVoteError) {
+      console.error('Game Vote - Vote insert failed:', insertVoteError)
+      throw insertVoteError
     }
 
-    // Update vote counts in game session
-    const newMomVotes = round.mom_votes + (vote === 'mom' ? 1 : 0)
-    const newDadVotes = round.dad_votes + (vote === 'dad' ? 1 : 0)
-    const totalVotes = newMomVotes + newDadVotes
-
-    // Calculate percentages
-    const momPercentage = totalVotes > 0 ? (newMomVotes / totalVotes) * 100 : 0
-    const dadPercentage = totalVotes > 0 ? (newDadVotes / totalVotes) * 100 : 0
-
-    const { error: updateRoundError } = await supabase
-      .from('baby_shower.mom_dad_game_sessions')
-      .update({
-        mom_votes: newMomVotes,
-        dad_votes: newDadVotes,
-        mom_percentage: Math.round(momPercentage * 100) / 100,
-        dad_percentage: Math.round(dadPercentage * 100) / 100
-      })
-      .eq('id', round_id)
-
-    if (updateRoundError) {
-      console.error('Game Vote - Round update failed:', updateRoundError)
-      throw updateRoundError
-    }
-
-    // Get all active players to check if everyone voted
-    const { data: allPlayers, error: playersError } = await supabase
-      .from('baby_shower.mom_dad_players')
-      .select('id, current_vote, player_type')
-      .eq('lobby_id', lobby.id)
-      .is('disconnected_at', null)
-
-    if (playersError) {
-      console.error('Game Vote - Failed to fetch players:', playersError)
-      throw playersError
-    }
-
-    const players = allPlayers || []
-    const votedPlayers = players.filter(p => p.current_vote !== null)
-    const allVoted = votedPlayers.length === players.length
-
-    // Fetch updated round data
-    const { data: updatedRound } = await supabase
-      .from('baby_shower.mom_dad_game_sessions')
-      .select('*')
-      .eq('id', round_id)
+    // Get updated vote counts using helper function
+    const { data: voteStats, error: statsError } = await supabase
+      .rpc('baby_shower.calculate_vote_stats', { scenario_id: scenario_id })
       .single()
 
-    // Broadcast vote update
+    if (statsError) {
+      console.warn('Game Vote - Could not get vote stats:', statsError)
+      // Continue without stats - not critical
+    }
+
+    // Broadcast vote update via realtime
     try {
-      await supabase.channel(`lobby:${lobby_key}`)
+      await supabase.channel(`game:${session_code}`)
         .send({
           type: 'broadcast',
           event: 'vote_update',
           payload: {
-            round_id,
-            player_id,
-            player_name: player.player_name,
-            vote,
-            mom_votes: newMomVotes,
-            dad_votes: newDadVotes,
-            mom_percentage: updatedRound?.mom_percentage,
-            dad_percentage: updatedRound?.dad_percentage,
-            voted_count: votedPlayers.length,
-            total_players: players.length,
-            all_voted: allVoted
+            scenario_id,
+            guest_name,
+            vote_choice,
+            mom_votes: voteStats?.mom_count || 0,
+            dad_votes: voteStats?.dad_count || 0,
+            mom_percentage: voteStats?.mom_percentage || 0,
+            dad_percentage: voteStats?.dad_percentage || 0
           }
         })
       console.log('Game Vote - Broadcasted vote_update event')
@@ -234,21 +191,18 @@ serve(async (req: Request) => {
     }
 
     console.log('Game Vote - Successfully recorded vote:', { 
-      player_id, 
-      vote, 
-      round: round_id,
-      mom_votes: newMomVotes,
-      dad_votes: newDadVotes,
-      all_voted: allVoted
+      guest_name, 
+      vote_choice, 
+      scenario_id,
+      mom_votes: voteStats?.mom_count,
+      dad_votes: voteStats?.dad_count
     })
 
     return createSuccessResponse({
       message: 'Vote recorded successfully',
-      vote,
-      round: updatedRound,
-      all_voted,
-      voted_count: votedPlayers.length,
-      total_players: players.length
+      vote_choice,
+      scenario_id,
+      vote_stats: voteStats
     }, 200)
 
   } catch (error) {

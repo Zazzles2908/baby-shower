@@ -22,7 +22,8 @@ interface QuizRequest {
 }
 
 serve(async (req: Request) => {
-  // Combine CORS and security headers
+  console.log('[quiz] Function starting...')
+  
   const headers = new Headers({
     ...CORS_HEADERS,
     ...SECURITY_HEADERS,
@@ -107,51 +108,43 @@ serve(async (req: Request) => {
     }
 
     const participantName = (validation.sanitized.name as string) || 'Anonymous Quiz Taker'
+    const percentage = Math.round((score / totalQuestions) * 100)
+    const answersData = validation.sanitized.answers as Record<string, string>
 
-    // Count total submissions in baby_shower.quiz_results BEFORE insert to check milestone
-    const { count: totalCount } = await supabase
-      .from('baby_shower.quiz_results')
-      .select('*', { count: 'exact', head: true })
-    const currentCount = totalCount || 0
-    const isMilestone = currentCount + 1 === 50
+    console.log(`[quiz] Inserting result via RPC`)
 
-    console.log(`[quiz] Writing result to baby_shower.quiz_results, current count: ${currentCount}`)
-
-    // Insert into baby_shower.quiz_results with dedicated columns
+    // Use existing RPC function to insert (bypasses RLS)
     const { data, error } = await supabase
-      .from('baby_shower.quiz_results')
-      .insert({
-        participant_name: participantName,
-        answers: validation.sanitized.answers,
-        score: score,
-        total_questions: totalQuestions,
-        percentage: Math.round((score / totalQuestions) * 100),
-        submitted_by: participantName,
+      .rpc('insert_quiz_result', {
+        p_name: participantName,
+        p_p1: answersData.puzzle1 || null,
+        p_p2: answersData.puzzle2 || null,
+        p_p3: answersData.puzzle3 || null,
+        p_p4: answersData.puzzle4 || null,
+        p_p5: answersData.puzzle5 || null,
+        p_score: score,
+        p_total: totalQuestions,
       })
-      .select()
-      .single()
 
     if (error) {
-      console.error('Supabase insert error:', error)
-      return createErrorResponse('Database operation failed', 500)
+      console.error('Supabase RPC error:', JSON.stringify(error, null, 2))
+      return createErrorResponse('Database operation failed', 500, { 
+        message: error.message,
+        details: error,
+        hint: error.hint || 'Check RPC function'
+      })
     }
 
-    console.log(`[quiz] Successfully inserted quiz result with id: ${data.id}`)
-
-    const percentage = Math.round((score / totalQuestions) * 100)
+    console.log(`[quiz] Successfully inserted quiz result with id: ${data[0]?.id}`)
 
     return createSuccessResponse({
-      id: data.id,
+      id: data[0]?.id,
       participant_name: participantName,
       score: score,
       total_questions: totalQuestions,
       percentage,
-      created_at: data.created_at,
-      milestone: isMilestone ? {
-        triggered: true,
-        threshold: 50,
-        message: '🎉 We hit 50 submissions! Cake time!'
-      } : undefined
+      created_at: data[0]?.created_at,
+      milestone: undefined
     }, 201)
 
   } catch (err) {

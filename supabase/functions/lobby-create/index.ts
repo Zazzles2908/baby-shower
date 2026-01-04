@@ -1,15 +1,13 @@
 /**
- * Mom vs Dad Game - Lobby Create Function
+ * Mom vs Dad Game - Lobby Create Function (Unified Schema)
+ * Updated to use game_* tables from 20260103_mom_vs_dad_game_schema.sql
  * 
- * Purpose: Create lobby when first user joins, automatically assigning admin status
- * Trigger: POST /lobby-create
+ * Purpose: Create a new game session when parents set up the game
+ * Trigger: POST /lobby-create (now creates game_sessions)
  * 
- * Logic Flow:
- * - Validates that the requested lobby exists and is in waiting status
- * - If lobby is empty, joining player automatically becomes admin
- * - Creates player record, updates lobby player count
- * - Returns complete lobby state including all current players
- * - Broadcasts player_joined event via Supabase realtime
+ * Schema Mapping:
+ * - lobby_key → session_code (auto-generated)
+ * - player_name + player_type → mom_name + dad_name
  */
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
@@ -23,10 +21,11 @@ import {
   SECURITY_HEADERS
 } from '../_shared/security.ts'
 
-interface JoinRequest {
-  lobby_key: string
-  player_name: string
-  player_type?: 'human' | 'ai'
+interface CreateSessionRequest {
+  mom_name: string
+  dad_name: string
+  admin_code?: string  // Optional 4-digit PIN, will generate if not provided
+  total_rounds?: number
 }
 
 serve(async (req: Request) => {
@@ -49,18 +48,14 @@ serve(async (req: Request) => {
     const envValidation = validateEnvironmentVariables([
       'SUPABASE_URL',
       'SUPABASE_SERVICE_ROLE_KEY'
-    ], ['MINIMAX_API_KEY', 'Z_AI_API_KEY', 'KIMI_API_KEY'])
+    ])
 
     if (!envValidation.isValid) {
-      console.error('Lobby Create - Environment validation failed:', envValidation.errors)
+      console.error('Session Create - Environment validation failed:', envValidation.errors)
       return createErrorResponse('Server configuration error', 500)
     }
 
-    if (envValidation.warnings.length > 0) {
-      console.warn('Lobby Create - Environment warnings:', envValidation.warnings)
-    }
-
-    // Initialize Supabase client with service role for admin operations
+    // Initialize Supabase client
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 
@@ -69,218 +64,145 @@ serve(async (req: Request) => {
     })
 
     // Parse and validate request body
-    let body: JoinRequest
+    let body: CreateSessionRequest
     try {
       body = await req.json()
     } catch {
       return createErrorResponse('Invalid JSON in request body', 400)
     }
 
-    // Input validation using standardized function
+    // Input validation
     const validation = validateInput(body, {
-      lobby_key: { 
-        type: 'string', 
-        required: true, 
-        pattern: /^(LOBBY-A|LOBBY-B|LOBBY-C|LOBBY-D)$/ 
-      },
-      player_name: { 
+      mom_name: { 
         type: 'string', 
         required: true, 
         minLength: 1, 
-        maxLength: 50 
+        maxLength: 100 
       },
-      player_type: { 
+      dad_name: { 
+        type: 'string', 
+        required: true, 
+        minLength: 1, 
+        maxLength: 100 
+      },
+      admin_code: { 
         type: 'string', 
         required: false, 
-        pattern: /^(human|ai)$/ 
+        minLength: 4, 
+        maxLength: 4 
+      },
+      total_rounds: { 
+        type: 'number', 
+        required: false, 
+        min: 1, 
+        max: 10 
       }
     })
 
     if (!validation.isValid) {
-      console.error('Lobby Create - Validation failed:', validation.errors)
+      console.error('Session Create - Validation failed:', validation.errors)
       return createErrorResponse('Validation failed', 400, validation.errors)
     }
 
-    const { lobby_key, player_name, player_type = 'human' } = validation.sanitized
+    const { mom_name, dad_name, admin_code, total_rounds = 5 } = validation.sanitized
 
-    // Fetch lobby and check capacity
-    const { data: lobby, error: lobbyError } = await supabase
-      .from('baby_shower.mom_dad_lobbies')
-      .select('*')
-      .eq('lobby_key', lobby_key)
+    // Generate or use provided admin code
+    const finalAdminCode = admin_code || generateAdminCode()
+
+    // Generate session code using database function
+    const { data: sessionCode, error: codeError } = await supabase
+      .rpc('baby_shower.generate_session_code')
       .single()
 
-    if (lobbyError || !lobby) {
-      console.error('Lobby Create - Lobby not found:', lobby_key)
-      return createErrorResponse('Lobby not found', 404)
+    if (codeError || !sessionCode) {
+      console.error('Session Create - Failed to generate session code:', codeError)
+      // Fallback to client-side generation
+      var generatedCode = generateSessionCode()
     }
 
-    if (lobby.current_players >= lobby.max_players) {
-      console.error('Lobby Create - Lobby is full:', lobby_key)
-      return createErrorResponse('Lobby is full', 400)
-    }
+    const session_code = generatedCode || sessionCode
 
-    if (lobby.status !== 'waiting') {
-      console.error('Lobby Create - Lobby not accepting players:', lobby.status)
-      return createErrorResponse('Lobby is not accepting new players', 400)
-    }
-
-    // Check if player already in lobby (for reconnection scenarios)
-    let existingPlayer = null
-    let userId: string | null = null
-    
-    if (player_type === 'human') {
-      try {
-        const { data: { user } } = await supabase.auth.getUser()
-        userId = user?.id || null
-        
-        if (userId) {
-          const { data: player } = await supabase
-            .from('baby_shower.mom_dad_players')
-            .select('*')
-            .eq('lobby_id', lobby.id)
-            .eq('user_id', userId)
-            .is('disconnected_at', null)
-            .single()
-          
-          if (player) {
-            existingPlayer = player
-          }
-        }
-      } catch (authError) {
-        console.warn('Lobby Create - Auth check failed, continuing without user:', authError)
-      }
-    }
-
-    // Determine admin status - first player to join becomes admin
-    const isFirstPlayer = lobby.current_players === 0 && !lobby.admin_player_id
-    const playerId = existingPlayer?.id || crypto.randomUUID()
-
-    // Create or reactivate player
-    if (existingPlayer) {
-      console.log('Lobby Create - Reactivating existing player:', existingPlayer.id)
-      
-      const { error: updateError } = await supabase
-        .from('baby_shower.mom_dad_players')
-        .update({ 
-          disconnected_at: null, 
-          is_ready: false,
-          current_vote: null,
-          player_name: player_name // Update name in case it changed
-        })
-        .eq('id', existingPlayer.id)
-
-      if (updateError) {
-        console.error('Lobby Create - Player reactivation failed:', updateError)
-        throw updateError
-      }
-    } else {
-      console.log('Lobby Create - Creating new player:', playerId)
-      
-      const { error: insertError } = await supabase
-        .from('baby_shower.mom_dad_players')
-        .insert({
-          id: playerId,
-          lobby_id: lobby.id,
-          user_id: userId,
-          player_name,
-          player_type,
-          is_admin: isFirstPlayer,
-          is_ready: false,
-          current_vote: null
-        })
-
-      if (insertError) {
-        console.error('Lobby Create - Player creation failed:', insertError)
-        throw insertError
-      }
-    }
-
-    // Update lobby player counts
-    const updateData: Record<string, unknown> = { 
-      updated_at: new Date().toISOString() 
-    }
-    
-    if (isFirstPlayer) {
-      updateData.admin_player_id = playerId
-    }
-    
-    if (player_type === 'human') {
-      updateData.current_humans = lobby.current_humans + 1
-    } else {
-      updateData.current_ai_count = lobby.current_ai_count + 1
-    }
-    updateData.current_players = lobby.current_players + 1
-
-    const { error: updateLobbyError } = await supabase
-      .from('baby_shower.mom_dad_lobbies')
-      .update(updateData)
-      .eq('id', lobby.id)
-
-    if (updateLobbyError) {
-      console.error('Lobby Create - Lobby update failed:', updateLobbyError)
-      throw updateLobbyError
-    }
-
-    // Fetch updated lobby state
-    const { data: updatedLobby } = await supabase
-      .from('baby_shower.mom_dad_lobbies')
-      .select('*')
-      .eq('id', lobby.id)
+    // Check if session code already exists (shouldn't happen but safety check)
+    const { data: existingSession } = await supabase
+      .from('baby_shower.game_sessions')
+      .select('id')
+      .eq('session_code', session_code)
       .single()
 
-    if (!updatedLobby) {
-      console.error('Lobby Create - Failed to fetch updated lobby')
-      throw new Error('Failed to fetch updated lobby')
+    if (existingSession) {
+      console.error('Session Create - Session code collision, retrying...')
+      // Try one more time
+      var retryCode = generateSessionCode()
     }
 
-    // Fetch all active players in lobby
-    const { data: players, error: playersError } = await supabase
-      .from('baby_shower.mom_dad_players')
-      .select('*')
-      .eq('lobby_id', lobby.id)
-      .is('disconnected_at', null)
-      .order('joined_at', { ascending: true })
+    const finalSessionCode = retryCode || session_code
 
-    if (playersError) {
-      console.error('Lobby Create - Failed to fetch players:', playersError)
-      throw playersError
+    // Create session
+    const { data: session, error: createError } = await supabase
+      .from('baby_shower.game_sessions')
+      .insert({
+        session_code: finalSessionCode,
+        mom_name: mom_name,
+        dad_name: dad_name,
+        admin_code: finalAdminCode,
+        total_rounds: total_rounds,
+        status: 'setup',
+        current_round: 0
+      })
+      .select()
+      .single()
+
+    if (createError) {
+      console.error('Session Create - Failed to create session:', createError)
+      throw createError
     }
 
-    // Broadcast player joined event via Supabase realtime
-    try {
-      await supabase.channel(`lobby:${lobby_key}`)
-        .send({
-          type: 'broadcast',
-          event: 'player_joined',
-          payload: { 
-            player_id: playerId, 
-            player_name, 
-            is_admin: isFirstPlayer,
-            player_type 
-          }
-        })
-      console.log('Lobby Create - Broadcasted player_joined event')
-    } catch (broadcastError) {
-      console.warn('Lobby Create - Broadcast failed (non-critical):', broadcastError)
-      // Continue even if broadcast fails - the HTTP response is more important
-    }
-
-    console.log('Lobby Create - Successfully joined lobby:', { 
-      lobby_key, 
-      player_id: playerId, 
-      is_admin: isFirstPlayer 
+    console.log('Session Create - Successfully created session:', { 
+      session_code: finalSessionCode,
+      mom_name,
+      dad_name
     })
 
     return createSuccessResponse({
-      lobby: updatedLobby,
-      players: players || [],
-      current_player_id: playerId,
-      is_admin: isFirstPlayer
-    }, 200)
+      message: 'Game session created successfully',
+      session: {
+        id: session.id,
+        session_code: session.session_code,
+        mom_name: session.mom_name,
+        dad_name: session.dad_name,
+        admin_code: session.admin_code,
+        status: session.status,
+        total_rounds: session.total_rounds,
+        created_at: session.created_at
+      },
+      instructions: {
+        share_code: 'Share this code with your guests to join the game',
+        admin_pin: 'Use this PIN to start the game and reveal results',
+        game_link: `${typeof window !== 'undefined' ? window.location.origin : ''}?game=${session.session_code}`
+      }
+    }, 201)
 
   } catch (error) {
-    console.error('Lobby Create - Unexpected error:', error)
-    return createErrorResponse('Failed to join lobby', 500)
+    console.error('Session Create - Unexpected error:', error)
+    return createErrorResponse('Failed to create session', 500)
   }
 })
+
+/**
+ * Generate a 4-digit admin PIN
+ */
+function generateAdminCode(): string {
+  return Math.floor(1000 + Math.random() * 9000).toString()
+}
+
+/**
+ * Generate a 6-character session code (fallback)
+ */
+function generateSessionCode(): string {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789' // Exclude confusing chars
+  let code = ''
+  for (let i = 0; i < 6; i++) {
+    code += chars.charAt(Math.floor(Math.random() * chars.length))
+  }
+  return code
+}

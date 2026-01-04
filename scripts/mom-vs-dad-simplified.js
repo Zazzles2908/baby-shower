@@ -88,10 +88,9 @@
       * Don't send Authorization: Bearer <anon_key> as it's not a valid JWT
       */
     async function apiFetch(url, options = {}) {
-        const supabaseKey = root.CONFIG?.SUPABASE?.ANON_KEY || '';
         const headers = {
             'Content-Type': 'application/json',
-            'apikey': supabaseKey,  // Use apikey header for Edge Function access
+            'apikey': root.CONFIG?.SUPABASE?.ANON_KEY || '',
             ...options.headers,
         };
 

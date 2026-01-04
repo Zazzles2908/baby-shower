@@ -53,7 +53,7 @@
      * Build Supabase Edge Function URL
      */
     function getSupabaseFunctionUrl(functionName) {
-        return `${SUPABASE_URL}/functions/${functionName}`;
+        return `${SUPABASE_URL}/functions/v1/${functionName}`;
     }
 
     /**

@@ -15,15 +15,40 @@
         <link rel="icon" type="image/x-icon" href="baby_content\Pictures\Jazeel_Icon\asset_chibi_avatar_f.png">
         <link rel="icon" type="image/x-icon" href="baby_content\Pictures\Michelle_Icon\asset_chibi_avatar_m.png">
         <link rel="icon" type="image/x-icon" href="favicon.png">
+        <script src="scripts/config.js"></script>
+    
+    <script>
+        // Environment variables injected at build time
+        window.ENV = window.ENV || {};
+        window.ENV.NEXT_PUBLIC_SUPABASE_URL = '"https://bkszmvfsfgvdwzacgmfz.supabase.co"';
+        window.ENV.NEXT_PUBLIC_SUPABASE_ANON_KEY = '"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJrc3ptdmZzZmd2ZHd6YWNnbWZ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQzODI1NjMsImV4cCI6MjA3OTk1ODU2M30.BswusP1pfDUStzAU8k-VKPailISimApapNeJGlid8sI"';
+        window.ENV.SUPABASE_SERVICE_ROLE_KEY = '"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJrc3ptdmZzZmd2ZHd6YWNnbWZ6Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NDM4MjU2MywiZXhwIjoyMDc5OTU4NTYzfQ.96o8NDg5cM8H8PRX3dVU9onPJJFGPnGGVlejcdQrNuU"';
         
-    
+        console.log('[ENV] Supabase URL configured:', window.ENV.NEXT_PUBLIC_SUPABASE_URL ? '***configured***' : 'missing');
+        console.log('[ENV] Supabase Anon Key configured:', window.ENV.NEXT_PUBLIC_SUPABASE_ANON_KEY ? '***configured***' : 'missing');
+    </script>
 
-    
-    
+    <script>
+        // Environment variables injected at build time
+        window.ENV = window.ENV || {};
+        window.ENV.NEXT_PUBLIC_SUPABASE_URL = '"https://bkszmvfsfgvdwzacgmfz.supabase.co"';
+        window.ENV.NEXT_PUBLIC_SUPABASE_ANON_KEY = '"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJrc3ptdmZzZmd2ZHd6YWNnbWZ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQzODI1NjMsImV4cCI6MjA3OTk1ODU2M30.BswusP1pfDUStzAU8k-VKPailISimApapNeJGlid8sI"';
+        window.ENV.SUPABASE_SERVICE_ROLE_KEY = '"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJrc3ptdmZzZmd2ZHd6YWNnbWZ6Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NDM4MjU2MywiZXhwIjoyMDc5OTU4NTYzfQ.96o8NDg5cM8H8PRX3dVU9onPJJFGPnGGVlejcdQrNuU"';
+        
+        console.log('[ENV] Supabase URL configured:', window.ENV.NEXT_PUBLIC_SUPABASE_URL ? '***configured***' : 'missing');
+        console.log('[ENV] Supabase Anon Key configured:', window.ENV.NEXT_PUBLIC_SUPABASE_ANON_KEY ? '***configured***' : 'missing');
+    </script>
 
-    
-
-    
+    <script>
+        // Environment variables injected at build time
+        window.ENV = window.ENV || {};
+        window.ENV.NEXT_PUBLIC_SUPABASE_URL = '"https://bkszmvfsfgvdwzacgmfz.supabase.co"';
+        window.ENV.NEXT_PUBLIC_SUPABASE_ANON_KEY = '"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJrc3ptdmZzZmd2ZHd6YWNnbWZ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQzODI1NjMsImV4cCI6MjA3OTk1ODU2M30.BswusP1pfDUStzAU8k-VKPailISimApapNeJGlid8sI"';
+        window.ENV.SUPABASE_SERVICE_ROLE_KEY = '"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJrc3ptdmZzZmd2ZHd6YWNnbWZ6Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NDM4MjU2MywiZXhwIjoyMDc5OTU4NTYzfQ.96o8NDg5cM8H8PRX3dVU9onPJJFGPnGGVlejcdQrNuU"';
+        
+        console.log('[ENV] Supabase URL configured:', window.ENV.NEXT_PUBLIC_SUPABASE_URL ? '***configured***' : 'missing');
+        console.log('[ENV] Supabase Anon Key configured:', window.ENV.NEXT_PUBLIC_SUPABASE_ANON_KEY ? '***configured***' : 'missing');
+    </script>
 </head>
 <body>
     <div id="app">
@@ -468,90 +493,21 @@
     </div>
     
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <!-- Enhanced Error Monitoring (must load first) -->
-    <script src="scripts/error-monitor.js"></script>
-
-    <!-- Configuration -->
-    
-    <script>
-        // Environment variables injected at build time
-        window.ENV = window.ENV || {};
-        window.ENV.NEXT_PUBLIC_SUPABASE_URL = 'null';
-        window.ENV.NEXT_PUBLIC_SUPABASE_ANON_KEY = 'null';
-        window.ENV.SUPABASE_SERVICE_ROLE_KEY = 'null';
-        
-        console.log('[ENV] Supabase URL configured:', window.ENV.NEXT_PUBLIC_SUPABASE_URL ? '***configured***' : 'missing');
-        console.log('[ENV] Supabase Anon Key configured:', window.ENV.NEXT_PUBLIC_SUPABASE_ANON_KEY ? '***configured***' : 'missing');
-    </script>
-
-    <script>
-        // Environment variables injected at build time
-        window.ENV = window.ENV || {};
-        window.ENV.NEXT_PUBLIC_SUPABASE_URL = 'https://bkszmvfsfgvdwzacgmfz.supabase.co';
-        window.ENV.NEXT_PUBLIC_SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJrc3ptdmZzZmd2ZHd6YWNnbWZ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQzODI1NjMsImV4cCI6MjA3OTk1ODU2M30.BswusP1pfDUStzAU8k-VKPailISimApapNeJGlid8sI';
-        window.ENV.SUPABASE_SERVICE_ROLE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJrc3ptdmZzZmd2ZHd6YWNnbWZ6Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NDM4MjU2MywiZXhwIjoyMDc5OTU4NTYzfQ.96o8NDg5cM8H8PRX3dVU9onPJJFGPnGGVlejcdQrNuU';
-        
-        console.log('[ENV] Supabase URL configured:', window.ENV.NEXT_PUBLIC_SUPABASE_URL ? '***configured***' : 'missing');
-        console.log('[ENV] Supabase Anon Key configured:', window.ENV.NEXT_PUBLIC_SUPABASE_ANON_KEY ? '***configured***' : 'missing');
-    </script>
-
-    <script>
-        // Environment variables injected at build time
-        window.ENV = window.ENV || {};
-        window.ENV.NEXT_PUBLIC_SUPABASE_URL = 'https://bkszmvfsfgvdwzacgmfz.supabase.co';
-        window.ENV.NEXT_PUBLIC_SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJrc3ptdmZzZmd2ZHd6YWNnbWZ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQzODI1NjMsImV4cCI6MjA3OTk1ODU2M30.BswusP1pfDUStzAU8k-VKPailISimApapNeJGlid8sI';
-        window.ENV.SUPABASE_SERVICE_ROLE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJrc3ptdmZzZmd2ZHd6YWNnbWZ6Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NDM4MjU2MywiZXhwIjoyMDc5OTU4NTYzfQ.96o8NDg5cM8H8PRX3dVU9onPJJFGPnGGVlejcdQrNuU';
-        
-        console.log('[ENV] Supabase URL configured:', window.ENV.NEXT_PUBLIC_SUPABASE_URL ? '***configured***' : 'missing');
-        console.log('[ENV] Supabase Anon Key configured:', window.ENV.NEXT_PUBLIC_SUPABASE_ANON_KEY ? '***configured***' : 'missing');
-    </script>
-
-    <script>
-        // Environment variables injected at build time
-        window.ENV = window.ENV || {};
-        window.ENV.NEXT_PUBLIC_SUPABASE_URL = 'https://bkszmvfsfgvdwzacgmfz.supabase.co';
-        window.ENV.NEXT_PUBLIC_SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJrc3ptdmZzZmd2ZHd6YWNnbWZ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQzODI1NjMsImV4cCI6MjA3OTk1ODU2M30.BswusP1pfDUStzAU8k-VKPailISimApapNeJGlid8sI';
-        window.ENV.SUPABASE_SERVICE_ROLE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJrc3ptdmZzZmd2ZHd6YWNnbWZ6Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NDM4MjU2MywiZXhwIjoyMDc5OTU4NTYzfQ.96o8NDg5cM8H8PRX3dVU9onPJJFGPnGGVlejcdQrNuU';
-        
-        console.log('[ENV] Supabase URL configured:', window.ENV.NEXT_PUBLIC_SUPABASE_URL ? '***configured***' : 'missing');
-        console.log('[ENV] Supabase Anon Key configured:', window.ENV.NEXT_PUBLIC_SUPABASE_ANON_KEY ? '***configured***' : 'missing');
-    </script>
-
-    <script>
-        // Environment variables injected at build time
-        window.ENV = window.ENV || {};
-        window.ENV.NEXT_PUBLIC_SUPABASE_URL = 'https://bkszmvfsfgvdwzacgmfz.supabase.co';
-        window.ENV.NEXT_PUBLIC_SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJrc3ptdmZzZmd2ZHd6YWNnbWZ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQzODI1NjMsImV4cCI6MjA3OTk1ODU2M30.BswusP1pfDUStzAU8k-VKPailISimApapNeJGlid8sI';
-        window.ENV.SUPABASE_SERVICE_ROLE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJrc3ptdmZzZmd2ZHd6YWNnbWZ6Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NDM4MjU2MywiZXhwIjoyMDc5OTU4NTYzfQ.96o8NDg5cM8H8PRX3dVU9onPJJFGPnGGVlejcdQrNuU';
-        
-        console.log('[ENV] Supabase URL configured:', window.ENV.NEXT_PUBLIC_SUPABASE_URL ? '***configured***' : 'missing');
-        console.log('[ENV] Supabase Anon Key configured:', window.ENV.NEXT_PUBLIC_SUPABASE_ANON_KEY ? '***configured***' : 'missing');
-    </script>
-<script src="scripts/config.js"></script>
+    <script src="scripts/config.js"></script>
     <script src="scripts/security.js"></script>
-
-    <!-- Enhanced Services (replacement for originals) -->
-    <script src="scripts/image-service-enhanced.js"></script>
+    <script src="scripts/image-service.js"></script>
     <script src="scripts/gallery.js"></script>
-    <script src="scripts/api-supabase-enhanced.js"></script>
-
-    <!-- Core Application -->
+    <script src="scripts/api-supabase.js"></script>
     <script src="scripts/surprises.js"></script>
     <script src="scripts/anime-characters.js"></script>
     <script src="scripts/main.js"></script>
-
-    <!-- Activity Scripts -->
     <script src="scripts/guestbook.js"></script>
     <script src="scripts/pool.js"></script>
     <script src="scripts/quiz.js"></script>
     <script src="scripts/advice.js"></script>
     <script src="scripts/voting.js"></script>
-
-    <!-- Enhanced Game Scripts -->
-    <script src="scripts/realtime-manager-enhanced.js"></script>
     <script src="scripts/mom-vs-dad-simplified.js"></script>
     <script src="scripts/who-would-rather.js"></script>
-    <script src="scripts/game-init-enhanced.js"></script>
 
     <!-- Activity Ticker -->
     <div id="activity-ticker" class="activity-ticker hidden" role="status" aria-live="polite" aria-atomic="true">

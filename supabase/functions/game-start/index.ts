@@ -1,15 +1,13 @@
 /**
- * Mom vs Dad Game - Game Start Function
+ * Mom vs Dad Game - Game Start Function (Unified Schema)
+ * Updated to use game_* tables from 20260103_mom_vs_dad_game_schema.sql
  * 
- * Purpose: Admin starts the game, generates scenarios, transitions lobby to active
+ * Purpose: Admin starts the game, generates scenarios, transitions session to voting
  * Trigger: POST /game-start
  * 
- * Logic Flow:
- * - Validates admin authorization
- * - Generates 5 rounds of scenarios (Z.AI or fallback)
- * - Creates game session records
- * - Updates lobby status to 'active'
- * - Broadcasts game_started and round_new events via Supabase
+ * Schema Mapping:
+ * - lobby_key → session_code (from game_sessions)
+ * - admin_player_id → validated against session's admin_code
  */
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
@@ -24,8 +22,8 @@ import {
 } from '../_shared/security.ts'
 
 interface StartGameRequest {
-  lobby_key: string
-  admin_player_id: string
+  session_code: string  // Changed from lobby_key
+  admin_code: string    // Changed from admin_player_id - 4-digit PIN
   total_rounds?: number
   intensity?: number
 }
@@ -73,14 +71,15 @@ serve(async (req: Request) => {
       return createErrorResponse('Invalid JSON in request body', 400)
     }
 
-    // Input validation
+    // Input validation - updated for new schema
     const validation = validateInput(body, {
-      lobby_key: { 
+      session_code: { 
         type: 'string', 
         required: true, 
-        pattern: /^(LOBBY-A|LOBBY-B|LOBBY-C|LOBBY-D)$/ 
+        minLength: 4,
+        maxLength: 8
       },
-      admin_player_id: { type: 'string', required: true },
+      admin_code: { type: 'string', required: true, minLength: 4, maxLength: 4 },
       total_rounds: { type: 'number', required: false, min: 1, max: 10 },
       intensity: { type: 'number', required: false, min: 0.1, max: 1.0 }
     })
@@ -90,188 +89,110 @@ serve(async (req: Request) => {
       return createErrorResponse('Validation failed', 400, validation.errors)
     }
 
-    const { lobby_key, admin_player_id, total_rounds = 5, intensity = 0.5 } = validation.sanitized
+    const { session_code, admin_code, total_rounds = 5, intensity = 0.5 } = validation.sanitized
 
-    // Fetch and validate lobby
-    const { data: lobby, error: lobbyError } = await supabase
-      .from('baby_shower.mom_dad_lobbies')
+    // Fetch and validate session
+    const { data: session, error: sessionError } = await supabase
+      .from('baby_shower.game_sessions')
       .select('*')
-      .eq('lobby_key', lobby_key)
+      .eq('session_code', session_code)
       .single()
 
-    if (lobbyError || !lobby) {
-      console.error('Game Start - Lobby not found:', lobby_key)
-      return createErrorResponse('Lobby not found', 404)
+    if (sessionError || !session) {
+      console.error('Game Start - Session not found:', session_code)
+      return createErrorResponse('Session not found', 404)
     }
 
-    if (lobby.status !== 'waiting') {
-      console.error('Game Start - Game already in progress:', lobby.status)
+    if (session.status !== 'setup') {
+      console.error('Game Start - Game already in progress:', session.status)
       return createErrorResponse('Game already in progress or completed', 400)
     }
 
-    if (lobby.admin_player_id !== admin_player_id) {
-      console.error('Game Start - Unauthorized admin attempt:', { lobby_admin: lobby.admin_player_id, request_admin: admin_player_id })
-      return createErrorResponse('Only admin can start the game', 403)
+    // Validate admin code
+    if (session.admin_code !== admin_code) {
+      console.error('Game Start - Invalid admin code')
+      return createErrorResponse('Invalid admin code', 403)
     }
 
-    // Get current players
-    const { data: players, error: playersError } = await supabase
-      .from('baby_shower.mom_dad_players')
-      .select('*')
-      .eq('lobby_id', lobby.id)
-      .is('disconnected_at', null)
+    // Generate scenarios for each round (simplified - uses fallback scenarios)
+    // In production, this would call Z.AI or another AI provider
+    const scenarios = generateFallbackScenarios(session.mom_name, session.dad_name, total_rounds, intensity)
 
-    if (playersError) {
-      console.error('Game Start - Failed to fetch players:', playersError)
-      throw playersError
+    // Insert scenarios
+    const { error: scenariosError } = await supabase
+      .from('baby_shower.game_scenarios')
+      .insert(
+        scenarios.map((scenario, index) => ({
+          session_id: session.id,
+          round_number: index + 1,
+          scenario_text: scenario.text,
+          mom_option: scenario.mom_option,
+          dad_option: scenario.dad_option,
+          intensity: intensity,
+          theme_tags: ['funny', 'parenting'],
+          is_active: true
+        }))
+      )
+
+    if (scenariosError) {
+      console.error('Game Start - Failed to create scenarios:', scenariosError)
+      throw scenariosError
     }
 
-    const activePlayers = players?.filter(p => p.disconnected_at === null) || []
-    
-    if (activePlayers.length < 2) {
-      console.error('Game Start - Not enough players:', activePlayers.length)
-      return createErrorResponse('At least 2 players required to start', 400)
-    }
-
-    // Check if AI players are needed to reach minimum viable player count
-    const aiSlotsNeeded = Math.max(0, lobby.max_players - activePlayers.length)
-    let addedAIPlayers = 0
-    
-    if (aiSlotsNeeded > 0 && lobby.current_ai_count < aiSlotsNeeded) {
-      console.log('Game Start - Adding AI players:', aiSlotsNeeded)
-      
-      const aiPlayers = []
-      for (let i = 0; i < aiSlotsNeeded; i++) {
-        aiPlayers.push({
-          lobby_id: lobby.id,
-          player_name: `AI Guest ${lobby.current_ai_count + i + 1}`,
-          player_type: 'ai',
-          is_admin: false,
-          is_ready: true, // AI is always ready
-          current_vote: null
-        })
-      }
-
-      const { error: aiError } = await supabase
-        .from('baby_shower.mom_dad_players')
-        .insert(aiPlayers)
-
-      if (aiError) {
-        console.error('Game Start - AI player creation failed:', aiError)
-        throw aiError
-      }
-
-      addedAIPlayers = aiSlotsNeeded
-
-      // Update AI count
-      await supabase
-        .from('baby_shower.mom_dad_lobbies')
-        .update({ 
-          current_ai_count: lobby.current_ai_count + aiSlotsNeeded,
-          current_players: lobby.current_players + aiSlotsNeeded,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', lobby.id)
-    }
-
-    // Generate scenarios using Z.AI or fallback to defaults
-    console.log('Game Start - Generating', total_rounds, 'scenarios with intensity', intensity)
-    const scenarios = await generateScenarios(supabase, total_rounds, intensity, lobby_key)
-
-    // Create game sessions
-    const gameSessions = scenarios.map((scenario, index) => ({
-      lobby_id: lobby.id,
-      round_number: index + 1,
-      scenario_text: scenario.text,
-      mom_option: scenario.mom_option,
-      dad_option: scenario.dad_option,
-      intensity: scenario.intensity || intensity,
-      status: 'voting',
-      mom_votes: 0,
-      dad_votes: 0,
-      mom_percentage: 0,
-      dad_percentage: 0
-    }))
-
-    const { error: sessionsError } = await supabase
-      .from('baby_shower.mom_dad_game_sessions')
-      .insert(gameSessions)
-
-    if (sessionsError) {
-      console.error('Game Start - Game session creation failed:', sessionsError)
-      throw sessionsError
-    }
-
-    // Update lobby status to active
-    const { error: updateError } = await supabase
-      .from('baby_shower.mom_dad_lobbies')
-      .update({ 
-        status: 'active',
-        total_rounds,
-        updated_at: new Date().toISOString()
+    // Update session status to voting
+    const { error: updateSessionError } = await supabase
+      .from('baby_shower.game_sessions')
+      .update({
+        status: 'voting',
+        current_round: 1,
+        started_at: new Date().toISOString()
       })
-      .eq('id', lobby.id)
+      .eq('id', session.id)
 
-    if (updateError) {
-      console.error('Game Start - Lobby update failed:', updateError)
-      throw updateError
+    if (updateSessionError) {
+      console.error('Game Start - Failed to update session:', updateSessionError)
+      throw updateSessionError
     }
+
+    // Fetch created scenarios
+    const { data: createdScenarios } = await supabase
+      .from('baby_shower.game_scenarios')
+      .select('*')
+      .eq('session_id', session.id)
+      .order('round_number', { ascending: true })
 
     // Broadcast game started event
     try {
-      await supabase.channel(`lobby:${lobby_key}`)
+      await supabase.channel(`game:${session_code}`)
         .send({
           type: 'broadcast',
           event: 'game_started',
-          payload: { 
-            total_rounds, 
-            intensity,
-            ai_players_added: addedAIPlayers
+          payload: {
+            session_id: session.id,
+            session_code: session_code,
+            mom_name: session.mom_name,
+            dad_name: session.dad_name,
+            total_rounds: total_rounds,
+            current_round: 1,
+            first_scenario: createdScenarios?.[0]
           }
         })
       console.log('Game Start - Broadcasted game_started event')
     } catch (broadcastError) {
-      console.warn('Game Start - Game started broadcast failed:', broadcastError)
-    }
-
-    // Get first round to broadcast
-    const { data: firstRound, error: roundError } = await supabase
-      .from('baby_shower.mom_dad_game_sessions')
-      .select('*')
-      .eq('lobby_id', lobby.id)
-      .eq('round_number', 1)
-      .single()
-
-    if (roundError || !firstRound) {
-      console.error('Game Start - Failed to fetch first round:', roundError)
-      // Continue anyway - game is started, first round will be fetched by client
-    } else {
-      // Broadcast first round
-      try {
-        await supabase.channel(`lobby:${lobby_key}`)
-          .send({
-            type: 'broadcast',
-            event: 'round_new',
-            payload: { round: firstRound }
-          })
-        console.log('Game Start - Broadcasted first round')
-      } catch (broadcastError) {
-        console.warn('Game Start - Round broadcast failed:', broadcastError)
-      }
+      console.warn('Game Start - Game start broadcast failed:', broadcastError)
     }
 
     console.log('Game Start - Successfully started game:', { 
-      lobby_key, 
-      total_rounds, 
-      scenarios_generated: scenarios.length 
+      session_code, 
+      total_rounds,
+      scenario_count: createdScenarios?.length 
     })
 
     return createSuccessResponse({
       message: 'Game started successfully',
+      session_code,
       total_rounds,
-      scenarios_created: scenarios.length,
-      first_round: firstRound,
-      ai_players_added: addedAIPlayers
+      scenarios: createdScenarios
     }, 200)
 
   } catch (error) {
@@ -281,149 +202,36 @@ serve(async (req: Request) => {
 })
 
 /**
- * Generate scenarios using Z.AI API or fallback to defaults
+ * Generate fallback scenarios (replace with AI generation in production)
  */
-async function generateScenarios(
-  supabase: ReturnType<typeof createClient>,
-  count: number,
-  intensity: number,
-  lobbyKey: string
-): Promise<Array<{
-  text: string
-  mom_option: string
-  dad_option: string
-  intensity: number
-}>> {
-  const zaiKey = Deno.env.get('Z_AI_API_KEY')
-  
-  if (!zaiKey) {
-    console.warn('Generate Scenarios - Z.AI not configured, using defaults')
-    return getDefaultScenarios(count, intensity)
-  }
-
-  try {
-    const response = await fetch('https://open.bigmodel.cn/api/paas/v3/modelapi/chatglm_pro/completions', {
-      method: 'POST',
-      headers: { 
-        'Authorization': `Bearer ${zaiKey}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        prompt: `Generate ${count} funny "who would rather" scenarios for a baby shower game about Mom vs Dad.
-                 Theme: Farm/Cozy. Comedy intensity: ${intensity} (0.1-1.0).
-                 Return JSON array with objects containing: scenario_text, mom_option, dad_option, intensity.
-                 Make scenarios relatable, funny, and family-friendly. Each scenario should be unique.`
-      })
-    })
-
-    if (!response.ok) {
-      const errorText = await response.text()
-      console.error('Generate Scenarios - Z.AI API error:', response.status, errorText)
-      throw new Error(`Z.AI API error: ${response.status}`)
-    }
-
-    const data = await response.json()
-    const content = data.choices?.[0]?.message?.content || data.data?.result || '[]'
-    
-    // Try to parse the JSON response
-    try {
-      const parsed = JSON.parse(content)
-      if (Array.isArray(parsed) && parsed.length > 0) {
-        console.log('Generate Scenarios - Successfully generated', parsed.length, 'scenarios from Z.AI')
-        return parsed.map(s => ({
-          text: s.scenario_text || s.text || s.scenario,
-          mom_option: s.mom_option || s.mom,
-          dad_option: s.dad_option || s.dad,
-          intensity: s.intensity || intensity
-        }))
-      }
-     } catch {
-       console.warn('Generate Scenarios - Failed to parse Z.AI response, using defaults')
-     }
-    
-    return getDefaultScenarios(count, intensity)
-    
-  } catch (error) {
-    console.error('Generate Scenarios - Z.AI request failed, using defaults:', error)
-    return getDefaultScenarios(count, intensity)
-  }
-}
-
-/**
- * Fallback default scenarios when AI is unavailable
- */
-function getDefaultScenarios(
-  count: number,
-  intensity: number
-): Array<{
-  text: string
-  mom_option: string
-  dad_option: string
-  intensity: number
-}> {
-  const defaults = [
-    { 
-      text: "It's 3 AM and the baby explodes diaper everywhere", 
-      mom_option: "Mom would retch dramatically", 
-      dad_option: "Dad would clean it up immediately",
-      intensity 
+function generateFallbackScenarios(momName: string, dadName: string, count: number, intensity: number) {
+  const fallbackScenarios = [
+    {
+      text: `It's 3 AM and the baby starts crying uncontrollably...`,
+      mom_option: `${momName} would gently rock and sing lullabies`,
+      dad_option: `${dadName} would stumble in, half-asleep, offering a pacifier`
     },
-    { 
-      text: "Baby's first solid food reaction", 
-      mom_option: "Mom would google frantically", 
-      dad_option: "Dad would take a video for memories",
-      intensity 
+    {
+      text: `The diaper explosion reaches the ceiling...`,
+      mom_option: `${momName} would retch but handle it like a pro`,
+      dad_option: `${dadName} would run for the hills, then come back with wipes`
     },
-    { 
-      text: "Lost pacifier at 2 AM", 
-      mom_option: "Mom would sanitize it", 
-      dad_option: "Dad would buy a new one",
-      intensity 
+    {
+      text: `Someone forgot to pack the diaper bag for outing...`,
+      mom_option: `${momName} would improvisation with handkerchiefs`,
+      dad_option: `${dadName} would panic and call for emergency backup`
     },
-    { 
-      text: "Baby laughs at a dog but not at parents", 
-      mom_option: "Mom would be offended", 
-      dad_option: "Dad would high-five the dog",
-      intensity 
+    {
+      text: `Baby's first solid food ends up everywhere except mouth...`,
+      mom_option: `${momName} would document everything for memories`,
+      dad_option: `${dadName} would be too busy taking video to help clean`
     },
-    { 
-      text: "First time baby says a word", 
-      mom_option: "Mom would cry happy tears", 
-      dad_option: "Dad would compete to teach more words",
-      intensity 
-    },
-    { 
-      text: "Baby reaches for grandparent instead of parent", 
-      mom_option: "Mom would fake tears", 
-      dad_option: "Dad would tease about it",
-      intensity 
-    },
-    { 
-      text: "Baby's first bath time chaos", 
-      mom_option: "Mom would worry about water temperature", 
-      dad_option: "Dad would splash around playfully",
-      intensity 
-    },
-    { 
-      text: "Middle of the night feeding responsibility", 
-      mom_option: "Mom would breastfeed", 
-      dad_option: "Dad would warm formula",
-      intensity 
-    },
-    { 
-      text: "Baby's first steps celebration", 
-      mom_option: "Mom would clap and cheer", 
-      dad_option: "Dad would video call everyone",
-      intensity 
-    },
-    { 
-      text: "Baby refuses to sleep at bedtime", 
-      mom_option: "Mom would try every trick", 
-      dad_option: "Dad would read the same book 10 times",
-      intensity 
+    {
+      text: `It's 2 AM and baby finally falls asleep...`,
+      mom_option: `${momName} would stare at them lovingly for an hour`,
+      dad_option: `${dadName} would immediately collapse on the couch`
     }
   ]
-  
-  console.log('Get Default Scenarios - Using', Math.min(count, defaults.length), 'default scenarios')
-  return defaults.slice(0, count)
+
+  return fallbackScenarios.slice(0, count)
 }

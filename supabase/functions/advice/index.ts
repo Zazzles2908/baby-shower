@@ -126,45 +126,33 @@ serve(async (req: Request) => {
       return await handleAIRoast(supabase, name, sanitizedAdvice, headers)
     }
 
-    // Count total submissions in baby_shower.advice BEFORE insert to check milestone
-    const { count: totalCount } = await supabase
-      .from('baby_shower.advice')
-      .select('*', { count: 'exact', head: true })
-    const currentCount = totalCount || 0
-    const isMilestone = currentCount + 1 === 50
+    console.log(`[advice] Inserting advice via RPC`)
 
-    console.log(`[advice] Writing advice to baby_shower.advice, current count: ${currentCount}`)
-
-    // Insert into baby_shower.advice with dedicated columns
+    // Use existing RPC function to insert (bypasses RLS)
     const { data, error } = await supabase
-      .from('baby_shower.advice')
-      .insert({
-        advice_giver: name,
-        advice_text: sanitizedAdvice,
-        delivery_option: finalCategory,
-        is_approved: false,
-        submitted_by: name,
+      .rpc('insert_advice_entry', {
+        p_name: name,
+        p_advice: sanitizedAdvice,
+        p_category: finalCategory,
       })
-      .select()
-      .single()
 
     if (error) {
-      console.error('Supabase insert error:', error)
-      return createErrorResponse('Database operation failed', 500)
+      console.error('Supabase RPC error:', JSON.stringify(error, null, 2))
+      return createErrorResponse('Database operation failed', 500, { 
+        message: error.message,
+        details: error,
+        hint: error.hint || 'Check RPC function'
+      })
     }
 
-    console.log(`[advice] Successfully inserted advice with id: ${data.id}`)
+    console.log(`[advice] Successfully inserted advice with id: ${data[0]?.id}`)
 
     return createSuccessResponse({
-      id: data.id,
+      id: data[0]?.id,
       advice_text: sanitizedAdvice,
       delivery_option: finalCategory,
-      created_at: data.created_at,
-      milestone: isMilestone ? {
-        triggered: true,
-        threshold: 50,
-        message: '🎉 We hit 50 submissions! Cake time!'
-      } : undefined
+      created_at: data[0]?.created_at,
+      milestone: undefined
     }, 201)
 
   } catch (err) {
@@ -230,32 +218,30 @@ async function handleAIRoast(supabase: any, name: string, topic: string, headers
 
     console.log(`[advice] AI generated roast: ${generatedAdvice}`)
 
-    // Save to baby_shower.advice table (AI-generated advice)
+    // Save to baby_shower.advice table via existing RPC (bypasses RLS)
     const { data, error } = await supabase
-      .from('baby_shower.advice')
-      .insert({
-        advice_giver: name,
-        advice_text: generatedAdvice,
-        delivery_option: 'ai_roast',
-        is_approved: true,
-        ai_generated: true,
-        submitted_by: name,
+      .rpc('insert_advice_entry', {
+        p_name: name,
+        p_advice: generatedAdvice,
+        p_category: 'ai_roast',
       })
-      .select()
-      .single()
 
     if (error) {
-      console.error('Supabase insert error:', error)
-      return createErrorResponse('Database operation failed', 500)
+      console.error('Supabase RPC error:', JSON.stringify(error, null, 2))
+      return createErrorResponse('Database operation failed', 500, { 
+        message: error.message,
+        details: error,
+        hint: error.hint || 'Check RPC function'
+      })
     }
 
-    console.log(`[advice] Successfully inserted AI roast with id: ${data.id}`)
+    console.log(`[advice] Successfully inserted AI roast with id: ${data[0]?.id}`)
 
     return createSuccessResponse({
-      id: data.id,
+      id: data[0]?.id,
       advice_text: generatedAdvice,
       delivery_option: 'ai_roast',
-      created_at: data.created_at,
+      created_at: data[0]?.created_at,
       ai_generated: true,
     }, 201)
 

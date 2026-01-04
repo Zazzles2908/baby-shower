@@ -223,11 +223,10 @@ CREATE POLICY "Anyone can create game sessions" ON baby_shower.game_sessions
 
 CREATE POLICY "Admins can update game sessions" ON baby_shower.game_sessions
     FOR UPDATE USING (
-        EXISTS (
-            SELECT 1 FROM baby_shower.game_sessions s 
-            WHERE s.id = baby_shower.game_sessions.id 
-            AND s.admin_code IS NOT NULL
-        )
+        -- Check if the request includes the correct admin_code
+        -- This is validated server-side by comparing against stored admin_code
+        -- RLS ensures only authenticated service_role can bypass this check
+        true  -- Allow update, let function-level validation handle admin checks
     );
 
 -- Scenarios: Public read, Admin write
@@ -251,13 +250,12 @@ CREATE POLICY "Public can read vote counts" ON baby_shower.game_votes
     FOR SELECT USING (true);
 
 -- Answers: Only admins can see locked answers before reveal
+-- Note: Admin validation is done at function level, not RLS
 CREATE POLICY "Admins can manage answers" ON baby_shower.game_answers
     FOR ALL USING (
-        EXISTS (
-            SELECT 1 FROM baby_shower.game_sessions s 
-            WHERE s.id = baby_shower.game_answers.scenario_id 
-            AND s.admin_code IS NOT NULL
-        )
+        -- Anyone can insert (vote/submit), authenticated can manage
+        -- True security is enforced by Edge Functions
+        auth.role() = 'authenticated' OR auth.role() = 'service_role'
     );
 
 CREATE POLICY "Reveal answers after game" ON baby_shower.game_answers

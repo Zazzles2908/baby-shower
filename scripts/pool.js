@@ -87,6 +87,16 @@ function validatePoolForm(form) {
         return false;
     }
 
+    // Validate date is within acceptable range (2024-01-01 to 2025-12-31)
+    const selectedDate = new Date(dateGuess);
+    const minDate = new Date('2024-01-01');
+    const maxDate = new Date('2025-12-31');
+    
+    if (selectedDate < minDate || selectedDate > maxDate) {
+        alert('Please select a date between January 1, 2024 and December 31, 2025');
+        return false;
+    }
+
     if (!timeGuess) {
         alert('Please select a predicted time');
         return false;
@@ -108,15 +118,24 @@ function validatePoolForm(form) {
 /**
  * Get pool form data
  * @param {HTMLFormElement} form - Pool form
- * @returns {Object} Form data
+ * @returns {Object} Form data - normalized for backend
  */
 function getPoolFormData(form) {
+    const name = form.querySelector('#pool-name').value.trim();
+    const dateGuess = form.querySelector('#pool-date').value;
+    const timeGuess = form.querySelector('#pool-time').value;
+    const weightGuess = form.querySelector('#pool-weight').value;
+    const lengthGuess = form.querySelector('#pool-length').value;
+    
+    // Create prediction string combining date and time
+    const prediction = dateGuess && timeGuess ? `${dateGuess} at ${timeGuess}` : dateGuess || '';
+    
     return {
-        name: form.querySelector('#pool-name').value.trim(),
-        dateGuess: form.querySelector('#pool-date').value,
-        timeGuess: form.querySelector('#pool-time').value,
-        weightGuess: form.querySelector('#pool-weight').value,
-        lengthGuess: form.querySelector('#pool-length').value
+        name: name,
+        prediction: prediction,
+        due_date: dateGuess,
+        weight: weightGuess,
+        length: lengthGuess,
     };
 }
 

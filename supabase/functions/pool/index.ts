@@ -189,10 +189,10 @@ serve(async (req: Request) => {
     // Additional date validation
     const selectedDate = new Date(body.dueDate)
     const minDate = new Date('2024-01-01')
-    const maxDate = new Date('2025-12-31')
+    const maxDate = new Date('2026-12-31')  // Updated for 2026 baby shower
     
     if (selectedDate < minDate || selectedDate > maxDate) {
-      return createErrorResponse('Birth date must be between 2024-01-01 and 2025-12-31', 400)
+      return createErrorResponse('Birth date must be between 2024-01-01 and 2026-12-31', 400)
     }
 
     // Use sanitized data from validation
@@ -208,32 +208,29 @@ serve(async (req: Request) => {
     const currentCount = totalCount || 0
     const isMilestone = currentCount + 1 === 50
 
-    console.log(`[pool] Writing prediction to baby_shower.pool_predictions, current count: ${currentCount}`)
+    console.log(`[pool] Writing prediction to baby_shower.pool_predictions via RPC, current count: ${currentCount}`)
 
-    // Insert into baby_shower.pool_predictions with dedicated columns
+    // Use existing RPC function to insert (bypasses RLS)
     const { data, error } = await supabase
-      .from('baby_shower.pool_predictions')
-      .insert({
-        predictor_name: sanitizedName,
-        gender: body.gender?.toLowerCase() || 'surprise',
-        birth_date: body.dueDate,
-        prediction: sanitizedPrediction,
-        weight_kg: body.weight,
-        length_cm: body.length,
-        hair_color: body.hairColor?.trim().slice(0, 50) || null,
-        eye_color: body.eyeColor?.trim().slice(0, 50) || null,
-        personality: body.personality?.trim().slice(0, 200) || null,
-        submitted_by: sanitizedName,
+      .rpc('insert_pool_prediction', {
+        p_name: sanitizedName,
+        p_prediction: sanitizedPrediction,
+        p_due_date: body.dueDate,
+        p_weight: body.weight,
+        p_length: body.length,
+        p_ai_roast: null, // Will be filled in later if AI generates a roast
       })
-      .select()
-      .single()
 
     if (error) {
-      console.error('Supabase insert error:', error)
-      return createErrorResponse('Database operation failed', 500)
+      console.error('Supabase RPC error:', JSON.stringify(error, null, 2))
+      return createErrorResponse('Database operation failed', 500, { 
+        message: error.message,
+        details: error,
+        hint: error.hint || 'Check RPC function'
+      })
     }
 
-    console.log(`[pool] Successfully inserted prediction with id: ${data.id}`)
+    console.log(`[pool] Successfully inserted prediction with id: ${data[0]?.id}`)
 
     // Generate AI roast (wrapped in try/catch - never block submission)
     let roast: string | null = null
@@ -254,11 +251,9 @@ serve(async (req: Request) => {
 
     // Return success response
     return createSuccessResponse({
-      message: 'Prediction recorded!',
       data: { 
-        id: data.id, 
+        id: data[0]?.id, 
         predictor_name: sanitizedName, 
-        gender: body.gender?.toLowerCase() || 'surprise',
         birth_date: body.dueDate,
         weight_kg: body.weight,
         length_cm: body.length,
