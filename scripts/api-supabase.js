@@ -268,8 +268,7 @@
         return apiFetch(url, {
             method: 'POST',
             body: JSON.stringify({
-                name: data.name?.trim() || '',
-                names: Array.isArray(data.names) ? data.names : [],
+                selected_names: Array.isArray(data.selected_names) ? data.selected_names : [],
             }),
         });
     }

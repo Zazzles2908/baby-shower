@@ -321,9 +321,20 @@
         }
     }
 
-    // Rest of the file remains the same...
-    // (Keeping the existing functions for brevity)
+    /**
+     * Submit baby name vote
+     */
+    async function submitVote(data) {
+        const url = getSupabaseFunctionUrl('vote');
 
+        return apiFetch(url, {
+            method: 'POST',
+            body: JSON.stringify({
+                selected_names: Array.isArray(data.selected_names) ? data.selected_names : [],
+            }),
+        });
+    }
+    
     /**
      * Initialize API and verify connection with enhanced diagnostics
      */

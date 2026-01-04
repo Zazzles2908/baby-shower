@@ -10,7 +10,7 @@ import {
 } from '../_shared/security.ts'
 
 interface VoteRequest {
-  names: string[]
+  selected_names: string[]
 }
 
 interface VoteResult {
@@ -56,20 +56,25 @@ serve(async (req: Request) => {
 
       const supabase = createClient(supabaseUrl, supabaseServiceKey, {
         auth: { autoRefreshToken: false, persistSession: false },
-        schema: 'baby_shower'
       })
 
       console.log('[vote] GET: Fetching all votes from baby_shower.votes')
 
       // Fetch all vote submissions from baby_shower.votes
+      // Use just 'votes' since schema is set in Supabase client config
       const { data: votes, error } = await supabase
-        .from('baby_shower.votes')
+        .from('votes')
         .select('id, voter_name, selected_names, created_at')
         .order('created_at', { ascending: false })
 
       if (error) {
-        console.error('Supabase query error:', error)
-        return createErrorResponse('Database operation failed', 500)
+        console.error('Supabase query error:', {
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+          code: error.code
+        })
+        return createErrorResponse(`Database operation failed: ${error.message}`, 500)
       }
 
       // Calculate vote counts and percentages from selected_names JSONB
@@ -134,10 +139,9 @@ serve(async (req: Request) => {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 
-    const supabase = createClient(supabaseUrl, supabaseServiceKey, {
-      auth: { autoRefreshToken: false, persistSession: false },
-      schema: 'baby_shower'
-    })
+      const supabase = createClient(supabaseUrl, supabaseServiceKey, {
+        auth: { autoRefreshToken: false, persistSession: false },
+      })
 
     // Parse and validate request body
     let body: VoteRequest
@@ -149,13 +153,13 @@ serve(async (req: Request) => {
 
     // Input validation using standardized function
     const validation = validateInput(body, {
-      names: { type: 'array', required: true }
+      selected_names: { type: 'array', required: true }
     })
 
     // Additional validation
     const errors: string[] = [...validation.errors]
     
-    const names = validation.sanitized.names as string[]
+    const names = validation.sanitized.selected_names as string[]
     
     if (names.length === 0) {
       errors.push('At least one name is required')
@@ -183,37 +187,45 @@ serve(async (req: Request) => {
       .map((n: string) => n.trim().slice(0, 50))
       .filter((n: string) => n.length > 0)
 
-    // Count total submissions in baby_shower.votes BEFORE insert to check milestone
-    const { count: totalCount } = await supabase
-      .from('baby_shower.votes')
-      .select('*', { count: 'exact', head: true })
-    const currentCount = totalCount || 0
-    const isMilestone = currentCount + 1 === 50
+      // Count total submissions in baby_shower.votes BEFORE insert to check milestone
+      // Use just 'votes' since schema is set in Supabase client config
+      const { count: totalCount } = await supabase
+        .from('votes')
+        .select('*', { count: 'exact', head: true })
+      const currentCount = totalCount || 0
+      const isMilestone = currentCount + 1 === 50
 
-    console.log(`[vote] POST: Writing vote to baby_shower.votes, current count: ${currentCount}`)
+      console.log(`[vote] POST: Writing vote to baby_shower.votes, current count: ${currentCount}`)
 
-    // Insert into baby_shower.votes with dedicated columns
-    const { data, error } = await supabase
-      .from('baby_shower.votes')
-      .insert({
-        voter_name: 'Anonymous Voter',
-        selected_names: sanitizedNames,
-        submitted_by: 'Anonymous Voter',
-      })
+      // Insert into baby_shower.votes table with dedicated columns
+      // Use just 'votes' since schema is set in Supabase client config
+      const { data, error } = await supabase
+        .from('votes')
+        .insert({
+          voter_name: 'Anonymous Voter',
+          selected_names: sanitizedNames,
+          submitted_by: 'Anonymous Voter',
+        })
       .select()
       .single()
 
     if (error) {
-      console.error('Supabase insert error:', error)
-      return createErrorResponse('Database operation failed', 500)
+      console.error('Supabase insert error:', {
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+        code: error.code
+      })
+      return createErrorResponse(`Database operation failed: ${error.message}`, 500)
     }
 
     console.log(`[vote] POST: Successfully inserted vote with id: ${data.id}`)
 
-    // Calculate updated progress data from baby_shower.votes
-    const allVotes = await supabase
-      .from('baby_shower.votes')
-      .select('id, selected_names, created_at')
+      // Calculate updated progress data from baby_shower.votes
+      // Use just 'votes' since schema is set in Supabase client config
+      const allVotes = await supabase
+        .from('votes')
+        .select('id, selected_names, created_at')
 
     const nameCounts: Record<string, number> = {}
     let totalVotes = 0

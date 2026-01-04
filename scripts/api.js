@@ -86,14 +86,14 @@
         const url = `${SUPABASE_URL}/functions/vote`;
         
         // Sanitize name array
-        const sanitizedNames = Array.isArray(data.names) ? data.names.map(name => {
+        const sanitizedNames = Array.isArray(data.selected_names) ? data.selected_names.map(name => {
             return window.SECURITY ? window.SECURITY.sanitizeName(name) : name.trim();
         }) : [];
         
         return apiFetch(url, {
             method: 'POST',
             body: JSON.stringify({
-                names: sanitizedNames,
+                selected_names: sanitizedNames,
             }),
         });
     }

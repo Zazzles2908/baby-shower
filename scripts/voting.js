@@ -369,7 +369,7 @@
             
             const response = await window.API.submitVote({
                 name: name.trim(),
-                names: votingState.selected
+                selected_names: votingState.selected
             });
             
             // Check for 50-submission milestone
