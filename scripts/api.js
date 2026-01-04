@@ -65,7 +65,7 @@
      * Submit guestbook entry
      */
     async function submitGuestbook(data) {
-        const url = `${SUPABASE_URL}/functions/v1/guestbook`;
+        const url = `${SUPABASE_URL}/functions/guestbook`;
         
         // Sanitize inputs using security utilities
         const sanitizedData = {
