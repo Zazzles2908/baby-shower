@@ -252,7 +252,7 @@
             try {
                 // Poll for game state updates
                 const gameState = await apiFetch(
-                    `${config.url}/functions/v1/game-session`,
+                    `${config.url}/functions/game-session`,
                     {
                         method: 'POST',
                         body: JSON.stringify({
@@ -304,12 +304,13 @@
             try {
                 // Call game-vote function to get current vote counts
                 // Using GET request with query parameters
-                const url = new URL(`${config.url}/functions/v1/game-vote`);
+                const url = new URL(`${config.url}/functions/game-vote`);
                 url.searchParams.append('scenario_id', currentScenario.id);
 
                 const response = await fetch(url.toString(), {
                     method: 'GET',
                     headers: {
+                        'apikey': config.anonKey,
                         'Authorization': `Bearer ${config.anonKey}`,
                         'Content-Type': 'application/json'
                     }
@@ -1289,7 +1290,7 @@
         try {
             // Call game-session Edge Function
             const response = await apiFetch(
-                `${config.url}/functions/v1/game-session`,
+                `${config.url}/functions/game-session`,
                 {
                     method: 'POST',
                     body: JSON.stringify({
@@ -1426,7 +1427,7 @@
 
         try {
             const response = await apiFetch(
-                `${config.url}/functions/v1/game-session`,
+                `${config.url}/functions/game-session`,
                 {
                     method: 'POST',
                     body: JSON.stringify({
@@ -1577,7 +1578,7 @@
 
         try {
             const response = await apiFetch(
-                `${config.url}/functions/v1/game-vote`,
+                `${config.url}/functions/game-vote`,
                 {
                     method: 'POST',
                     body: JSON.stringify({
@@ -1704,7 +1705,7 @@
 
         try {
             const response = await apiFetch(
-                `${config.url}/functions/v1/game-vote`,
+                `${config.url}/functions/game-vote`,
                 {
                     method: 'POST',
                     body: JSON.stringify({
@@ -1744,7 +1745,7 @@
 
         try {
             const response = await apiFetch(
-                `${config.url}/functions/v1/game-reveal`,
+                `${config.url}/functions/game-reveal`,
                 {
                     method: 'POST',
                     body: JSON.stringify({

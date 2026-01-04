@@ -53,7 +53,7 @@
      * Build Supabase Edge Function URL
      */
     function getSupabaseFunctionUrl(functionName) {
-        return `${SUPABASE_URL}/functions/v1/${functionName}`;
+        return `${SUPABASE_URL}/functions/${functionName}`;
     }
 
     /**
@@ -67,6 +67,7 @@
 
         // Add Supabase authorization header
         if (SUPABASE_ANON_KEY) {
+            headers['apikey'] = SUPABASE_ANON_KEY;
             headers['Authorization'] = `Bearer ${SUPABASE_ANON_KEY}`;
         }
 

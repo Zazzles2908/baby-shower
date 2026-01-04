@@ -79,7 +79,7 @@
 
     function getEdgeFunctionUrl(functionName) {
         const supabaseUrl = root.CONFIG?.SUPABASE?.URL || '';
-        return `${supabaseUrl}/functions/v1/${functionName}`;
+        return `${supabaseUrl}/functions/${functionName}`;
     }
 
     /**
