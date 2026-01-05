@@ -1392,7 +1392,7 @@
     // ==========================================
 
     /**
-     * Initialize game
+     * Initialize the game
      */
     function initializeGame() {
         console.log('[MomVsDadSimplified] initializing...');
@@ -1403,6 +1403,27 @@
             console.warn('[MomVsDadSimplified] Container not found');
             return;
         }
+
+        // Supabase client is now available via window.API.getSupabaseClient()
+        // No local initialization needed
+
+        try {
+            // Render initial screen
+            renderLobbySelector();
+        } catch (error) {
+            console.error('[MomVsDadSimplified] Error initializing game:', error);
+            // Show error state in container
+            container.innerHTML = `
+                <div class="mvd-section" style="text-align: center; padding: 40px 20px;">
+                    <h2>🎮 Mom vs Dad Game</h2>
+                    <p>Unable to load game. Please try again later.</p>
+                    <button onclick="location.reload()" class="btn-primary" style="margin-top: 20px;">
+                        🔄 Refresh Page
+                    </button>
+                </div>
+            `;
+        }
+    }
 
         // Supabase client is now available via window.API.getSupabaseClient()
         // No local initialization needed (FIXES ISSUE #1)

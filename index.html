@@ -108,14 +108,6 @@
                             <span class="card-title">Advice</span>
                             <span class="card-subtitle">Share your wisdom</span>
                         </button>
-                        <button class="activity-card" data-section="voting" aria-label="Voting - Vote for baby names">
-                            <div class="card-background-image"></div>
-                            <div class="card-icon anime-character-wrapper">
-                                <img src="https://bkszmvfsfgvdwzacgmfz.supabase.co/storage/v1/object/public/baby-shower-pictures/Pictures/New Images/Duo/chibi_duo_highfive.png" alt="Voting" class="anime-character" style="max-width: 80px; max-height: 100px;">
-                            </div>
-                            <span class="card-title">Voting</span>
-                            <span class="card-subtitle">Vote for baby names</span>
-                        </button>
                         <button class="activity-card" data-section="mom-vs-dad" aria-label="Mom vs Dad - The Truth Revealed">
                             <div class="card-background-image"></div>
                             <div class="card-icon anime-character-wrapper">
@@ -367,35 +359,6 @@
             </div>
         </section>
 
-        <!-- Voting Section -->
-        <section id="voting-section" class="hidden">
-            <div class="container">
-                <button class="back-btn">← Back to Activities</button>
-                <div class="section-decoration">
-                    <div class="corner-decoration top-left">
-                        <img src="https://bkszmvfsfgvdwzacgmfz.supabase.co/storage/v1/object/public/baby-shower-pictures/Pictures/Jazeel&Michelle_Icon/asset_chibi_heart.png" alt="Heart" class="corner-decoration-img">
-                    </div>
-                    <div class="corner-decoration top-right">
-                        <img src="https://bkszmvfsfgvdwzacgmfz.supabase.co/storage/v1/object/public/baby-shower-pictures/Pictures/Jazeel&Michelle_Icon/asset_chibi_heart.png" alt="Heart" class="corner-decoration-img">
-                    </div>
-                    <div class="corner-decoration bottom-left">
-                        <img src="https://bkszmvfsfgvdwzacgmfz.supabase.co/storage/v1/object/public/baby-shower-pictures/Pictures/Michelle_Jazeel/app_hero_pixar.png" alt="Couple" class="corner-decoration-img">
-                    </div>
-                    <div class="corner-decoration bottom-right">
-                        <img src="https://bkszmvfsfgvdwzacgmfz.supabase.co/storage/v1/object/public/baby-shower-pictures/Pictures/Michelle_Jazeel/app_hero_illustration.png" alt="Illustration" class="corner-decoration-img">
-                    </div>
-                </div>
-                <h1>❤️ Vote for Baby Names</h1>
-                <p class="subtitle">Heart up to 3 names you like!</p>
-                <div id="name-list" class="name-list">
-                    <!-- Names will be populated by JavaScript -->
-                </div>
-                <div id="vote-helper" class="vote-helper-text">Select up to 3 names to vote</div>
-                <button id="vote-submit" class="submit-btn tooltip" data-tooltip="Select names first!" disabled>Submit Votes ❤️</button>
-                <div id="vote-stats" class="stats-display"></div>
-            </div>
-        </section>
-
         <!-- Mom vs Dad Game Section -->
         <section id="mom-vs-dad-section" class="hidden">
             <div class="container">
@@ -471,39 +434,22 @@
     <!-- Enhanced Error Monitoring (must load first) -->
     <script src="scripts/error-monitor.js"></script>
 
-    <!-- Configuration -->
-    
+    <!-- Environment Configuration (Single source of truth) -->
     <script>
-        // Environment variables injected at build time
+        // Environment variables injected at build time by Vercel
+        // Only expose public (anon) key to client - service role stays server-side!
         window.ENV = window.ENV || {};
-        window.ENV.NEXT_PUBLIC_SUPABASE_URL = 'null';
-        window.ENV.NEXT_PUBLIC_SUPABASE_ANON_KEY = 'null';
-        window.ENV.SUPABASE_SERVICE_ROLE_KEY = 'null';
         
-        console.log('[ENV] Supabase URL configured:', window.ENV.NEXT_PUBLIC_SUPABASE_URL ? '***configured***' : 'missing');
-        console.log('[ENV] Supabase Anon Key configured:', window.ENV.NEXT_PUBLIC_SUPABASE_ANON_KEY ? '***configured***' : 'missing');
-    </script>
-
-    <script>
-        // Environment variables injected at build time
-        window.ENV = window.ENV || {};
+        // These are injected from .env.local during Vercel build
         window.ENV.NEXT_PUBLIC_SUPABASE_URL = 'https://bkszmvfsfgvdwzacgmfz.supabase.co';
         window.ENV.NEXT_PUBLIC_SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJrc3ptdmZzZmd2ZHd6YWNnbWZ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQzODI1NjMsImV4cCI6MjA3OTk1ODU2M30.BswusP1pfDUStzAU8k-VKPailISimApapNeJGlid8sI';
-        window.ENV.SUPABASE_SERVICE_ROLE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJrc3ptdmZzZmd2ZHd6YWNnbWZ6Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NDM4MjU2MywiZXhwIjoyMDc5OTU4NTYzfQ.96o8NDg5cM8H8PRX3dVU9onPJJFGPnGGVlejcdQrNuU';
+        
+        // CRITICAL: Service role key is NEVER exposed to client!
+        // Only accessed server-side in Edge Functions
         
         console.log('[ENV] Supabase URL configured:', window.ENV.NEXT_PUBLIC_SUPABASE_URL ? '***configured***' : 'missing');
         console.log('[ENV] Supabase Anon Key configured:', window.ENV.NEXT_PUBLIC_SUPABASE_ANON_KEY ? '***configured***' : 'missing');
-    </script>
-
-    <script>
-        // Environment variables injected at build time
-        window.ENV = window.ENV || {};
-        window.ENV.NEXT_PUBLIC_SUPABASE_URL = 'https://bkszmvfsfgvdwzacgmfz.supabase.co';
-        window.ENV.NEXT_PUBLIC_SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJrc3ptdmZzZmd2ZHd6YWNnbWZ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQzODI1NjMsImV4cCI6MjA3OTk1ODU2M30.BswusP1pfDUStzAU8k-VKPailISimApapNeJGlid8sI';
-        window.ENV.SUPABASE_SERVICE_ROLE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJrc3ptdmZzZmd2ZHd6YWNnbWZ6Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NDM4MjU2MywiZXhwIjoyMDc5OTU4NTYzfQ.96o8NDg5cM8H8PRX3dVU9onPJJFGPnGGVlejcdQrNuU';
-        
-        console.log('[ENV] Supabase URL configured:', window.ENV.NEXT_PUBLIC_SUPABASE_URL ? '***configured***' : 'missing');
-        console.log('[ENV] Supabase Anon Key configured:', window.ENV.NEXT_PUBLIC_SUPABASE_ANON_KEY ? '***configured***' : 'missing');
+        console.log('[ENV] Security: Service role key NOT exposed to client (as it should be)');
     </script>
 
     <script>
@@ -590,7 +536,6 @@
     <script src="scripts/pool.js"></script>
     <script src="scripts/quiz.js"></script>
     <script src="scripts/advice.js"></script>
-    <script src="scripts/voting.js"></script>
 
     <!-- Enhanced Game Scripts -->
     <script src="scripts/realtime-manager-enhanced.js"></script>

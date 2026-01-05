@@ -518,9 +518,6 @@ function initializeSection(sectionName) {
                 window.Advice.init();
             }
             break;
-        case 'voting':
-            initializeVoting();
-            break;
         case 'mom-vs-dad':
             // Mom vs Dad simplified game is self-contained in mom-vs-dad-simplified.js
             // It will auto-initialize when DOM is ready
@@ -964,9 +961,9 @@ async function handleAdviceSubmit(event) {
 
         // Show success message
         if (window.UIUtils) {
-            window.UIUtils.showInlineSuccess(form, getAdviceSuccessMessage(data.name, data.adviceType));
+            window.UIUtils.showInlineSuccess(form, window.Advice.getAdviceSuccessMessage(data.name, data.adviceType));
         } else {
-            showFormSuccessMessage(getAdviceSuccessMessage(data.name, data.adviceType), form);
+            showFormSuccessMessage(window.Advice.getAdviceSuccessMessage(data.name, data.adviceType), form);
         }
         triggerConfetti();
 

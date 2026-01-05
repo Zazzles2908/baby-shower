@@ -7,7 +7,6 @@ PROJECT_NAME="Baby_Shower"
 PROJECT_DIR="C:/Project/Baby_Shower"
 SUPABASE_URL="https://bkszmvfsfgvdwzacgmfz.supabase.co"
 PROJECT_REF="bkszmvfsfgvdwzacgmfz"
-ACCESS_TOKEN="sbp_fdca3aaba5d2ca76cc938e4b7c44c4599ac97812"
 
 # Colors for output
 RED='\033[0;31m'
@@ -20,10 +19,23 @@ echo "Supabase Helper: ${PROJECT_NAME}"
 echo "============================================"
 echo ""
 
-# Set the correct token for this project
-export SUPABASE_ACCESS_TOKEN="${ACCESS_TOKEN}"
-echo -e "${GREEN}✓${NC} Set SUPABASE_ACCESS_TOKEN for ${PROJECT_NAME}"
-echo "  Token: ${ACCESS_TOKEN:0:15}...${ACCESS_TOKEN: -5}"
+# Read token from .env.local
+TOKEN_FILE="${PROJECT_DIR}/.env.local"
+if [ -f "$TOKEN_FILE" ]; then
+    ACCESS_TOKEN=$(grep SUPABASE_ACCESS_TOKEN "$TOKEN_FILE" | cut -d'"' -f2)
+    if [ -n "$ACCESS_TOKEN" ]; then
+        # Set the correct token for this project
+        export SUPABASE_ACCESS_TOKEN="${ACCESS_TOKEN}"
+        echo -e "${GREEN}✓${NC} Set SUPABASE_ACCESS_TOKEN for ${PROJECT_NAME}"
+        echo "  Token: ${ACCESS_TOKEN:0:15}...${ACCESS_TOKEN: -5}"
+    else
+        echo -e "${RED}✗${NC} Could not find SUPABASE_ACCESS_TOKEN in .env.local"
+        exit 1
+    fi
+else
+    echo -e "${RED}✗${NC} Could not find .env.local at ${TOKEN_FILE}"
+    exit 1
+fi
 echo ""
 
 # Change to project directory
@@ -53,3 +65,4 @@ else
     echo -e "${RED}✗${NC} Token validation failed"
     echo "  Please check the access token in .env.local"
 fi
+

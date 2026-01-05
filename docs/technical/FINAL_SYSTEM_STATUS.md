@@ -150,8 +150,7 @@ Production: https://baby-shower-qr-app.vercel.app
 
 ### Supabase
 - **Project ID:** `bkszmvfsfgvdwzacgmfz`
-- **Working Token:** `sbp_fdca3aaba5d2ca76cc938e4b7c44c4599ac97812`
-- **Expired Token:** `sbp_46795a6cfa20cec69f26ae1b0430444b84207b5c`
+- **Access Token:** Located in `.env.local` (line 41)
 
 ### Environment Variables (Vercel)
 ```

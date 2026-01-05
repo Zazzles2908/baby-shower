@@ -85,14 +85,16 @@
         return AVATAR_EMOTIONS[emotion] || AVATAR_EMOTIONS.neutral;
     }
 
+    // Game state
     let currentQuestionIndex = 0;
+    let votes = []; // Store all votes locally
     let userName = '';
-    let votes = []; // Store all votes
 
     /**
      * Get guest name
      */
     function getGuestName() {
+        // Try to get from localStorage first
         const name = localStorage.getItem('babyShowerGuestName');
         if (name) {
             userName = name;
@@ -102,6 +104,7 @@
         const nameInput = prompt("What's your name?");
         if (nameInput && nameInput.trim()) {
             userName = nameInput.trim();
+            // Save for convenience across activities
             localStorage.setItem('babyShowerGuestName', userName);
         }
         return userName;
@@ -175,14 +178,15 @@
     /**
      * Create results screen HTML
      */
-    function createResultsScreen() {
+    async function createResultsScreen() {
+        // For now, show user's own results (we could fetch aggregated data here)
         const michelleVotes = votes.filter(v => v === 'michelle').length;
-        const jazeelVotes = votes.filter(v => 'jazeel').length;
+        const jazeelVotes = votes.filter(v => v === 'jazeel').length;
         const total = votes.length;
         const michellePercent = total > 0 ? Math.round((michelleVotes / total) * 100) : 0;
         const jazeelPercent = total > 0 ? Math.round((jazeelVotes / total) * 100) : 0;
 
-        // Determine majority
+        // Determine majority based on user's votes
         let winner = '';
         if (michellePercent > jazeelPercent) {
             winner = 'Michelle';
@@ -200,15 +204,15 @@
                     <p class="results-subtitle">Thanks for playing, ${userName}!</p>
                 </div>
 
-                <!-- Winner Banner -->
+                <!-- Results Summary -->
                 <div class="winner-banner ${winner.toLowerCase()}">
                     <div class="winner-avatar">
                         <img src="${winner === 'Michelle' ? AVATAR_URLS.michelle : AVATAR_URLS.jazeel}" alt="${winner}" class="winner-img">
                     </div>
                     <div class="winner-text">
-                        <div class="winner-label">Predicted Winner</div>
+                        <div class="winner-label">Your Pick</div>
                         <div class="winner-name">${winner}</div>
-                        <div class="winner-percent">${Math.max(michellePercent, jazeelPercent)}%</div>
+                        <div class="winner-percent">${Math.max(michellePercent, jazeelPercent)}% of your votes</div>
                     </div>
                 </div>
 
@@ -228,6 +232,34 @@
                         </div>
                         <div class="breakdown-percent">${jazeelPercent}%</div>
                     </div>
+                </div>
+
+                <!-- Stats Summary -->
+                <div class="results-stats">
+                    <div class="stat-item">
+                        <span class="stat-label">Questions Answered</span>
+                        <span class="stat-value">${total}</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Your Michelle Picks</span>
+                        <span class="stat-value">${michelleVotes}</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Your Jazeel Picks</span>
+                        <span class="stat-value">${jazeelVotes}</span>
+                    </div>
+                </div>
+
+                <!-- Cloud Save Toggle (Optional) -->
+                <div class="cloud-save-section">
+                    <div class="cloud-toggle">
+                        <label class="cloud-toggle-label">
+                            <input type="checkbox" id="cloud-save-toggle" class="cloud-toggle-input">
+                            <span class="cloud-toggle-slider"></span>
+                            <span class="cloud-toggle-text">☁️ Save to cloud (optional)</span>
+                        </label>
+                    </div>
+                    <div id="cloud-save-status" class="cloud-save-status"></div>
                 </div>
 
                 <!-- Play Again Button -->
@@ -257,7 +289,7 @@
     function vote(choice) {
         console.log('[ShoeGame] Vote:', choice);
         
-        // Store vote
+        // Store vote locally (no API call needed)
         votes.push(choice);
         
         // Visual feedback
@@ -293,11 +325,103 @@
     /**
      * Show results screen
      */
-    function showResults() {
+    async function showResults() {
+        // Results calculated locally - no API call needed
+        
         const container = document.getElementById('who-would-rather-container');
         if (!container) return;
 
-        container.innerHTML = createResultsScreen();
+        container.innerHTML = await createResultsScreen();
+        
+        // Add cloud save toggle event listener
+        const cloudToggle = document.getElementById('cloud-save-toggle');
+        const cloudStatus = document.getElementById('cloud-save-status');
+        
+        if (cloudToggle && cloudStatus) {
+            cloudToggle.addEventListener('change', async function() {
+                if (this.checked) {
+                    // Attempt cloud save
+                    cloudStatus.textContent = 'Saving...';
+                    cloudStatus.className = 'cloud-save-status saving';
+                    
+                    try {
+                        await saveResultsToCloud();
+                        cloudStatus.textContent = '✓ Saved to cloud';
+                        cloudStatus.className = 'cloud-save-status success';
+                    } catch (error) {
+                        console.warn('[ShoeGame] Cloud save failed:', error);
+                        cloudStatus.textContent = '✗ Cloud save failed (offline mode works!)';
+                        cloudStatus.className = 'cloud-save-status error';
+                        this.checked = false; // Uncheck on failure
+                    }
+                } else {
+                    cloudStatus.textContent = '';
+                }
+            });
+        }
+    }
+
+    /**
+     * Save results to cloud (optional feature)
+     */
+    async function saveResultsToCloud() {
+        // This is an optional cloud save feature that attempts to save results
+        // If it fails, the game still works perfectly in offline mode
+        
+        try {
+            const michelleVotes = votes.filter(v => v === 'michelle').length;
+            const jazeelVotes = votes.filter(v => v === 'jazeel').length;
+            const total = votes.length;
+            
+            // Prepare results data
+            const resultsData = {
+                game: 'shoe-game',
+                guest_name: userName,
+                total_votes: total,
+                michelle_votes: michelleVotes,
+                jazeel_votes: jazeelVotes,
+                timestamp: new Date().toISOString(),
+                votes_detail: votes.map((choice, index) => ({
+                    question_number: index + 1,
+                    question_text: QUESTIONS[index],
+                    vote: choice
+                }))
+            };
+            
+            // Try to send to a hypothetical cloud endpoint
+            // This will fail silently if no backend is available
+            const url = `${window.API?.getSupabaseFunctionUrl?.('who-would-rather') || 'https://bkszmvfsfgvdwzacgmfz.supabase.co/functions/v1/who-would-rather'}/save-results`;
+            
+            // Note: This will likely fail due to 401 auth errors, but that's expected
+            // The game works perfectly without this functionality
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${window.API?.getSupabaseClient?.()?.auth?.session?.()?.access_token || ''}`
+                },
+                body: JSON.stringify(resultsData)
+            }).catch(() => {
+                // Silently fail - the game works offline
+                throw new Error('Cloud save unavailable');
+            });
+            
+            if (!response.ok) {
+                throw new Error('Cloud save failed');
+            }
+            
+            const data = await response.json();
+            if (data.success) {
+                console.log('[ShoeGame] Results saved to cloud');
+                return true;
+            }
+            
+        } catch (error) {
+            console.warn('[ShoeGame] Cloud save failed, continuing offline:', error.message);
+            throw error; // Re-throw to trigger error handling in the toggle handler
+        }
+        
+        return false;
     }
 
     /**

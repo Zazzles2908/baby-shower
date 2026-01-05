@@ -5,7 +5,7 @@
 - **Project Name**: Baby
 - **Supabase URL**: https://bkszmvfsfgvdwzacgmfz.supabase.co
 - **Project Reference ID**: `bkszmvfsfgvdwzacgmfz`
-- **Access Token**: `sbp_fdca3aaba5d2ca76cc938e4b7c44c4599ac97812`
+- **Access Token**: Located in `.env.local` (line 41)
 
 ## Directory Structure
 
@@ -22,7 +22,7 @@ C:/Project/Baby_Shower/
 │   ├── migrations/         # Database migrations
 │   └── supabase-helper.sh  # This helper script
 ├── .env.local              # Contains Supabase credentials
-└── ...
+└ ...
 ```
 
 ## Common Commands for This Project
@@ -30,7 +30,7 @@ C:/Project/Baby_Shower/
 ### Authentication & Linking
 ```bash
 # Set the correct access token for this project
-export SUPABASE_ACCESS_TOKEN="sbp_fdca3aaba5d2ca76cc938e4b7c44c4599ac97812"
+export SUPABASE_ACCESS_TOKEN="$(cat ../.env.local | grep SUPABASE_ACCESS_TOKEN | cut -d'"' -f2)"
 
 # Verify token and list projects
 supabase projects list
@@ -89,8 +89,8 @@ If you get "Unauthorized" errors:
 # Verify which token is being used
 echo $SUPABASE_ACCESS_TOKEN
 
-# Use this project's token
-export SUPABASE_ACCESS_TOKEN="sbp_fdca3aaba5d2ca76cc938e4b7c44c4599ac97812"
+# Use this project's token (read from .env.local)
+export SUPABASE_ACCESS_TOKEN="$(cat ../.env.local | grep SUPABASE_ACCESS_TOKEN | cut -d'"' -f2)"
 
 # Re-link the project
 supabase link --project-ref bkszmvfsfgvdwzacgmfz
@@ -117,7 +117,7 @@ Required in `.env.local`:
 NEXT_PUBLIC_SUPABASE_URL="https://bkszmvfsfgvdwzacgmfz.supabase.co"
 NEXT_PUBLIC_SUPABASE_ANON_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
 SUPABASE_SERVICE_ROLE_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-SUPABASE_ACCESS_TOKEN="sbp_fdca3aaba5d2ca76cc938e4b7c44c4599ac97812"
+SUPABASE_ACCESS_TOKEN="<token from .env.local>"
 ```
 
 ## Important Notes
@@ -138,7 +138,7 @@ When working with this project:
 
 1. **Always use the project's token** from `.env.local`:
    ```bash
-   export SUPABASE_ACCESS_TOKEN="sbp_fdca3aaba5d2ca76cc938e4b7c44c4599ac97812"
+   export SUPABASE_ACCESS_TOKEN="$(cat ../.env.local | grep SUPABASE_ACCESS_TOKEN | cut -d'"' -f2)"
    ```
 
 2. **Always work from the project directory**:

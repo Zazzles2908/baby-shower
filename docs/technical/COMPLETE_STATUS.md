@@ -156,7 +156,7 @@ Please test and let me know:
 ### Deploy Backend (if needed)
 ```bash
 cd C:\Project\Baby_Shower
-export SUPABASE_ACCESS_TOKEN="sbp_fdca3aaba5d2ca76cc938e4b7c44c4599ac97812"
+export SUPABASE_ACCESS_TOKEN="$(cat .env.local | grep SUPABASE_ACCESS_TOKEN | cut -d'"' -f2)"
 supabase functions deploy lobby-create
 supabase functions deploy lobby-status
 supabase functions deploy game-start

@@ -971,6 +971,43 @@ if (perceptionGap > 50) {
 
 ---
 
-**Document Version: 3.2**  
-**Purpose: Complete Development Guide with Game Implementation + Security Guidelines**  
-**Added: Security guidelines, schema conflict resolution, unified table naming**
+## 🔑 Supabase CLI Configuration (Critical for Agents)
+
+**If you need to use Supabase CLI commands, you MUST set the Supabase access token FIRST:**
+
+```bash
+export SUPABASE_ACCESS_TOKEN="$(cat .env.local | grep SUPABASE_ACCESS_TOKEN | cut -d'"' -f2)"
+```
+
+**Alternative - copy from .env.local:**
+```bash
+# Find this line in .env.local:
+# SUPABASE_ACCESS_TOKEN="sbp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+
+# Copy that token and use it:
+export SUPABASE_ACCESS_TOKEN="sbp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+```
+
+**Without this, you will get "Unauthorized" errors.**
+
+**Why this is needed:**
+- The Supabase CLI reads from system environment variable `SUPABASE_ACCESS_TOKEN`
+- It does NOT automatically read from `.env.local`
+- An expired/wrong token was set in the system environment variable
+
+**Quick test - does your token work?**
+```bash
+supabase projects list
+# If error: "Unexpected error retrieving projects: {"message":"Unauthorized"}"
+# Check your token: echo $SUPABASE_ACCESS_TOKEN
+# If wrong, update it using the command above
+```
+
+**Or use the setup scripts:**
+- Windows: `supabase-env-setup.bat`
+- Linux/Mac: `source supabase-env-setup.sh`
+
+---
+
+**Document Version: 3.3**  
+**Added: Supabase CLI configuration for future agents**

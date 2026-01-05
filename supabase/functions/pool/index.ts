@@ -186,13 +186,16 @@ serve(async (req: Request) => {
       return createErrorResponse('Validation failed', 400, validation.errors)
     }
 
-    // Additional date validation
+    // Additional date validation for 2026 baby shower
+    // Today is January 5, 2026, so valid dates are Jan 6 - Dec 31, 2026
     const selectedDate = new Date(body.dueDate)
-    const minDate = new Date('2024-01-01')
-    const maxDate = new Date('2026-12-31')  // Updated for 2026 baby shower
+    const today = new Date('2026-01-05')
+    const minDate = new Date(today)
+    minDate.setDate(today.getDate() + 1) // Tomorrow (Jan 6, 2026)
+    const maxDate = new Date('2026-12-31')
     
     if (selectedDate < minDate || selectedDate > maxDate) {
-      return createErrorResponse('Birth date must be between 2024-01-01 and 2026-12-31', 400)
+      return createErrorResponse(`Birth date must be between ${minDate.toISOString().split('T')[0]} and ${maxDate.toISOString().split('T')[0]}`, 400)
     }
 
     // Use sanitized data from validation
