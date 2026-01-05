@@ -243,16 +243,22 @@ async function refreshStatsFromAPI() {
             advice_count: 0
         };
         
-        // Get counts for each activity type
+        // Get counts for each activity type in PARALLEL (not sequential!)
         const activities = ['guestbook', 'pool', 'quiz', 'advice'];
-        for (const activity of activities) {
-            try {
-                const submissions = await window.API.getSubmissions(activity);
-                stats[activity + '_count'] = submissions.length || 0;
-            } catch (e) {
-                console.warn(`Failed to get ${activity} submissions:`, e.message);
-            }
-        }
+        
+        // Parallel fetching with Promise.all for much faster loading
+        const results = await Promise.all(
+            activities.map(activity => 
+                window.API.getSubmissions(activity)
+                    .then(submissions => ({ activity, count: submissions.length || 0 }))
+                    .catch(e => ({ activity, count: 0, error: e.message }))
+            )
+        );
+        
+        // Process results
+        results.forEach(result => {
+            stats[result.activity + '_count'] = result.count;
+        });
         
         statsCache.guestbook_count = stats.guestbook_count;
         statsCache.pool_count = stats.pool_count;
@@ -1653,14 +1659,44 @@ function cleanupTicker() {
     }
 }
 
-// Initialize ticker after API is ready
+// Initialize ticker after API is ready AND user interaction
 function initializeTickerAfterAPI() {
-    // Wait for API to initialize, then setup ticker
-    setTimeout(() => {
-        initializeActivityTicker();
-        startTickerCycling();
-        console.log('✅ Activity ticker initialized');
-    }, 1500);
+    // Wait for API to initialize and page to be interactive
+    // Defer to after LCP (Largest Contentful Paint) for better performance
+    if (document.readyState === 'complete') {
+        // Page already loaded, wait 3 seconds for initial render
+        setTimeout(() => {
+            initializeActivityTicker();
+            startTickerCycling();
+            console.log('✅ Activity ticker initialized (deferred for performance)');
+        }, 3000);
+    } else {
+        // Wait for page load then defer
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                initializeActivityTicker();
+                startTickerCycling();
+                console.log('✅ Activity ticker initialized (deferred for performance)');
+            }, 3000);
+        });
+    }
+    
+    // Also try to initialize on first user interaction (backup)
+    const initOnInteraction = () => {
+        if (!tickerState.channel) {  // Not already initialized
+            initializeActivityTicker();
+            startTickerCycling();
+            console.log('✅ Activity ticker initialized (on user interaction)');
+        }
+        document.removeEventListener('scroll', initOnInteraction);
+        document.removeEventListener('click', initOnInteraction);
+        document.removeEventListener('touchstart', initOnInteraction);
+    };
+    
+    // Listen for user interaction
+    document.addEventListener('scroll', initOnInteraction, { once: true, passive: true });
+    document.addEventListener('click', initOnInteraction, { once: true });
+    document.addEventListener('touchstart', initOnInteraction, { once: true, passive: true });
 }
 
 // Hook into existing initialization

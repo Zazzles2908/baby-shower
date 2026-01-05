@@ -441,18 +441,24 @@
     async function initializeAPI() {
         console.log('[API] Client initializing with enhanced retry logic...');
         
-        const healthResults = await performHealthCheck();
+        // CRITICAL: Don't run blocking health check on page load!
+        // Health check is now optional and runs only when needed
+        // This improves initial page load time significantly
         
-        if (healthResults.overall === 'healthy') {
-            console.log('[API] Client ready - all systems operational');
-            return { success: true, health: healthResults };
-        } else if (healthResults.overall === 'degraded') {
-            console.warn('[API] Client ready - some features may be limited');
-            return { success: true, health: healthResults, warning: 'Some features may be limited' };
-        } else {
-            console.error('[API] Client initialization failed');
-            return { success: false, health: healthResults, error: 'Initialization failed' };
-        }
+        console.log('[API] Client ready - deferred health check available');
+        return { 
+            success: true, 
+            message: 'API client initialized. Run performHealthCheck() for status.' 
+        };
+    }
+    
+    /**
+     * Run health check (optional - only when needed)
+     * Call this function explicitly when you want to check API status
+     */
+    async function runOptionalHealthCheck() {
+        console.log('[API] Running optional health check...');
+        return await performHealthCheck();
     }
 
     /**
@@ -487,9 +493,8 @@
         gameJoin,
         // Supabase client accessor
         getSupabaseClient,
-        // Health check
-        performHealthCheck,
-        // Initialize API
+        // Health checks
+        performHealthCheck: runOptionalHealthCheck, // Renamed to clarify it's optional
         initialize: initializeAPI,
     };
 
@@ -500,15 +505,60 @@
         root.API = API;
     }
 
-    // Auto-initialize when DOM is ready
-    if (typeof document !== 'undefined') {
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', initializeAPI);
-        } else {
-            initializeAPI();
+    // CRITICAL: Defer API initialization to improve page load time!
+    // Don't run blocking initialization on page load
+    // Initialize only when first API call is made
+    
+    let apiInitialized = false;
+    const originalInitialize = initializeAPI;
+    
+    initializeAPI = async function() {
+        if (apiInitialized) return { success: true, cached: true };
+        
+        const result = await originalInitialize();
+        if (result.success) {
+            apiInitialized = true;
         }
-    }
+        return result;
+    };
+    
+    // Lazy initialization wrapper for all API calls
+    const originalSubmitGuestbook = submitGuestbook;
+    submitGuestbook = async function(data) {
+        await initializeAPI();
+        return originalSubmitGuestbook(data);
+    };
+    
+    const originalSubmitVote = submitVote;
+    submitVote = async function(data) {
+        await initializeAPI();
+        return originalSubmitVote(data);
+    };
+    
+    const originalSubmitPool = submitPool;
+    submitPool = async function(data) {
+        await initializeAPI();
+        return originalSubmitPool(data);
+    };
+    
+    const originalSubmitQuiz = submitQuiz;
+    submitQuiz = async function(data) {
+        await initializeAPI();
+        return originalSubmitQuiz(data);
+    };
+    
+    const originalSubmitAdvice = submitAdvice;
+    submitAdvice = async function(data) {
+        await initializeAPI();
+        return originalSubmitAdvice(data);
+    };
+    
+    const originalGameJoin = gameJoin;
+    gameJoin = async function(sessionCode, guestName) {
+        await initializeAPI();
+        return originalGameJoin(sessionCode, guestName);
+    };
 
-    console.log('[API] Client (api-supabase.js) loaded successfully with enhanced retry logic');
+    console.log('[API] Client (api-supabase.js) loaded successfully with lazy initialization');
 
 })(typeof window !== 'undefined' ? window : this);
