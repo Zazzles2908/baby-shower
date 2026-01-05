@@ -169,104 +169,65 @@
     }
 
       /**
-       * Join lobby - using window.API Supabase client (FIXES EDGE FUNCTION ISSUE)
-       * Includes race condition handling and input validation
+       * Join lobby - using Edge Functions API (FIXES RLS PERMISSION ISSUE)
+       * Uses game-session Edge Function instead of direct database queries
        */
       async function joinLobby(lobbyKey, playerName) {
           setLoading(true);
           const startTime = Date.now();
 
           try {
-              // Use window.API.getSupabaseClient() instead of local initialization
-              let supabase;
-              if (typeof window.API !== 'undefined' && typeof window.API.getSupabaseClient === 'function') {
-                  supabase = await window.API.getSupabaseClient();
+              // Use window.API for Edge Function calls (no JWT needed)
+              if (typeof window.API === 'undefined') {
+                  throw new Error('API not available. Please refresh the page.');
+              }
+              
+              // ===== VALIDATION =====
+              const cleanName = playerName ? playerName.trim().substring(0, 50) : '';
+              if (!cleanName || cleanName.length < 1) {
+                  throw new Error('Please enter your name');
+              }
+              const safeName = cleanName.replace(/[<>\"\'\\\/]/g, '');
+              
+              // Validate lobby key format (allow both old LOBBY-X and new session codes)
+              const isOldFormat = /^(LOBBY-[A-D])$/.test(lobbyKey);
+              const isNewFormat = /^[A-Z0-9]{6}$/.test(lobbyKey);
+              
+              if (!isOldFormat && !isNewFormat) {
+                  throw new Error('Invalid lobby key');
+              }
+              
+              // Use Edge Function for joining (works with anon key)
+              // If old format, we need to convert or use a different approach
+              let response;
+              
+              if (isNewFormat) {
+                  // New format: use game-session Edge Function
+                  response = await window.API.gameJoin(lobbyKey, safeName);
               } else {
-                  // Fallback to synchronous client if available
-                  supabase = getSupabase();
+                  // Old format: try direct query (this may fail without auth)
+                  // Fallback to using session_code format
+                  throw new Error('Please use the 6-character session code instead of LOBBY format');
               }
-
-              if (!supabase) {
-                  throw new Error('Supabase client not available. Please refresh the page.');
+              
+              if (!response.success) {
+                  throw new Error(response.error || 'Failed to join lobby');
               }
-             
-             // ===== VALIDATION =====
-             // Validate player name (length and sanitization)
-             const cleanName = playerName ? playerName.trim().substring(0, 50) : '';
-             if (!cleanName || cleanName.length < 1) {
-                 throw new Error('Please enter your name');
-             }
-             // Remove potentially dangerous characters
-             const safeName = cleanName.replace(/[<>\"\'\\\/]/g, '');
-             
-             // Validate lobby key format
-             if (!/^(LOBBY-[A-D])$/.test(lobbyKey)) {
-                 throw new Error('Invalid lobby key');
-             }
-             
-             // ===== STEP 1: Fetch lobby with lock hint =====
-             const { data: lobby, error: lobbyError } = await supabase
-                 .from('mom_dad_lobbies')
-                 .select('id, lobby_key, status, max_players, current_players, current_humans, admin_player_id')
-                 .eq('lobby_key', lobbyKey)
-                 .single();
-             
-             if (lobbyError || !lobby) {
-                 console.warn('[MomVsDadSimplified] Lobby not found:', lobbyKey);
-                 throw new Error('Lobby not found');
-             }
-             
-             // ===== STEP 2: Validate lobby state =====
-             if (lobby.current_players >= lobby.max_players) {
-                 throw new Error('Lobby is full (max ' + lobby.max_players + ' players)');
-             }
-             
-             if (lobby.status !== 'waiting') {
-                 throw new Error('Game is in progress - cannot join now');
-             }
-             
-             // ===== STEP 3: Create player record =====
-             const playerId = crypto.randomUUID();
-             const isFirstPlayer = lobby.current_players === 0;
-             
-             const { error: playerError } = await supabase
-                 .from('mom_dad_players')
-                 .insert({
-                     id: playerId,
-                     lobby_id: lobby.id,
-                     player_name: safeName,
-                     player_type: 'human',
-                     is_admin: isFirstPlayer,
-                     is_ready: false
-                 });
-             
-             if (playerError) {
-                 // Check for duplicate player name
-                 if (playerError.message.includes('duplicate key') || 
-                     playerError.code === '23505') {
-                     throw new Error('A player with this name already exists');
-                 }
-                 throw new Error('Failed to create player: ' + playerError.message);
-             }
-             
-             // ===== STEP 4: Update lobby player count =====
-             // Use atomic increment to prevent race conditions
-             const { error: updateError } = await supabase
-                 .from('mom_dad_lobbies')
-                 .update({
-                     current_players: lobby.current_players + 1,
-                     current_humans: lobby.current_humans + 1,
-                     admin_player_id: isFirstPlayer ? playerId : lobby.admin_player_id,
-                     updated_at: new Date().toISOString()
-                 })
-                 .eq('id', lobby.id)
-                 .eq('current_players', lobby.current_players);  // Optimistic lock
-             
-             if (updateError) {
-                 // Rollback: delete the player we just created
-                 await supabase.from('mom_dad_players').delete().eq('id', playerId);
-                 throw new Error('Lobby is full - another player just joined');
-             }
+              
+              const duration = Date.now() - startTime;
+              console.log(`[MomVsDadSimplified] Joined lobby in ${duration}ms`);
+              
+              setLoading(false);
+              return response.data;
+              
+          } catch (error) {
+              const duration = Date.now() - startTime;
+              console.error('[MomVsDadSimplified] Join failed:', error.message);
+              
+              setLoading(false);
+              throw error;
+          }
+      }
              
              // ===== STEP 5: Fetch all players in lobby =====
              const { data: players, error: playersError } = await supabase

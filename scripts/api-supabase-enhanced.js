@@ -455,6 +455,25 @@
         }
     }
 
+    /**
+     * Join Mom vs Dad game session via Edge Function
+     * @param {string} sessionCode - 6-character session code
+     * @param {string} guestName - Guest's name
+     * @returns {Promise<Object>} Join result
+     */
+    async function gameJoin(sessionCode, guestName) {
+        const url = getSupabaseFunctionUrl('game-session');
+        return apiFetch(url, {
+            method: 'POST',
+            body: JSON.stringify({
+                action: 'join',
+                session_code: sessionCode,
+                guest_name: guestName,
+                is_admin: false
+            }),
+        });
+    }
+
     // Create API object with functions actually defined in this file
     const API = {
         // Submit functions (via Edge Functions)
@@ -464,6 +483,8 @@
         submitQuiz,
         submitAdvice,
         submit,
+        // Game functions (via Edge Functions)
+        gameJoin,
         // Supabase client accessor
         getSupabaseClient,
         // Health check
