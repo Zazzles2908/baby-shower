@@ -4,7 +4,33 @@
  * Initialize pool-specific functionality
  */
 function initializePool() {
+    // Set date picker to show dates from January 6, 2026 (today) to December 31, 2026
+    setPoolDateRange();
     loadPoolStats();
+}
+
+/**
+ * Set the date picker range for Baby Pool predictions
+ * Due date should be in 2026 (event is Jan 4, 2026)
+ */
+function setPoolDateRange() {
+    const dateInput = document.getElementById('pool-date');
+    if (dateInput) {
+        const today = new Date('2026-01-05'); // Today is Jan 5, 2026
+        const minDate = new Date(today);
+        minDate.setDate(today.getDate() + 1); // Tomorrow (Jan 6, 2026)
+        
+        const maxDate = new Date('2026-12-31'); // End of 2026
+        
+        // Format as YYYY-MM-DD for HTML date input
+        const minDateStr = minDate.toISOString().split('T')[0];
+        const maxDateStr = maxDate.toISOString().split('T')[0];
+        
+        dateInput.min = minDateStr;
+        dateInput.max = maxDateStr;
+        
+        console.log('[Pool] Date range set:', minDateStr, 'to', maxDateStr);
+    }
 }
 
 /**
@@ -87,13 +113,13 @@ function validatePoolForm(form) {
         return false;
     }
 
-    // Validate date is within acceptable range (2024-01-01 to 2025-12-31)
+    // Validate date is within acceptable range (2026-01-06 to 2026-12-31)
     const selectedDate = new Date(dateGuess);
-    const minDate = new Date('2024-01-01');
-    const maxDate = new Date('2025-12-31');
+    const minDate = new Date('2026-01-06');
+    const maxDate = new Date('2026-12-31');
     
     if (selectedDate < minDate || selectedDate > maxDate) {
-        alert('Please select a date between January 1, 2024 and December 31, 2025');
+        alert('Please select a date between January 6, 2026 and December 31, 2026');
         return false;
     }
 
