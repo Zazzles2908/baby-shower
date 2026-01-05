@@ -371,11 +371,13 @@ serve(async (req: Request) => {
     }
 
     const validation = validateInput(body, {
+      name: { type: 'string', required: false, maxLength: 100 },
       selected_names: { type: 'array', required: true }
     })
 
     const errors: string[] = [...validation.errors]
     const names = validation.sanitized.selected_names as string[]
+    const voterName = (validation.sanitized.name as string) || 'Anonymous Voter'
     
     if (names.length === 0) {
       errors.push('At least one name is required')
@@ -412,9 +414,9 @@ serve(async (req: Request) => {
     const { data, error } = await supabase
       .from('votes')
       .insert({
-        voter_name: 'Anonymous Voter',
+        voter_name: voterName,
         selected_names: sanitizedNames,
-        submitted_by: 'Anonymous Voter',
+        submitted_by: voterName,
       })
       .select()
       .single()

@@ -107,7 +107,8 @@ serve(async (req: Request) => {
       return createErrorResponse('Validation failed', 400, errors)
     }
 
-    const participantName = (validation.sanitized.name as string) || 'Anonymous Quiz Taker'
+    // Use the original body.name if sanitized.name is empty
+    const participantName = (validation.sanitized.name as string) || (body.name?.trim()) || 'Anonymous Quiz Taker'
     const percentage = Math.round((score / totalQuestions) * 100)
     const answersData = validation.sanitized.answers as Record<string, string>
 

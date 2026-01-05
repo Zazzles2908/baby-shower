@@ -207,8 +207,9 @@
             method: 'POST',
             body: JSON.stringify({
                 name: data.name?.trim() || '',
-                prediction: data.prediction || data.time || '',
-                dueDate: data.due_date || data.dateGuess || '',
+                prediction: data.prediction || '',
+                dueDate: data.due_date || data.dueDate || data.dateGuess || '',
+                due_date: data.due_date || '', // Keep for compatibility
                 weight: parseFloat(data.weight) || parseFloat(data.weightGuess) || 0,
                 length: parseFloat(data.length) || parseFloat(data.lengthGuess) || 0,
             }),
@@ -233,18 +234,24 @@
 
     /**
      * Submit advice for parents
-     */
-    async function submitAdvice(data) {
-        const url = getSupabaseFunctionUrl('advice');
-        return apiFetch(url, {
-            method: 'POST',
-            body: JSON.stringify({
-                name: data.name?.trim() || '',
-                message: data.message?.trim() || '',
-                adviceType: data.adviceType?.trim() || 'For Parents',
-            }),
-        });
-    }
+      */
+     async function submitAdvice(data) {
+         const url = getSupabaseFunctionUrl('advice');
+         
+         // Handle both category (from main.js) and adviceType (direct calls)
+         const adviceType = data.adviceType?.trim() || data.category || 'For Parents';
+         
+         return apiFetch(url, {
+             method: 'POST',
+             body: JSON.stringify({
+                 name: data.name?.trim() || '',
+                 message: data.message?.trim() || '',
+                 advice: data.advice?.trim() || '',  // Also support 'advice' field
+                 adviceType: adviceType,
+                 category: data.category,  // Pass through for backend compatibility
+             }),
+         });
+     }
 
     /**
      * Generic submit function for any activity
@@ -457,6 +464,12 @@
         submitQuiz,
         submitAdvice,
         submit,
+        // Supabase client accessor
+        getSupabaseClient,
+        // Health check
+        performHealthCheck,
+        // Initialize API
+        initialize: initializeAPI,
     };
 
     // Legacy function name for compatibility (removed - functions now in main.js)

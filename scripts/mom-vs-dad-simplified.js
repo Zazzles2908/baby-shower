@@ -45,32 +45,23 @@
     };
 
     // ==========================================
-    // SUPABASE CLIENT INITIALIZATION (FIXES ISSUE #1)
+    // SUPABASE CLIENT - USE EXISTING API CLIENT (FIXES ISSUE #1)
     // ==========================================
 
-    let supabaseClient = null;
-
-    function initializeSupabase() {
-        if (supabaseClient) return supabaseClient;
-        
-        const supabaseUrl = root.CONFIG?.SUPABASE?.URL || '';
-        const supabaseKey = root.CONFIG?.SUPABASE?.ANON_KEY || '';
-        
-        if (supabaseUrl && supabaseKey && typeof root.createClient === 'function') {
-            supabaseClient = root.createClient(supabaseUrl, supabaseKey);
-            console.log('[MomVsDadSimplified] Supabase client initialized');
-            return supabaseClient;
-        }
-        
-        console.warn('[MomVsDadSimplified] Could not initialize Supabase client');
-        return null;
-    }
-
     function getSupabase() {
-        if (!supabaseClient) {
-            supabaseClient = initializeSupabase();
+        // Use the existing window.API client instead of creating a new one
+        if (typeof window.API !== 'undefined' && typeof window.API.getSupabaseClient === 'function') {
+            // Return a promise that resolves to the Supabase client
+            return window.API.getSupabaseClient();
         }
-        return supabaseClient;
+
+        // Fallback: try to get client synchronously from window if API is not async
+        if (typeof window.supabaseClient !== 'undefined') {
+            return window.supabaseClient;
+        }
+
+        console.warn('[MomVsDadSimplified] Supabase client not available via window.API');
+        return null;
     }
 
     // ==========================================
@@ -120,75 +111,84 @@
     }
 
     /**
-     * Fetch lobby status - WORKAROUND: Use direct fetch with Accept-Profile header
+     * Fetch lobby status - using window.API client
      */
     async function fetchLobbyStatus(lobbyKey) {
         try {
-            const supabaseUrl = root.CONFIG?.SUPABASE?.URL || '';
-            const supabaseKey = root.CONFIG?.SUPABASE?.ANON_KEY || '';
-            
-            if (!supabaseUrl || !supabaseKey) {
-                console.warn('[MomVsDadSimplified] Supabase config not available');
+            // Use window.API.getSupabaseClient() instead of local initialization
+            let supabase;
+            if (typeof window.API !== 'undefined' && typeof window.API.getSupabaseClient === 'function') {
+                supabase = await window.API.getSupabaseClient();
+            } else {
+                // Fallback to synchronous client if available
+                supabase = getSupabase();
+            }
+
+            if (!supabase) {
+                console.warn('[MomVsDadSimplified] Supabase client not available');
                 return null;
             }
 
-            // Use direct fetch with Accept-Profile header to access baby_shower schema
-            const url = `${supabaseUrl}/rest/v1/mom_dad_lobbies?lobby_key=eq.${lobbyKey}`;
-            
-            const response = await fetch(url, {
-                method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'apikey': supabaseKey,
-                    'Accept-Profile': 'baby_shower'
-                }
-            });
+            // Use Supabase client to fetch lobby data
+            const { data: lobby, error } = await supabase
+                .from('mom_dad_lobbies')
+                .select('id, lobby_key, status, max_players, current_players, current_humans, admin_player_id')
+                .eq('lobby_key', lobbyKey)
+                .single();
 
-            if (!response.ok) {
-                const errorText = await response.text();
-                console.warn('[MomVsDadSimplified] API error:', response.status, errorText);
+            if (error || !lobby) {
+                console.warn('[MomVsDadSimplified] Lobby not found:', lobbyKey);
                 return null;
             }
 
-            const data = await response.json();
-            
-            if (data && data.length > 0) {
-                const lobby = data[0];
-                return {
-                    success: true,
-                    data: {
-                        lobby: lobby,
-                        players: [],
-                        game_status: {
-                            state: lobby.status,
-                            rounds_completed: 0,
-                            current_round: null,
-                            can_start: lobby.status === 'waiting'
-                        }
+            // Fetch players in lobby
+            const { data: players, error: playersError } = await supabase
+                .from('mom_dad_players')
+                .select('id, player_name, player_type, is_admin, is_ready, joined_at')
+                .eq('lobby_id', lobby.id)
+                .is('disconnected_at', null)
+                .order('joined_at', { ascending: true });
+
+            return {
+                success: true,
+                data: {
+                    lobby: lobby,
+                    players: players || [],
+                    game_status: {
+                        state: lobby.status,
+                        rounds_completed: 0,
+                        current_round: null,
+                        can_start: lobby.status === 'waiting'
                     }
-                };
-            }
-
-            return null;
+                }
+            };
         } catch (error) {
             console.warn('[MomVsDadSimplified] Failed to fetch lobby status:', error.message);
             return null;
         }
     }
 
-     /**
-      * Join lobby - using direct Supabase client (FIXES EDGE FUNCTION ISSUE)
-      * Includes race condition handling and input validation
-      */
-     async function joinLobby(lobbyKey, playerName) {
-         setLoading(true);
-         const startTime = Date.now();
-         
-         try {
-             const supabase = getSupabase();
-             if (!supabase) {
-                 throw new Error('Supabase client not available');
-             }
+      /**
+       * Join lobby - using window.API Supabase client (FIXES EDGE FUNCTION ISSUE)
+       * Includes race condition handling and input validation
+       */
+      async function joinLobby(lobbyKey, playerName) {
+          setLoading(true);
+          const startTime = Date.now();
+
+          try {
+              // Use window.API.getSupabaseClient() instead of local initialization
+              let supabase;
+              if (typeof window.API !== 'undefined' && typeof window.API.getSupabaseClient === 'function') {
+                  supabase = await window.API.getSupabaseClient();
+              } else {
+                  // Fallback to synchronous client if available
+                  supabase = getSupabase();
+              }
+
+              if (!supabase) {
+                  throw new Error('Supabase client not available. Please refresh the page.');
+              }
              
              // ===== VALIDATION =====
              // Validate player name (length and sanitization)
@@ -453,52 +453,60 @@
     // ==========================================
 
     function subscribeToLobbyUpdates() {
-        const supabase = getSupabase();
-        if (!supabase || !GameState.lobbyKey) return;
+        // Use window.API.getSupabaseClient() instead of local initialization
+        getSupabase().then(async (supabase) => {
+            if (!supabase || !GameState.lobbyKey) return;
 
-        // Unsubscribe from existing channel
-        if (GameState.realtimeChannel) {
-            GameState.realtimeChannel.unsubscribe();
-        }
+            // Unsubscribe from existing channel
+            if (GameState.realtimeChannel) {
+                GameState.realtimeChannel.unsubscribe();
+            }
 
-        console.log('[MomVsDadSimplified] Subscribing to lobby updates:', GameState.lobbyKey);
-        GameState.connectionStatus = 'connecting';
+            console.log('[MomVsDadSimplified] Subscribing to lobby updates:', GameState.lobbyKey);
+            GameState.connectionStatus = 'connecting';
 
-        const channelName = `lobby:${GameState.lobbyKey}`;
-        GameState.realtimeChannel = supabase.channel(channelName)
-            .on('broadcast', { event: 'player_joined' }, handlePlayerJoined)
-            .on('broadcast', { event: 'player_left' }, handlePlayerLeft)
-            .on('broadcast', { event: 'game_started' }, handleGameStarted)
-            .on('broadcast', { event: 'lobby_closed' }, handleLobbyClosed)
-            .subscribe((status) => {
-                console.log('[MomVsDadSimplified] Realtime subscription status:', status);
-                if (status === 'SUBSCRIBED') {
-                    GameState.connectionStatus = 'connected';
-                } else if (status === 'CHANNEL_ERROR') {
-                    GameState.connectionStatus = 'error';
-                } else if (status === 'TIMED_OUT') {
-                    GameState.connectionStatus = 'timeout';
-                }
-                // Re-render waiting room to show connection status
-                if (GameState.view === GameStates.WAITING) {
-                    renderWaitingRoom();
-                }
-            });
+            const channelName = `lobby:${GameState.lobbyKey}`;
+            GameState.realtimeChannel = supabase.channel(channelName)
+                .on('broadcast', { event: 'player_joined' }, handlePlayerJoined)
+                .on('broadcast', { event: 'player_left' }, handlePlayerLeft)
+                .on('broadcast', { event: 'game_started' }, handleGameStarted)
+                .on('broadcast', { event: 'lobby_closed' }, handleLobbyClosed)
+                .subscribe((status) => {
+                    console.log('[MomVsDadSimplified] Realtime subscription status:', status);
+                    if (status === 'SUBSCRIBED') {
+                        GameState.connectionStatus = 'connected';
+                    } else if (status === 'CHANNEL_ERROR') {
+                        GameState.connectionStatus = 'error';
+                    } else if (status === 'TIMED_OUT') {
+                        GameState.connectionStatus = 'timeout';
+                    }
+                    // Re-render waiting room to show connection status
+                    if (GameState.view === GameStates.WAITING) {
+                        renderWaitingRoom();
+                    }
+                });
+        }).catch(error => {
+            console.warn('[MomVsDadSimplified] Failed to initialize realtime subscription:', error);
+        });
     }
 
     function subscribeToGameUpdates() {
-        const supabase = getSupabase();
-        if (!supabase || !GameState.lobbyKey) return;
+        // Use window.API.getSupabaseClient() instead of local initialization
+        getSupabase().then(async (supabase) => {
+            if (!supabase || !GameState.lobbyKey) return;
 
-        console.log('[MomVsDadSimplified] Subscribing to game updates:', GameState.lobbyKey);
+            console.log('[MomVsDadSimplified] Subscribing to game updates:', GameState.lobbyKey);
 
-        const channelName = `game:${GameState.lobbyKey}`;
-        GameState.realtimeChannel = supabase.channel(channelName)
-            .on('broadcast', { event: 'round_new' }, handleRoundNew)
-            .on('broadcast', { event: 'vote_update' }, handleVoteUpdate)
-            .on('broadcast', { event: 'round_reveal' }, handleRoundReveal)
-            .on('broadcast', { event: 'game_complete' }, handleGameComplete)
-            .subscribe();
+            const channelName = `game:${GameState.lobbyKey}`;
+            GameState.realtimeChannel = supabase.channel(channelName)
+                .on('broadcast', { event: 'round_new' }, handleRoundNew)
+                .on('broadcast', { event: 'vote_update' }, handleVoteUpdate)
+                .on('broadcast', { event: 'round_reveal' }, handleRoundReveal)
+                .on('broadcast', { event: 'game_complete' }, handleGameComplete)
+                .subscribe();
+        }).catch(error => {
+            console.warn('[MomVsDadSimplified] Failed to initialize game updates subscription:', error);
+        });
     }
 
     // ==========================================
@@ -685,7 +693,7 @@
 
         card.classList.remove('full', 'filling', 'empty', 'error');
 
-        if (!status) {
+        if (!status || !status.data) {
             // API unavailable (FIXES ISSUE #13)
             statusEl.textContent = '⚠️ Offline';
             countEl.textContent = 'Unavailable';
@@ -693,8 +701,9 @@
             return;
         }
 
-        const playerCount = status.player_count || 0;
-        const maxPlayers = status.max_players || 6;
+        const lobby = status.data.lobby;
+        const playerCount = lobby?.current_players || 0;
+        const maxPlayers = lobby?.max_players || 6;
 
         countEl.textContent = `${playerCount}/${maxPlayers} players`;
 
@@ -1434,8 +1443,8 @@
             return;
         }
 
-        // Initialize Supabase client (FIXES ISSUE #1)
-        initializeSupabase();
+        // Supabase client is now available via window.API.getSupabaseClient()
+        // No local initialization needed (FIXES ISSUE #1)
 
         // Render initial screen
         renderLobbySelector();

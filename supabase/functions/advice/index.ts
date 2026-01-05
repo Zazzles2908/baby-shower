@@ -81,8 +81,14 @@ serve(async (req: Request) => {
     // Additional manual validation for complex rules
     const errors: string[] = [...validation.errors]
     
+    // Get advice text from either 'advice' or 'message' field
     const adviceText = (validation.sanitized.advice as string) || (validation.sanitized.message as string) || ''
-    const category = (validation.sanitized.category as string) || (validation.sanitized.adviceType as string) || ''
+    
+    // Get category - normalize both 'category' and 'adviceType' fields
+    // Use 'For Parents' as default if neither is provided
+    const categoryFromBody = (validation.sanitized.category as string) || (validation.sanitized.adviceType as string) || ''
+    const category = categoryFromBody.trim() || 'For Parents'
+    
     const name = (validation.sanitized.name as string) || 'Anonymous Advisor'
 
     // Advice text validation
@@ -102,9 +108,9 @@ serve(async (req: Request) => {
       
       // Map frontend values to valid categories
       let finalCategory = normalizedCategory
-      if (normalizedCategory === 'for parents' || normalizedCategory === 'parents') {
+      if (normalizedCategory === 'for parents' || normalizedCategory === 'parents' || normalizedCategory === 'general') {
         finalCategory = 'general'
-      } else if (normalizedCategory === 'for baby' || normalizedCategory === 'baby') {
+      } else if (normalizedCategory === 'for baby' || normalizedCategory === 'baby' || normalizedCategory === 'fun') {
         finalCategory = 'fun'
       } else if (normalizedCategory === '18th birthday' || normalizedCategory === 'time capsule') {
         finalCategory = 'fun'

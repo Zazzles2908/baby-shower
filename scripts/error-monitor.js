@@ -903,6 +903,54 @@
     }
 
     /**
+     * Log custom event/data with full context
+     */
+    function logCustom(type, message, context = {}) {
+        if (!CONFIG.enableConsole) return;
+
+        const logEntry = {
+            id: generateLogId(),
+            timestamp: getTimestamp(),
+            sessionId: sessionId,
+            type: type,
+            category: context.category || 'custom',
+            severity: context.severity || 'info',
+            message: message,
+            stack: null,
+            caller: getCallerInfo(),
+            context: {
+                url: window.location.href,
+                userAgent: navigator.userAgent,
+                viewport: `${window.innerWidth}x${window.innerHeight}`,
+                ...context
+            }
+        };
+
+        // Add to logs
+        if (type === 'error' || type === 'warning') {
+            errorLogs.unshift(logEntry);
+            if (logEntry.severity === 'critical') {
+                criticalCount++;
+            }
+            if (type === 'warning') {
+                warningCount++;
+            } else {
+                errorCount++;
+            }
+        } else {
+            // For non-error types, just log to console
+            console.log(`[ErrorMonitor ${type}]`, message, logEntry);
+        }
+
+        // Save to localStorage
+        if (CONFIG.enableLocalStorage) {
+            saveLogsToStorage();
+        }
+
+        return logEntry;
+    }
+
+    /**
      * Track custom performance metric
      */
     function trackPerformance(name, value, metadata = {}) {
@@ -962,6 +1010,7 @@
         log: logError,
         warn: logWarning,
         info: logInfo,
+        logCustom: logCustom,
         getLogs: getLogs,
         getPerformance: getPerformance,
         getDashboard: getDashboard,

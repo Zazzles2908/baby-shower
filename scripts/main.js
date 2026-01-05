@@ -633,32 +633,39 @@ async function handleGuestbookSubmit(event) {
     event.preventDefault();
 
     const form = event.target;
-    
-    // Validate form first
-    if (!validateForm(form)) {
-        // Validation will show error messages
-        return;
-    }
-
-    const formData = new FormData(form);
-
-    const data = {
-        name: formData.get('name'),
-        relationship: formData.get('relationship'),
-        message: formData.get('message')
-    };
-
-    const photoInput = document.getElementById('guestbook-photo');
-    const photoFile = photoInput ? photoInput.files[0] : null;
     const submitBtn = form.querySelector('.submit-btn');
 
     try {
-        // Add loading state to submit button
-        if (submitBtn) {
-            submitBtn.classList.add('api-loading');
-            submitBtn.disabled = true;
+        // Validate form first
+        if (!window.UIUtils || !window.UIUtils.validateFormWithErrors(form)) {
+            // Fallback to old validation if UIUtils not available
+            if (!validateForm(form)) {
+                return;
+            }
         }
-        
+
+        const formData = new FormData(form);
+
+        const data = {
+            name: formData.get('name'),
+            relationship: formData.get('relationship'),
+            message: formData.get('message')
+        };
+
+        const photoInput = document.getElementById('guestbook-photo');
+        const photoFile = photoInput ? photoInput.files[0] : null;
+
+        // Add loading state to submit button using UIUtils
+        if (window.UIUtils) {
+            window.UIUtils.setButtonLoading(submitBtn, 'Saving your message...');
+        } else {
+            // Fallback to old method
+            if (submitBtn) {
+                submitBtn.classList.add('api-loading');
+                submitBtn.disabled = true;
+            }
+        }
+
         showLoading();
 
         const response = await submitGuestbook(data, photoFile);
@@ -670,15 +677,23 @@ async function handleGuestbookSubmit(event) {
         }
 
         hideLoading();
-        
+
         // Remove loading state from submit button
-        if (submitBtn) {
-            submitBtn.classList.remove('api-loading');
-            submitBtn.disabled = false;
+        if (window.UIUtils) {
+            window.UIUtils.clearButtonLoading(submitBtn);
+        } else {
+            if (submitBtn) {
+                submitBtn.classList.remove('api-loading');
+                submitBtn.disabled = false;
+            }
         }
-        
+
         // Show inline success message
-        showFormSuccessMessage('Thank you for your message!', form);
+        if (window.UIUtils) {
+            window.UIUtils.showInlineSuccess(form, 'Thank you for your message!');
+        } else {
+            showFormSuccessMessage('Thank you for your message!', form);
+        }
         triggerConfetti();
 
         // Update personal progress
@@ -691,14 +706,23 @@ async function handleGuestbookSubmit(event) {
 
     } catch (error) {
         hideLoading();
-        
+
         // Remove loading state from submit button
-        if (submitBtn) {
-            submitBtn.classList.remove('api-loading');
-            submitBtn.disabled = false;
+        if (window.UIUtils) {
+            window.UIUtils.clearButtonLoading(submitBtn);
+        } else {
+            if (submitBtn) {
+                submitBtn.classList.remove('api-loading');
+                submitBtn.disabled = false;
+            }
         }
-        
-        showError(error);
+
+        // Show inline error message
+        if (window.UIUtils) {
+            window.UIUtils.showInlineError(form, error.message || 'Failed to save your message. Please try again.');
+        } else {
+            showError(error);
+        }
     }
 }
 
@@ -710,17 +734,32 @@ async function handlePoolSubmit(event) {
     event.preventDefault();
 
     const form = event.target;
-    const formData = new FormData(form);
-
-    const data = {
-        name: formData.get('name'),
-        dateGuess: formData.get('dateGuess'),
-        timeGuess: formData.get('timeGuess'),
-        weightGuess: formData.get('weightGuess'),
-        lengthGuess: formData.get('lengthGuess')
-    };
+    const submitBtn = form.querySelector('.submit-btn');
 
     try {
+        // Validate form first
+        if (!window.UIUtils || !window.UIUtils.validateFormWithErrors(form)) {
+            // Fallback to old validation if UIUtils not available
+            if (!validateForm(form)) {
+                return;
+            }
+        }
+
+        const formData = new FormData(form);
+
+        const data = {
+            name: formData.get('name'),
+            dateGuess: formData.get('dateGuess'),
+            timeGuess: formData.get('timeGuess'),
+            weightGuess: formData.get('weightGuess'),
+            lengthGuess: formData.get('lengthGuess')
+        };
+
+        // Add loading state to submit button
+        if (window.UIUtils) {
+            window.UIUtils.setButtonLoading(submitBtn, 'Saving your prediction...');
+        }
+
         showLoading();
 
         const response = await submitPool(data);
@@ -732,17 +771,26 @@ async function handlePoolSubmit(event) {
         }
 
         hideLoading();
-        
+
+        // Remove loading state from submit button
+        if (window.UIUtils) {
+            window.UIUtils.clearButtonLoading(submitBtn);
+        }
+
         // Get success message and roast from response
         const successResult = getPoolSuccessMessage(data.name, response.roast);
-        
-        // Display the roast if available
+
+        // Display roast if available
         if (response.roast) {
             displayRoast(response.roast);
         }
-        
+
         // Show inline success message
-        showFormSuccessMessage(successResult.message, form);
+        if (window.UIUtils) {
+            window.UIUtils.showInlineSuccess(form, successResult.message);
+        } else {
+            showFormSuccessMessage(successResult.message, form);
+        }
         triggerConfetti();
 
         // Update personal progress
@@ -757,7 +805,18 @@ async function handlePoolSubmit(event) {
 
     } catch (error) {
         hideLoading();
-        showError(error);
+
+        // Remove loading state from submit button
+        if (window.UIUtils) {
+            window.UIUtils.clearButtonLoading(submitBtn);
+        }
+
+        // Show inline error message
+        if (window.UIUtils) {
+            window.UIUtils.showInlineError(form, error.message || 'Failed to save your prediction. Please try again.');
+        } else {
+            showError(error);
+        }
     }
 }
 
@@ -769,27 +828,42 @@ async function handleQuizSubmit(event) {
     event.preventDefault();
 
     const form = event.target;
-    const formData = new FormData(form);
-
-    // Calculate score BEFORE API call to show immediately
-    const answers = {
-        puzzle1: formData.get('puzzle1')?.trim() || '',
-        puzzle2: formData.get('puzzle2')?.trim() || '',
-        puzzle3: formData.get('puzzle3')?.trim() || '',
-        puzzle4: formData.get('puzzle4')?.trim() || '',
-        puzzle5: formData.get('puzzle5')?.trim() || ''
-    };
-    const score = calculateQuizScore(answers);
-    
-    const data = {
-        name: formData.get('name'),
-        ...answers,
-        score: score,
-        totalQuestions: 5,
-        percentage: Math.round((score / 5) * 100)
-    };
+    const submitBtn = form.querySelector('.submit-btn');
 
     try {
+        // Validate form first
+        if (!window.UIUtils || !window.UIUtils.validateFormWithErrors(form)) {
+            // Fallback to old validation if UIUtils not available
+            if (!validateForm(form)) {
+                return;
+            }
+        }
+
+        const formData = new FormData(form);
+
+        // Calculate score BEFORE API call to show immediately
+        const answers = {
+            puzzle1: formData.get('puzzle1')?.trim() || '',
+            puzzle2: formData.get('puzzle2')?.trim() || '',
+            puzzle3: formData.get('puzzle3')?.trim() || '',
+            puzzle4: formData.get('puzzle4')?.trim() || '',
+            puzzle5: formData.get('puzzle5')?.trim() || ''
+        };
+        const score = calculateQuizScore(answers);
+
+        const data = {
+            name: formData.get('name'),
+            ...answers,
+            score: score,
+            totalQuestions: 5,
+            percentage: Math.round((score / 5) * 100)
+        };
+
+        // Add loading state to submit button
+        if (window.UIUtils) {
+            window.UIUtils.setButtonLoading(submitBtn, 'Submitting your answers...');
+        }
+
         showLoading();
 
         const response = await submitQuiz(data);
@@ -801,9 +875,18 @@ async function handleQuizSubmit(event) {
         }
 
         hideLoading();
-        
+
+        // Remove loading state from submit button
+        if (window.UIUtils) {
+            window.UIUtils.clearButtonLoading(submitBtn);
+        }
+
         // Show success message with pre-calculated score
-        showFormSuccessMessage(getQuizSuccessMessage(data.name, score), form);
+        if (window.UIUtils) {
+            window.UIUtils.showInlineSuccess(form, getQuizSuccessMessage(data.name, score));
+        } else {
+            showFormSuccessMessage(getQuizSuccessMessage(data.name, score), form);
+        }
         triggerConfetti();
 
         // Update personal progress
@@ -815,7 +898,18 @@ async function handleQuizSubmit(event) {
 
     } catch (error) {
         hideLoading();
-        showError(error);
+
+        // Remove loading state from submit button
+        if (window.UIUtils) {
+            window.UIUtils.clearButtonLoading(submitBtn);
+        }
+
+        // Show inline error message
+        if (window.UIUtils) {
+            window.UIUtils.showInlineError(form, error.message || 'Failed to submit your quiz. Please try again.');
+        } else {
+            showError(error);
+        }
     }
 }
 
@@ -827,28 +921,28 @@ async function handleAdviceSubmit(event) {
     event.preventDefault();
 
     const form = event.target;
-    
-    // Validate form first
-    if (!validateForm(form)) {
-        // Validation will show error messages
-        return;
-    }
-
-    const formData = new FormData(form);
-
-    const data = {
-        name: formData.get('name'),
-        adviceType: formData.get('adviceType'),
-        message: formData.get('message')
-    };
-
     const submitBtn = form.querySelector('.submit-btn');
 
     try {
+        // Validate form first
+        if (!window.UIUtils || !window.UIUtils.validateFormWithErrors(form)) {
+            // Fallback to old validation if UIUtils not available
+            if (!validateForm(form)) {
+                return;
+            }
+        }
+
+        const formData = new FormData(form);
+
+        const data = {
+            name: formData.get('name'),
+            adviceType: formData.get('adviceType'),
+            message: formData.get('message')
+        };
+
         // Add loading state to submit button
-        if (submitBtn) {
-            submitBtn.classList.add('api-loading');
-            submitBtn.disabled = true;
+        if (window.UIUtils) {
+            window.UIUtils.setButtonLoading(submitBtn, 'Saving your advice...');
         }
 
         showLoading();
@@ -861,16 +955,19 @@ async function handleAdviceSubmit(event) {
             triggerMilestoneCelebration(response.milestone);
         }
 
-        // Remove loading state from submit button before success message
-        if (submitBtn) {
-            submitBtn.classList.remove('api-loading');
-            submitBtn.disabled = false;
-        }
-
         hideLoading();
 
-        // Show inline success message
-        showFormSuccessMessage('Thank you for your advice!', form);
+        // Remove loading state from submit button
+        if (window.UIUtils) {
+            window.UIUtils.clearButtonLoading(submitBtn);
+        }
+
+        // Show success message
+        if (window.UIUtils) {
+            window.UIUtils.showInlineSuccess(form, getAdviceSuccessMessage(data.name, data.adviceType));
+        } else {
+            showFormSuccessMessage(getAdviceSuccessMessage(data.name, data.adviceType), form);
+        }
         triggerConfetti();
 
         // Update personal progress
@@ -881,14 +978,19 @@ async function handleAdviceSubmit(event) {
         repopulateNameField('advice-name');
 
     } catch (error) {
-        // Remove loading state from submit button on error
-        if (submitBtn) {
-            submitBtn.classList.remove('api-loading');
-            submitBtn.disabled = false;
+        hideLoading();
+
+        // Remove loading state from submit button
+        if (window.UIUtils) {
+            window.UIUtils.clearButtonLoading(submitBtn);
         }
 
-        hideLoading();
-        showError(error);
+        // Show inline error message
+        if (window.UIUtils) {
+            window.UIUtils.showInlineError(form, error.message || 'Failed to save your advice. Please try again.');
+        } else {
+            showError(error);
+        }
     }
 }
 
