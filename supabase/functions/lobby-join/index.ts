@@ -83,7 +83,16 @@ serve(async (req: Request) => {
     const { lobby_key, player_name, player_type = 'human' } = validation.sanitized
 
     // Normalize session code
-    const normalizedLobbyKey = lobby_key.toUpperCase().trim()
+    let normalizedLobbyKey = lobby_key.toUpperCase().trim()
+
+    // Support LOBBY-A/B/C/D format by mapping to session codes
+    // Check if input matches LOBBY-X pattern
+    const lobbyMatch = normalizedLobbyKey.match(/^LOBBY-([A-D])$/)
+    if (lobbyMatch) {
+        // Map LOBBY-A → LOBBY-A (keep as-is since we use session_code column)
+        // The demo sessions use LOBBY-A as the actual session_code
+        console.log('[lobby-join] Detected LOBBY format:', normalizedLobbyKey)
+    }
 
     // Get session information from game_sessions table
     const { data: session, error: sessionError } = await supabase
