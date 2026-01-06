@@ -30,10 +30,12 @@
         currentPlayerId: null,
         playerName: null,
         isAdmin: false,
+        adminCode: null,  // Store admin code for starting game
         adminPlayerId: null,
         players: [],
         currentRound: 0,
         totalRounds: 5,
+        scenarios: [],
         currentScenario: null,
         gameStatus: 'setup',
         myVote: null,
@@ -111,9 +113,9 @@
     }
 
     /**
-      * Fetch lobby status - using window.API client
-      * Updated to specify baby_shower schema explicitly
-      */
+       * Fetch lobby status - using window.API client
+       * Updated to specify baby_shower schema explicitly
+       */
     async function fetchLobbyStatus(lobbyKey) {
         try {
             // Use window.API.getSupabaseClient() instead of local initialization
@@ -146,8 +148,6 @@
 
             console.log('[MomVsDadSimplified] Found session:', session.mom_name, 'vs', session.dad_name, session.status);
 
-            // For players, we would need to query game_votes but they need scenario_id
-            // For now, return session info and let the game handle player counting
             return {
                 id: session.id,
                 lobby_key: session.session_code,
@@ -160,28 +160,52 @@
                 admin_code: session.admin_code,
                 players: [] // Would need separate player tracking for complete implementation
             };
-
-            if (playersError) {
-                console.warn('[MomVsDadSimplified] Failed to fetch players:', playersError);
-            }
-
-            console.log('[MomVsDadSimplified] Players in lobby:', players?.length || 0);
-
-            return {
-                success: true,
-                data: {
-                    lobby: lobby,
-                    players: players || [],
-                    game_status: {
-                        state: lobby.status,
-                        rounds_completed: 0,
-                        current_round: null,
-                        can_start: lobby.status === 'waiting'
-                    }
-                }
-            };
         } catch (error) {
             console.warn('[MomVsDadSimplified] Failed to fetch lobby status:', error.message);
+            return null;
+        }
+    }
+
+    /**
+     * Fetch full game status including scenarios and votes
+     */
+    async function fetchGameStatus(lobbyKey) {
+        try {
+            const url = getEdgeFunctionUrl('lobby-status');
+            const response = await apiFetch(url, {
+                method: 'POST',
+                body: JSON.stringify({
+                    session_code: lobbyKey
+                }),
+            });
+
+            if (response && response.data) {
+                // Update game state with fetched data
+                GameState.gameStatus = response.data.session?.status || 'setup';
+                GameState.totalRounds = response.data.session?.total_rounds || 5;
+                GameState.currentRound = response.data.session?.current_round || 0;
+                GameState.adminCode = response.data.session?.admin_code || GameState.adminCode;
+                
+                // Store scenarios if game has started
+                if (response.data.scenarios && response.data.scenarios.length > 0) {
+                    GameState.scenarios = response.data.scenarios;
+                    // Set current scenario based on current round
+                    const currentScenario = response.data.scenarios.find(s => s.round_number === GameState.currentRound);
+                    if (currentScenario) {
+                        GameState.currentScenario = currentScenario;
+                    }
+                }
+
+                console.log('[MomVsDadSimplified] Game status updated:', {
+                    status: GameState.gameStatus,
+                    rounds: GameState.totalRounds,
+                    scenarios: GameState.scenarios.length
+                });
+            }
+
+            return response;
+        } catch (error) {
+            console.warn('[MomVsDadSimplified] Failed to fetch game status:', error.message);
             return null;
         }
     }
@@ -247,8 +271,8 @@
 
 
     /**
-     * Start game - with admin_player_id (FIXES ISSUE #3)
-     */
+      * Start game - uses session_code and admin_code (matches backend API)
+      */
     async function startGame(lobbyKey, settings = {}) {
         setLoading(true);
         try {
@@ -256,8 +280,8 @@
             const response = await apiFetch(url, {
                 method: 'POST',
                 body: JSON.stringify({
-                    lobby_key: lobbyKey,
-                    admin_player_id: GameState.currentPlayerId, // FIX: Include admin_player_id
+                    session_code: lobbyKey,
+                    admin_code: GameState.adminCode,
                     total_rounds: settings.totalRounds || 5,
                     intensity: settings.intensity || 0.5
                 }),
@@ -267,6 +291,8 @@
                 // Store game data
                 GameState.totalRounds = response.data.total_rounds || 5;
                 GameState.gameStatus = 'active';
+                GameState.currentScenario = response.data.scenarios?.[0] || null;
+                GameState.scenarios = response.data.scenarios || [];
             }
             
             return response;
@@ -279,19 +305,19 @@
     }
 
     /**
-     * Submit vote - FIXED FIELD NAMES (FIXES ISSUE #4)
-     */
-    async function submitVote(lobbyKey, roundId, choice) {
+      * Submit vote - uses session_code, guest_name, scenario_id, vote_choice (matches backend API)
+      */
+    async function submitVote(lobbyKey, scenarioId, choice) {
         setLoading(true);
         try {
             const url = getEdgeFunctionUrl('game-vote');
             const response = await apiFetch(url, {
                 method: 'POST',
                 body: JSON.stringify({
-                    lobby_key: lobbyKey,
-                    player_id: GameState.currentPlayerId, // FIX: Use player_id not player_name
-                    round_id: roundId, // FIX: Use round_id not round
-                    vote: choice // FIX: Use vote not choice
+                    session_code: lobbyKey,
+                    guest_name: GameState.playerName,
+                    scenario_id: scenarioId,
+                    vote_choice: choice
                 }),
             });
             return response;
@@ -304,18 +330,18 @@
     }
 
     /**
-     * Reveal round results - with admin_player_id
-     */
-    async function revealRound(lobbyKey, roundId) {
+      * Reveal round results - uses session_code, admin_code, scenario_id (matches backend API)
+      */
+    async function revealRound(lobbyKey, scenarioId) {
         setLoading(true);
         try {
             const url = getEdgeFunctionUrl('game-reveal');
             const response = await apiFetch(url, {
                 method: 'POST',
                 body: JSON.stringify({
-                    lobby_key: lobbyKey,
-                    admin_player_id: GameState.currentPlayerId,
-                    round_id: roundId
+                    session_code: lobbyKey,
+                    admin_code: GameState.adminCode,
+                    scenario_id: scenarioId
                 }),
             });
             return response;
@@ -563,11 +589,19 @@
                     <div class="modal-content">
                         <h2>Join Lobby <span id="modal-lobby-key">A</span></h2>
                         <input type="text" id="player-name" placeholder="Enter your name" maxlength="20" />
+                        <input type="text" id="admin-code" placeholder="Admin Code (4 digits, optional)" maxlength="4" style="display: none;" />
                         <div class="modal-actions">
                             <button id="join-cancel" class="btn-secondary">Cancel</button>
                             <button id="join-confirm" class="btn-primary">Join Lobby</button>
                         </div>
                     </div>
+                </div>
+
+                <!-- Admin Code Toggle -->
+                <div style="margin-top: 20px; text-align: center;">
+                    <button id="show-admin-code" class="btn-secondary" style="font-size: 12px;">
+                        🔑 I'm an Admin (Enter Code)
+                    </button>
                 </div>
             </div>
         `;
@@ -715,8 +749,8 @@
     }
 
     /**
-     * Attach event listeners for lobby selector
-     */
+      * Attach event listeners for lobby selector
+      */
     function attachLobbySelectorEvents() {
         // Lobby cards
         document.querySelectorAll('.lobby-card').forEach(card => {
@@ -737,6 +771,18 @@
         document.getElementById('player-name')?.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') {
                 handleJoinLobby();
+            }
+        });
+
+        // Admin code toggle
+        document.getElementById('show-admin-code')?.addEventListener('click', () => {
+            const adminCodeInput = document.getElementById('admin-code');
+            const toggleBtn = document.getElementById('show-admin-code');
+            if (adminCodeInput && toggleBtn) {
+                adminCodeInput.style.display = adminCodeInput.style.display === 'none' ? 'block' : 'none';
+                toggleBtn.textContent = adminCodeInput.style.display === 'none' 
+                    ? '🔑 I\'m an Admin (Enter Code)' 
+                    : '❌ Hide Admin Code';
             }
         });
     }
@@ -774,6 +820,7 @@
         clearError();
         const modalLobbyKey = document.getElementById('modal-lobby-key');
         const playerNameInput = document.getElementById('player-name');
+        const adminCodeInput = document.getElementById('admin-code');
 
         const lobbyKeyEl = modalLobbyKey?.textContent || '';
         // Find the full lobby key
@@ -786,6 +833,7 @@
         });
 
         const playerName = playerNameInput?.value.trim() || '';
+        const adminCode = adminCodeInput?.value.trim() || '';
 
         if (!playerName) {
             showError('Please enter your name');
@@ -812,12 +860,22 @@
                 GameState.sessionCode = fullLobbyKey; // Use lobby key as session code
                 GameState.playerName = playerName;
                 GameState.currentPlayerId = result.current_player_id;
-                GameState.isAdmin = result.is_admin || false;
+                
+                // Check if provided admin code matches session admin code
+                const sessionAdminCode = result.admin_code || '';
+                GameState.isAdmin = adminCode === sessionAdminCode;
+                GameState.adminCode = adminCode; // Store provided admin code
+                
                 GameState.players = result.players || [];
-                GameState.adminPlayerId = result.is_admin ? result.current_player_id : null;
+                GameState.adminPlayerId = GameState.isAdmin ? result.current_player_id : null;
+                GameState.totalRounds = result.total_rounds || 5;
+                GameState.gameStatus = result.status || 'setup';
 
                 // Set connection status
                 GameState.connectionStatus = 'connecting';
+
+                // Fetch full lobby status to get scenarios if game already started
+                await fetchGameStatus(fullLobbyKey);
 
                 renderWaitingRoom();
             } else {
@@ -1006,8 +1064,8 @@
     }
 
     /**
-     * Handle start game - WITH REAL API (FIXES ISSUE #3, #9)
-     */
+      * Handle start game - WITH REAL API (FIXES ISSUE #3, #9)
+      */
     async function handleStartGame() {
         const roundsSelect = document.getElementById('rounds-select');
         const intensitySelect = document.getElementById('intensity-select');
@@ -1017,13 +1075,21 @@
         try {
             setLoading(true);
             
-            // Start game via API (FIXES ISSUE #3 - now includes admin_player_id)
-            await startGame(GameState.lobbyKey, { totalRounds, intensity });
+            // Start game via API (now includes session_code and admin_code)
+            const response = await startGame(GameState.lobbyKey, { totalRounds, intensity });
+            
+            if (response && response.data) {
+                // Store scenarios returned from game-start
+                GameState.scenarios = response.data.scenarios || [];
+                if (GameState.scenarios.length > 0) {
+                    GameState.currentScenario = GameState.scenarios[0];
+                }
+            }
             
             // Switch to playing state (FIXES ISSUE #9 - real gameplay)
             GameState.view = GameStates.PLAYING;
             GameState.currentRound = 1;
-            GameState.gameStatus = 'active';
+            GameState.gameStatus = 'voting';
             
             // Subscribe to game updates
             subscribeToGameUpdates();
@@ -1038,8 +1104,8 @@
     }
 
     /**
-     * Handle exit lobby
-     */
+      * Handle exit lobby
+      */
     function handleExitLobby() {
         // Unsubscribe from realtime
         if (GameState.realtimeChannel) {
@@ -1054,10 +1120,12 @@
         GameState.currentPlayerId = null;
         GameState.playerName = null;
         GameState.isAdmin = false;
+        GameState.adminCode = null;  // Reset admin code
         GameState.adminPlayerId = null;
         GameState.players = [];
         GameState.currentRound = 0;
         GameState.totalRounds = 5;
+        GameState.scenarios = [];
         GameState.currentScenario = null;
         GameState.gameStatus = 'setup';
         GameState.myVote = null;
@@ -1068,8 +1136,8 @@
     }
 
     /**
-     * Render Game Screen - WITH REAL SCENARIOS (FIXES ISSUE #9)
-     */
+      * Render Game Screen - WITH REAL SCENARIOS (FIXES ISSUE #9)
+      */
     function renderGameScreen() {
         const container = document.getElementById('mom-vs-dad-game');
         if (!container) return;
@@ -1077,6 +1145,10 @@
         // Use real scenario from game start or default
         const scenario = GameState.currentScenario;
         const questionText = scenario?.scenario_text || "Who would rather handle this baby situation?";
+        
+        // Get mom/dad names from session or use defaults
+        const momName = GameState.lobbyData?.mom_name || 'Mom';
+        const dadName = GameState.lobbyData?.dad_name || 'Dad';
         
         const progressPercent = ((GameState.currentRound - 1) / GameState.totalRounds) * 100;
 
@@ -1093,12 +1165,12 @@
                     </div>
                 </div>
 
-                <!-- Michelle Avatar (Left) -->
+                <!-- Mom Avatar (Left) -->
                 <div class="avatar-container avatar-left">
                     <div class="avatar-circle">
                         <div class="avatar-image">👩</div>
                     </div>
-                    <div class="avatar-name">Michelle</div>
+                    <div class="avatar-name">${escapeHtml(momName)}</div>
                     <div class="avatar-role">(Mom)</div>
                 </div>
 
@@ -1120,18 +1192,18 @@
                     <h2 id="question-text">${escapeHtml(questionText)}</h2>
                     ${scenario ? `
                         <div class="scenario-options">
-                            <div class="option-mom">👩 ${escapeHtml(scenario.mom_option || 'Michelle would')}</div>
-                            <div class="option-dad">👨 ${escapeHtml(scenario.dad_option || 'Jazeel would')}</div>
+                            <div class="option-mom">👩 ${escapeHtml(scenario.mom_option || `${momName} would`)}</div>
+                            <div class="option-dad">👨 ${escapeHtml(scenario.dad_option || `${dadName} would`)}</div>
                         </div>
                     ` : ''}
                 </div>
 
-                <!-- Jazeel Avatar (Right) -->
+                <!-- Dad Avatar (Right) -->
                 <div class="avatar-container avatar-right">
                     <div class="avatar-circle">
                         <div class="avatar-image">👨</div>
                     </div>
-                    <div class="avatar-name">Jazeel</div>
+                    <div class="avatar-name">${escapeHtml(dadName)}</div>
                     <div class="avatar-role">(Dad)</div>
                 </div>
 
@@ -1139,18 +1211,18 @@
                 <div class="vote-buttons">
                     <button class="vote-btn vote-mom" data-choice="mom" ${GameState.myVote ? 'disabled' : ''}>
                         <span class="vote-icon">👩</span>
-                        <span class="vote-text">Michelle</span>
+                        <span class="vote-text">${escapeHtml(momName)}</span>
                     </button>
 
                     <button class="vote-btn vote-dad" data-choice="dad" ${GameState.myVote ? 'disabled' : ''}>
                         <span class="vote-icon">👨</span>
-                        <span class="vote-text">Jazeel</span>
+                        <span class="vote-text">${escapeHtml(dadName)}</span>
                     </button>
                 </div>
 
                 <!-- Feedback Message -->
                 <div class="vote-feedback ${GameState.myVote ? '' : 'hidden'}" id="vote-feedback">
-                    ✅ Vote recorded! Waiting for others...
+                    ✅ Vote recorded! Waiting for admin to reveal results...
                 </div>
             </div>
         `;
@@ -1207,10 +1279,16 @@
     }
 
     /**
-     * Handle vote - WITH REAL API (FIXES ISSUE #4, #9)
-     */
+      * Handle vote - WITH REAL API (FIXES ISSUE #4, #9)
+      */
     async function handleVote(choice) {
         try {
+            // Get current scenario ID
+            const scenarioId = GameState.currentScenario?.id;
+            if (!scenarioId) {
+                throw new Error('No active scenario to vote on');
+            }
+
             GameState.myVote = choice;
 
             // Disable vote buttons
@@ -1218,8 +1296,8 @@
                 btn.disabled = true;
             });
 
-            // Submit vote to API (FIXES ISSUE #4 - correct field names)
-            await submitVote(GameState.lobbyKey, GameState.currentRound, choice);
+            // Submit vote to API (now uses session_code, guest_name, scenario_id, vote_choice)
+            await submitVote(GameState.lobbyKey, scenarioId, choice);
 
             // Show feedback
             const feedback = document.getElementById('vote-feedback');
@@ -1245,13 +1323,17 @@
     }
 
     /**
-     * Show round results (FIXES ISSUE #18)
-     */
+      * Show round results (FIXES ISSUE #18)
+      */
     function showRoundResults(data) {
         const container = document.getElementById('mom-vs-dad-game');
         if (!container) return;
 
-        const momWins = data.winner === 'mom';
+        // Get mom/dad names from session or use defaults
+        const momName = GameState.lobbyData?.mom_name || 'Mom';
+        const dadName = GameState.lobbyData?.dad_name || 'Dad';
+
+        const momWins = data.crowd_choice === 'mom' || data.winner === 'mom';
         const momVotes = data.mom_votes || 0;
         const dadVotes = data.dad_votes || 0;
         const totalVotes = momVotes + dadVotes;
@@ -1262,7 +1344,7 @@
             <div id="mom-vs-dad-results" class="mvd-section">
                 <div class="results-header">
                     <div class="result-icon">${momWins ? '👩' : '👨'}</div>
-                    <h1>${momWins ? 'Mom Wins!' : 'Dad Wins!'}</h1>
+                    <h1>${momWins ? `${escapeHtml(momName)} Wins!` : `${escapeHtml(dadName)} Wins!`}</h1>
                     <p>${data.perception_gap > 0 ? `Perception Gap: ${data.perception_gap}%` : 'Results revealed!'}</p>
                 </div>
 
@@ -1270,10 +1352,10 @@
                 <div class="vote-results-container">
                     <div class="result-bar">
                         <div class="result-mom" style="width: ${momPercent}%">
-                            <span>👩 Michelle ${momPercent}%</span>
+                            <span>👩 ${escapeHtml(momName)} ${momPercent}%</span>
                         </div>
                         <div class="result-dad" style="width: ${dadPercent}%">
-                            <span>👨 Jazeel ${dadPercent}%</span>
+                            <span>👨 ${escapeHtml(dadName)} ${dadPercent}%</span>
                         </div>
                     </div>
                     <div class="result-counts">
@@ -1311,8 +1393,8 @@
     }
 
     /**
-     * Handle next round (admin only)
-     */
+      * Handle next round (admin only)
+      */
     async function handleNextRound() {
         try {
             setLoading(true);
@@ -1321,7 +1403,19 @@
             if (GameState.currentRound < GameState.totalRounds) {
                 GameState.currentRound++;
                 GameState.myVote = null;
-                GameState.currentScenario = null;
+                
+                // Load next scenario from the scenarios array
+                const nextScenario = GameState.scenarios.find(s => s.round_number === GameState.currentRound);
+                if (nextScenario) {
+                    GameState.currentScenario = nextScenario;
+                } else {
+                    // Fetch updated game status if scenario not found locally
+                    await fetchGameStatus(GameState.lobbyKey);
+                }
+                
+                // Reset vote progress
+                GameState.voteProgress = { mom: 0, dad: 0 };
+                
                 renderGameScreen();
             } else {
                 // Game complete - show final results
@@ -1337,23 +1431,22 @@
     }
 
     /**
-     * Render Results Screen - WITH REAL SCORES (FIXES ISSUE #18)
-     */
+      * Render Results Screen - WITH REAL SCORES (FIXES ISSUE #18)
+      */
     function renderResultsScreen(results = null) {
         const container = document.getElementById('mom-vs-dad-game');
         if (!container) return;
 
-        // Use real results or default
-        const finalResults = results || {
-            mom_score: 0,
-            dad_score: 0,
-            winner: 'mom'
-        };
+        // Get mom/dad names from session or use defaults
+        const momName = GameState.lobbyData?.mom_name || 'Mom';
+        const dadName = GameState.lobbyData?.dad_name || 'Dad';
+
+        // Use real results or calculate from vote data
+        const finalResults = results || calculateFinalResults();
 
         const momWins = finalResults.winner === 'mom';
         const momScore = finalResults.mom_score || 0;
         const dadScore = finalResults.dad_score || 0;
-        const winner = momWins ? 'Michelle' : 'Jazeel';
 
         container.innerHTML = `
             <div id="mom-vs-dad-results" class="mvd-section">
@@ -1367,14 +1460,14 @@
                 <div class="score-container">
                     <div class="score-card ${momWins ? 'winner' : ''}">
                         <div class="score-avatar">👩</div>
-                        <div class="score-name">Michelle</div>
+                        <div class="score-name">${escapeHtml(momName)}</div>
                         <div class="score-points">${momScore} points</div>
                         ${momWins ? '<div class="winner-badge">👑 Winner!</div>' : ''}
                     </div>
 
                     <div class="score-card ${!momWins ? 'winner' : ''}">
                         <div class="score-avatar">👨</div>
-                        <div class="score-name">Jazeel</div>
+                        <div class="score-name">${escapeHtml(dadName)}</div>
                         <div class="score-points">${dadScore} points</div>
                         ${!momWins ? '<div class="winner-badge">👑 Winner!</div>' : ''}
                     </div>
@@ -1382,7 +1475,7 @@
 
                 <!-- Final Message -->
                 <div class="final-message">
-                    <p>${momWins ? 'Mom really knows her stuff! 🎉' : 'Dad takes the crown! 🏆'}</p>
+                    <p>${momWins ? `${escapeHtml(momName)} really knows her stuff! 🎉` : `${escapeHtml(dadName)} takes the crown! 🏆`}</p>
                 </div>
 
                 <!-- Action Buttons -->
@@ -1404,6 +1497,31 @@
             GameState.realtimeChannel.unsubscribe();
             GameState.realtimeChannel = null;
         }
+    }
+
+    /**
+     * Calculate final results from scenario data
+     */
+    function calculateFinalResults() {
+        let momScore = 0;
+        let dadScore = 0;
+
+        // Count wins from revealed scenarios
+        GameState.scenarios.forEach(scenario => {
+            if (scenario.results) {
+                if (scenario.results.crowd_choice === 'mom') {
+                    momScore++;
+                } else if (scenario.results.crowd_choice === 'dad') {
+                    dadScore++;
+                }
+            }
+        });
+
+        return {
+            mom_score: momScore,
+            dad_score: dadScore,
+            winner: momScore > dadScore ? 'mom' : (dadScore > momScore ? 'dad' : 'tie')
+        };
     }
 
     /**

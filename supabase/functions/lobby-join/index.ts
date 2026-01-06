@@ -152,6 +152,7 @@ serve(async (req: Request) => {
         player_name: player_name,
         player_type: player_type,
         is_admin: isAdmin,
+        admin_code: session.admin_code,  // Include admin code for admin verification
         is_ready: true,
         joined_at: new Date().toISOString(),
         // All players (would need separate player tracking table for complete implementation)
