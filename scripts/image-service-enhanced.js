@@ -15,11 +15,8 @@
         IMAGE_TIMEOUT: 10000,
         FALLBACK_EMOJI: '🖼️',
         FALLBACK_COLORS: ['#FFB6C1', '#87CEEB', '#98FB98', '#DDA0DD', '#F0E68C'],
-        PRELOAD_IMAGES: [
-            '/images/hero-baby.jpg',
-            '/images/gallery-bg.jpg',
-            '/images/activity-cards.jpg'
-        ]
+        // PRELOAD_IMAGES removed - these images don't exist and cause 404 errors
+        // Images are loaded lazily via browser native lazy loading
     };
     
     // State
@@ -82,6 +79,37 @@
      * Load image with comprehensive retry and fallback logic
      */
     async function loadImageWithRetry(src, options = {}) {
+        // Handle undefined, null, or empty src
+        if (!src || typeof src !== 'string' || src.trim() === '') {
+            console.warn('[ImageService] loadImageWithRetry called with invalid src:', src);
+            
+            // Return fallback immediately for invalid src
+            if (options.fallbackType === 'emoji' || options.fallbackType === undefined) {
+                return {
+                    src: null,
+                    emoji: CONFIG.FALLBACK_EMOJI,
+                    color: CONFIG.FALLBACK_COLORS[0],
+                    width: 200,
+                    height: 200,
+                    loaded: true,
+                    fallback: true,
+                    type: 'emoji'
+                };
+            } else if (options.fallbackType === 'color') {
+                return {
+                    src: null,
+                    color: CONFIG.FALLBACK_COLORS[0],
+                    width: 200,
+                    height: 200,
+                    loaded: true,
+                    fallback: true,
+                    type: 'color'
+                };
+            } else {
+                return getFallbackImage(src, options.fallbackType);
+            }
+        }
+        
         const {
             maxRetries = CONFIG.MAX_RETRIES,
             timeout = CONFIG.IMAGE_TIMEOUT,
@@ -226,8 +254,15 @@
     
     /**
      * Get fallback image based on type
+     * Gracefully handles undefined/null src parameters
      */
     function getFallbackImage(originalSrc, type = 'emoji') {
+        // Handle undefined, null, or empty src
+        if (!originalSrc) {
+            console.warn('[ImageService] getFallbackImage called with empty src, using default fallback');
+            originalSrc = 'default-fallback';
+        }
+        
         const fallbackId = generateFallbackId(originalSrc);
         
         switch (type) {
@@ -273,8 +308,15 @@
     
     /**
      * Generate unique fallback ID from URL
+     * Safely handles undefined/null/empty URLs
      */
     function generateFallbackId(url) {
+        // Handle undefined, null, or empty URL
+        if (!url || typeof url !== 'string' || url.length === 0) {
+            console.warn('[ImageService] generateFallbackId called with invalid URL, using default');
+            return 0; // Return 0 to use first color in fallback colors array
+        }
+        
         let hash = 0;
         for (let i = 0; i < url.length; i++) {
             const char = url.charCodeAt(i);
@@ -302,22 +344,14 @@
     }
     
     /**
-     * Preload critical images
+     * Preload critical images - DISABLED
+     * These images don't exist and cause 404 errors
+     * Browser native lazy loading handles images efficiently now
      */
     async function preloadCriticalImages() {
-        console.log('[ImageService] Preloading critical images...');
-        
-        const preloadPromises = CONFIG.PRELOAD_IMAGES.map(async (src) => {
-            try {
-                await loadImageWithRetry(src, { maxRetries: 1 });
-                console.log(`[ImageService] Preloaded: ${src}`);
-            } catch (error) {
-                console.warn(`[ImageService] Failed to preload: ${src}`, error.message);
-            }
-        });
-        
-        await Promise.allSettled(preloadPromises);
-        console.log('[ImageService] Image preloading completed');
+        console.log('[ImageService] Preloading disabled - using native lazy loading');
+        // Images load on scroll via browser native lazy loading
+        // No manual preloading needed
     }
     
     /**
@@ -353,6 +387,13 @@
             
             img.dataset.enhanced = 'true';
             const originalSrc = img.src;
+            
+            // Skip if src is empty or undefined
+            if (!originalSrc || originalSrc.trim() === '') {
+                console.warn('[ImageService] Skipping image with empty src');
+                img.alt = 'Image not available';
+                return;
+            }
             
             // Replace with loading state
             img.style.opacity = '0.5';

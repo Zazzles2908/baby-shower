@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mom vs Dad Debug Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; max-width: 800px; margin: 0 auto; }
+        h1 { color: #333; }
+        .test-result { padding: 10px; margin: 5px 0; border-radius: 5px; }
+        .pass { background-color: #d4edda; color: #155724; }
+        .fail { background-color: #f8d7da; color: #721c24; }
+        .info { background-color: #d1ecf1; color: #0c5460; }
+        .section-header { background-color: #ffc107; padding: 10px; margin: 20px 0 10px 0; border-radius: 5px; }
+    </style>
+</head>
+<body>
+    <h1>🧪 Mom vs Dad Game Debug Test</h1>
+    <div id="test-results"></div>
+
+    <!-- Include required scripts -->
+    <script src="scripts/config.js"></script>
+    <script src="scripts/api.js"></script>
+    <script src="scripts/mom-vs-dad-simplified.js"></script>
+
+    <script>
+        const results = [];
+        const consoleLogs = [];
+
+        // Capture console.log calls
+        const originalLog = console.log;
+        console.log = function(...args) {
+            consoleLogs.push(args.join(' '));
+            originalLog.apply(console, args);
+        };
+
+        function addTestResult(name, passed, message) {
+            const result = { name, passed, message };
+            results.push(result);
+            const div = document.createElement('div');
+            div.className = 'test-result ' + (passed ? 'pass' : 'fail');
+            div.innerHTML = `<strong>${passed ? '✅' : '❌'} ${name}:</strong> ${message}`;
+            document.getElementById('test-results').appendChild(div);
+        }
+
+        function addSectionHeader(title) {
+            const div = document.createElement('div');
+            div.className = 'section-header';
+            div.innerHTML = `<strong>${title}</strong>`;
+            document.getElementById('test-results').appendChild(div);
+        }
+
+        // Run tests
+        try {
+            addSectionHeader('📁 Script Loading Tests');
+
+            // Test 1: Check if script loaded
+            addTestResult(
+                'Script Object Available',
+                typeof window.MomVsDadSimplified !== 'undefined',
+                typeof window.MomVsDadSimplified !== 'undefined' 
+                    ? '✅ MomVsDadSimplified object found' 
+                    : '❌ MomVsDadSimplified object NOT found'
+            );
+
+            // Test 2: Check script version/logging
+            addTestResult(
+                'Script Initialized',
+                consoleLogs.some(log => log.includes('[MomVsDadSimplified] loaded successfully')),
+                consoleLogs.some(log => log.includes('[MomVsDadSimplified] loaded successfully'))
+                    ? '✅ Script logged successful load'
+                    : '❌ Script did not log successful load'
+            );
+
+            addSectionHeader('🏗️ DOM Structure Tests');
+
+            // Test 3: Check if container exists
+            const container = document.getElementById('mom-vs-dad-game');
+            addTestResult(
+                'Container Exists',
+                !!container,
+                container 
+                    ? '✅ Found mom-vs-dad-game container' 
+                    : '❌ Container missing'
+            );
+
+            // Test 4: Check if section exists and is hidden
+            const section = document.getElementById('mom-vs-dad-section');
+            addTestResult(
+                'Section Exists',
+                !!section,
+                section ? '✅ Section element found' : '❌ Section element missing'
+            );
+
+            const isHidden = section && section.classList.contains('hidden');
+            addTestResult(
+                'Section Hidden Initially',
+                isHidden,
+                isHidden 
+                    ? '✅ Section has hidden class (expected)' 
+                    : '❌ Section is visible (unexpected)'
+            );
+
+            addSectionHeader('🚀 Initialization Tests');
+
+            // Test 5: Try to initialize the game
+            if (window.MomVsDadSimplified && container) {
+                try {
+                    // Clear any existing content
+                    container.innerHTML = '';
+                    
+                    // Call init
+                    window.MomVsDadSimplified.init();
+                    
+                    // Give it a moment to render
+                    setTimeout(() => {
+                        addTestResult('Initialization Called', true, '✅ initializeGame() executed without error');
+
+                        // Check if content was rendered
+                        const hasContent = container.querySelector('.mvd-section');
+                        addTestResult(
+                            'Content Rendered',
+                            !!hasContent,
+                            hasContent 
+                                ? '✅ Game content found in container' 
+                                : '❌ No game content found'
+                        );
+
+                        if (hasContent) {
+                            // Check for lobby cards
+                            const lobbyCards = container.querySelectorAll('.lobby-card');
+                            addTestResult(
+                                'Lobby Cards Created',
+                                lobbyCards.length === 4,
+                                `Found ${lobbyCards.length} lobby cards (expected 4)`
+                            );
+
+                            // Check for header
+                            const header = container.querySelector('.mvd-header h1');
+                            addTestResult(
+                                'Header Rendered',
+                                header && header.textContent.includes('Mom vs Dad'),
+                                header 
+                                    ? `✅ Header found: "${header.textContent}"` 
+                                    : '❌ Header missing'
+                            );
+                        }
+
+                        addSectionHeader('🔧 API & Dependencies Tests');
+
+                        // Test API availability
+                        addTestResult(
+                            'API Available',
+                            typeof window.API !== 'undefined',
+                            typeof window.API !== 'undefined' 
+                                ? '✅ window.API found' 
+                                : '❌ window.API NOT found'
+                        );
+
+                        // Test CONFIG availability
+                        addTestResult(
+                            'CONFIG Available',
+                            typeof window.CONFIG !== 'undefined',
+                            typeof window.CONFIG !== 'undefined' 
+                                ? '✅ window.CONFIG found' 
+                                : '❌ window.CONFIG NOT found'
+                        );
+
+                        addSectionHeader('📋 Console Log Analysis');
+
+                        // Check for initialization log
+                        const initLog = consoleLogs.some(log => log.includes('[MomVsDadSimplified] initializing'));
+                        addTestResult(
+                            'Initialization Log',
+                            initLog,
+                            initLog 
+                                ? '✅ Initialization started (see console)' 
+                                : '❌ No initialization log found'
+                        );
+
+                        // Check for lobby selector log
+                        const lobbyLog = consoleLogs.some(log => log.includes('lobby'));
+                        addTestResult(
+                            'Lobby Operations Log',
+                            lobbyLog,
+                            lobbyLog 
+                                ? '✅ Lobby operations attempted' 
+                                : '❌ No lobby operation logs found'
+                        );
+
+                        // Summary
+                        addSectionHeader('📊 Test Summary');
+                        const passedCount = results.filter(r => r.passed).length;
+                        const totalCount = results.length;
+                        addTestResult(
+                            'Overall Result',
+                            passedCount === totalCount,
+                            `${passedCount}/${totalCount} tests passed`
+                        );
+
+                        if (passedCount < totalCount) {
+                            addTestResult(
+                                'Next Steps',
+                                true,
+                                '❌ Some tests failed. Check specific failures above for debugging information.'
+                            );
+                        } else {
+                            addTestResult(
+                                'Success!',
+                                true,
+                                '✅ All tests passed! The game should be working correctly.'
+                            );
+                        }
+
+                    }, 100); // Small delay for async operations
+
+                } catch (initError) {
+                    addTestResult('Initialization', false, `❌ Error: ${initError.message}`);
+                    addTestResult('Stack Trace', true, initError.stack);
+                }
+            } else {
+                addTestResult('Cannot Test Init', false, '❌ Missing required objects for initialization test');
+                addTestResult('Missing Objects', true, 
+                    `Container: ${!!container}, Script: ${typeof window.MomVsDadSimplified}`);
+            }
+
+        } catch (error) {
+            addTestResult('Test Execution', false, `❌ Unexpected error: ${error.message}`);
+        }
+    </script>
+</body>
+</html>

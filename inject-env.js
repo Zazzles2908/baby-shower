@@ -6,9 +6,34 @@
  * 
  * SECURITY: Only injects public (anon) key to client-side
  * Service role key is NEVER exposed to client - used only in Edge Functions
+ * 
+ * Optimized for Bun with ES modules support while maintaining Node.js compatibility
  */
 
-const fs = require('fs');
+// Universal module detection for Bun vs Node.js
+const isBun = typeof Bun !== 'undefined';
+const isNode = typeof process !== 'undefined' && process.versions?.node;
+
+// Use Bun's native file operations if available (faster), fallback to Node.js fs
+let fs;
+if (isBun) {
+    // Bun's native file system API - significantly faster than Node.js
+    fs = {
+        readFileSync: (path, encoding) => Bun.file(path).text(),
+        writeFileSync: (path, content) => Bun.write(path, content),
+        existsSync: (path) => {
+            try {
+                return Bun.file(path).exists();
+            } catch {
+                return false;
+            }
+        }
+    };
+} else {
+    // Node.js fallback
+    fs = require('fs');
+}
+
 const path = require('path');
 
 // Read index.html
@@ -16,6 +41,7 @@ const indexPath = path.join(__dirname, 'index.html');
 let html = fs.readFileSync(indexPath, 'utf8');
 
 // Check if already injected (prevent duplicate blocks)
+// RE-ENABLED after v20260106d forced refresh
 if (html.includes('[ENV] Supabase URL configured:')) {
     console.log('⚠️  Environment variables already injected, skipping...');
     process.exit(0);

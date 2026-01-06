@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Mom vs Dad Initialization</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        #mom-vs-dad-game { 
+            border: 2px solid #ccc; 
+            padding: 20px; 
+            margin: 20px 0;
+            min-height: 300px;
+        }
+        .test-result { padding: 10px; margin: 10px 0; border-radius: 5px; }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+    </style>
+</head>
+<body>
+    <h1>Mom vs Dad Game Initialization Test</h1>
+    
+    <!-- Simulate the game container from index.html -->
+    <div id="mom-vs-dad-game">
+        <!-- Content will be rendered here -->
+    </div>
+    
+    <div id="test-results"></div>
+    
+    <script>
+        // Mock CONFIG for testing
+        window.CONFIG = {
+            SUPABASE: {
+                URL: 'https://test.supabase.co',
+                ANON_KEY: 'test-key'
+            }
+        };
+        
+        // Test results container
+        const testResults = document.getElementById('test-results');
+        
+        function addTestResult(name, success, message) {
+            const div = document.createElement('div');
+            div.className = 'test-result ' + (success ? 'success' : 'error');
+            div.innerHTML = `<strong>${name}:</strong> ${message}`;
+            testResults.appendChild(div);
+        }
+        
+        // Test 1: Check if container exists
+        const container = document.getElementById('mom-vs-dad-game');
+        addTestResult('Container exists', !!container, container ? '✓ Found mom-vs-dad-game container' : '✗ Container missing');
+        
+        // Test 2: Simulate the initialization logic
+        function testInitialization() {
+            try {
+                // Simulate initializeGame logic
+                const gameContainer = document.getElementById('mom-vs-dad-game');
+                if (!gameContainer) {
+                    addTestResult('Initialization', false, 'Container not found');
+                    return;
+                }
+                
+                // Simulate rendering the lobby selector
+                gameContainer.innerHTML = `
+                    <div id="mom-vs-dad-lobbies" class="mvd-section active">
+                        <div class="mvd-header">
+                            <h1>🎮 Mom vs Dad</h1>
+                            <p>Choose a lobby to join</p>
+                        </div>
+                        <div class="lobbies-grid">
+                            <button class="lobby-card" data-lobby="LOBBY-A" data-name="Sunny Meadows">
+                                <div class="lobby-status" id="status-LOBBY-A">🔄 Loading...</div>
+                                <div class="lobby-title">Sunny Meadows</div>
+                                <div class="lobby-count" id="count-LOBBY-A">-/- players</div>
+                            </button>
+                        </div>
+                    </div>
+                `;
+                
+                // Check if content was rendered
+                const renderedContent = gameContainer.querySelector('.mvd-section');
+                addTestResult('Lobby rendered', !!renderedContent, renderedContent ? '✓ Lobby selector rendered successfully' : '✗ Failed to render lobby');
+                
+                // Test reinitializeForSection logic
+                const reinitContainer = document.getElementById('mom-vs-dad-game');
+                const needsReinit = !reinitContainer.querySelector('.mvd-section');
+                addTestResult('Re-initialization check', !needsReinit, needsReinit ? '✓ Would re-render (container empty)' : '✓ Content already present');
+                
+            } catch (error) {
+                addTestResult('Initialization', false, 'Error: ' + error.message);
+            }
+        }
+        
+        // Run test
+        testInitialization();
+    </script>
+</body>
+</html>

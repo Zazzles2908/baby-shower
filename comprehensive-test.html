@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎮 Mom vs Dad Game - Complete Verification Test</title>
+    <style>
+        * { box-sizing: border-box; }
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            padding: 20px; 
+            max-width: 900px; 
+            margin: 0 auto; 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        h1 { 
+            color: white; 
+            text-align: center;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            margin-bottom: 30px;
+        }
+        .test-container {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+        .test-section {
+            margin-bottom: 25px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #eee;
+        }
+        .test-section:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+        }
+        .test-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .test-result { 
+            padding: 12px 15px; 
+            margin: 8px 0; 
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 14px;
+            transition: transform 0.2s;
+        }
+        .test-result:hover {
+            transform: translateX(5px);
+        }
+        .pass { 
+            background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%); 
+            color: #155724;
+            border-left: 4px solid #28a745;
+        }
+        .fail { 
+            background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%); 
+            color: #721c24;
+            border-left: 4px solid #dc3545;
+        }
+        .info { 
+            background: linear-gradient(135deg, #d1ecf1 0%, #bee5eb 100%); 
+            color: #0c5460;
+            border-left: 4px solid #17a2b8;
+        }
+        .warning { 
+            background: linear-gradient(135deg, #fff3cd 0%, #ffeeba 100%); 
+            color: #856404;
+            border-left: 4px solid #ffc107;
+        }
+        .success-banner {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 20px;
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+        }
+        .test-actions {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        .test-btn {
+            padding: 12px 24px;
+            font-size: 14px;
+            cursor: pointer;
+            border: none;
+            border-radius: 8px;
+            transition: all 0.3s;
+            font-weight: 600;
+        }
+        .test-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .btn-secondary {
+            background: linear-gradient(135deg, #6c757d 0%, #545b62 100%);
+            color: white;
+        }
+        .btn-success {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+        }
+        .game-preview {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+        .lobby-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+        .lobby-card {
+            background: white;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            padding: 15px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .lobby-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            border-color: #667eea;
+        }
+        .lobby-status {
+            font-size: 12px;
+            padding: 5px 10px;
+            border-radius: 20px;
+            display: inline-block;
+            margin-bottom: 10px;
+        }
+        .lobby-title {
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 5px;
+        }
+        .lobby-count {
+            font-size: 12px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <h1>🎮 Mom vs Dad Game - Complete Verification</h1>
+    
+    <div class="test-container">
+        <div class="test-actions">
+            <button class="test-btn btn-primary" onclick="runAllTests()">🚀 Run All Tests</button>
+            <button class="test-btn btn-secondary" onclick="testNavigation()">🧪 Test Navigation</button>
+            <button class="test-btn btn-success" onclick="showGamePreview()">👀 Show Game Preview</button>
+            <button class="test-btn btn-secondary" onclick="clearResults()">🗑️ Clear Results</button>
+        </div>
+        
+        <div id="test-results"></div>
+        
+        <div id="game-preview" class="game-preview" style="display: none;">
+            <h3 style="margin-top: 0; color: #333;">🎮 Game Preview</h3>
+            <div id="preview-container"></div>
+        </div>
+    </div>
+
+    <!-- Include required scripts -->
+    <script src="scripts/config.js"></script>
+    <script src="scripts/api.js"></script>
+    <script src="scripts/mom-vs-dad-simplified.js"></script>
+
+    <script>
+        const results = [];
+        const consoleLogs = [];
+
+        // Capture console output
+        const originalLog = console.log;
+        const originalWarn = console.warn;
+        const originalError = console.error;
+        
+        console.log = function(...args) {
+            const msg = args.join(' ');
+            consoleLogs.push({ type: 'log', message: msg, time: new Date().toISOString() });
+            originalLog.apply(console, args);
+        };
+        
+        console.warn = function(...args) {
+            const msg = args.join(' ');
+            consoleLogs.push({ type: 'warn', message: msg, time: new Date().toISOString() });
+            originalWarn.apply(console, args);
+        };
+        
+        console.error = function(...args) {
+            const msg = args.join(' ');
+            consoleLogs.push({ type: 'error', message: msg, time: new Date().toISOString() });
+            originalError.apply(console, args);
+        };
+
+        function addTestResult(name, passed, message, type = 'info') {
+            const result = { name, passed, message, type, time: new Date().toISOString() };
+            results.push(result);
+            
+            const div = document.createElement('div');
+            div.className = `test-result ${passed ? 'pass' : fail ? 'error' : type}`;
+            
+            // Handle different result types
+            let icon = 'ℹ️';
+            if (!passed) icon = '❌';
+            else if (message.includes('SUCCESS') || message.includes('✅')) icon = '✅';
+            else if (message.includes('WARNING') || message.includes('⚠️')) icon = '⚠️';
+            else if (message.includes('ERROR') || message.includes('❌')) icon = '❌';
+            
+            div.innerHTML = `<strong>${icon} ${name}:</strong> ${message}`;
+            document.getElementById('test-results').appendChild(div);
+        }
+
+        function addSectionHeader(title, emoji = '📋') {
+            const div = document.createElement('div');
+            div.className = 'test-section';
+            div.innerHTML = `<div class="test-title">${emoji} ${title}</div>`;
+            document.getElementById('test-results').appendChild(div);
+        }
+
+        function clearResults() {
+            document.getElementById('test-results').innerHTML = '';
+            results.length = 0;
+            consoleLogs.length = 0;
+        }
+
+        async function runAllTests() {
+            clearResults();
+            
+            // Section 1: Script Loading
+            addSectionHeader('📁 Script Loading & Structure', '🔍');
+            
+            // Test 1.1: Script object exists
+            const scriptExists = typeof window.MomVsDadSimplified !== 'undefined';
+            addTestResult(
+                'Script Object Created',
+                scriptExists,
+                scriptExists 
+                    ? '✅ MomVsDadSimplified object is available on window' 
+                    : '❌ MomVsDadSimplified object NOT found on window'
+            );
+
+            // Test 1.2: Script logged successful load
+            const scriptLoaded = consoleLogs.some(log => log.message.includes('[MomVsDadSimplified] loaded successfully'));
+            addTestResult(
+                'Script Initialized',
+                scriptLoaded,
+                scriptLoaded 
+                    ? '✅ Script logged successful initialization' 
+                    : '❌ Script did not log initialization'
+            );
+
+            // Test 1.3: Required functions exist
+            const requiredFunctions = ['init', 'renderLobbySelector', 'reinitializeForSection', 'getState'];
+            const missingFunctions = requiredFunctions.filter(fn => 
+                typeof window.MomVsDadSimplified[fn] !== 'function'
+            );
+            addTestResult(
+                'Required Functions Available',
+                missingFunctions.length === 0,
+                missingFunctions.length === 0 
+                    ? `✅ All ${requiredFunctions.length} required functions available` 
+                    : `❌ Missing functions: ${missingFunctions.join(', ')}`
+            );
+
+            // Section 2: DOM Structure
+            addSectionHeader('🏗️ DOM Structure & Container', '🔧');
+            
+            // Test 2.1: Container exists
+            const container = document.getElementById('mom-vs-dad-game');
+            addTestResult(
+                'Game Container Exists',
+                !!container,
+                container 
+                    ? '✅ mom-vs-dad-game container found in DOM' 
+                    : '❌ mom-vs-dad-game container NOT found'
+            );
+
+            // Test 2.2: Section exists
+            const section = document.getElementById('mom-vs-dad-section');
+            addTestResult(
+                'Section Element Exists',
+                !!section,
+                section 
+                    ? '✅ mom-vs-dad-section found in DOM' 
+                    : '❌ mom-vs-dad-section NOT found'
+            );
+
+            // Test 2.3: Section has hidden class
+            const isHidden = section && section.classList.contains('hidden');
+            addTestResult(
+                'Section Initially Hidden',
+                isHidden,
+                isHidden 
+                    ? '✅ Section has hidden class (expected behavior)' 
+                    : '⚠️ Section is visible immediately (unexpected)'
+            );
+
+            // Section 3: Initialization Test
+            addSectionHeader('🚀 Initialization Test', '🎯');
+            
+            if (container && window.MomVsDadSimplified) {
+                try {
+                    // Clear container
+                    container.innerHTML = '';
+                    
+                    // Call init
+                    window.MomVsDadSimplified.init();
+                    
+                    // Wait for rendering
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                    
+                    // Test 3.1: Content rendered
+                    const hasContent = container.querySelector('.mvd-section');
+                    addTestResult(
+                        'Game Content Rendered',
+                        !!hasContent,
+                        hasContent 
+                            ? '✅ Game content successfully rendered in container' 
+                            : '❌ No content rendered in container'
+                    );
+
+                    // Test 3.2: Lobby cards exist
+                    const lobbyCards = container.querySelectorAll('.lobby-card');
+                    addTestResult(
+                        'Lobby Cards Created',
+                        lobbyCards.length === 4,
+                        `Found ${lobbyCards.length} lobby cards (expected 4)`
+                    );
+
+                    // Test 3.3: Header exists
+                    const header = container.querySelector('.mvd-header h1');
+                    const headerCorrect = header && header.textContent.includes('Mom vs Dad');
+                    addTestResult(
+                        'Game Header Rendered',
+                        headerCorrect,
+                        headerCorrect 
+                            ? `✅ Header found: "${header.textContent}"` 
+                            : '❌ Header missing or incorrect'
+                    );
+
+                    // Test 3.4: Join modal exists
+                    const joinModal = container.querySelector('#join-modal');
+                    addTestResult(
+                        'Join Modal Exists',
+                        !!joinModal,
+                        joinModal 
+                            ? '✅ Join modal found in rendered content' 
+                            : '❌ Join modal NOT found'
+                    );
+
+                    // Test 3.5: Console logs
+                    const initLog = consoleLogs.some(log => 
+                        log.message.includes('[MomVsDadSimplified] initializing') ||
+                        log.message.includes('[MomVsDadSimplified] Lobby selector')
+                    );
+                    addTestResult(
+                        'Initialization Logs Present',
+                        initLog,
+                        initLog 
+                            ? '✅ Initialization process logged to console' 
+                            : '⚠️ No initialization logs found'
+                    );
+
+                } catch (error) {
+                    addTestResult('Initialization', false, `❌ Error: ${error.message}`);
+                }
+            } else {
+                addTestResult('Cannot Test Initialization', false, '❌ Missing required objects');
+            }
+
+            // Section 4: API & Dependencies
+            addSectionHeader('🔗 API & Dependencies', '🌐');
+            
+            const apiAvailable = typeof window.API !== 'undefined';
+            addTestResult(
+                'API Object Available',
+                apiAvailable,
+                apiAvailable 
+                    ? '✅ window.API found' 
+                    : '⚠️ window.API not found (may affect functionality)'
+            );
+
+            const configAvailable = typeof window.CONFIG !== 'undefined';
+            addTestResult(
+                'CONFIG Object Available',
+                configAvailable,
+                configAvailable 
+                    ? '✅ window.CONFIG found' 
+                    : '⚠️ window.CONFIG not found (may affect functionality)'
+            );
+
+            // Section 5: Navigation Test
+            addSectionHeader('🧭 Navigation Test', '👉');
+            
+            if (section && window.MomVsDadSimplified) {
+                try {
+                    // Hide section first
+                    section.classList.add('hidden');
+                    
+                    // Show section (simulate navigation)
+                    section.classList.remove('hidden');
+                    
+                    // Call reinitialize
+                    window.MomVsDadSimplified.reinitializeForSection();
+                    
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                    
+                    const contentAfterNav = container.querySelector('.mvd-section');
+                    addTestResult(
+                        'Navigation Re-initialization',
+                        !!contentAfterNav,
+                        contentAfterNav 
+                            ? '✅ Content re-rendered after navigation' 
+                            : '❌ Content not rendered after navigation'
+                    );
+                    
+                } catch (error) {
+                    addTestResult('Navigation Test', false, `❌ Error: ${error.message}`);
+                }
+            }
+
+            // Final Summary
+            addSectionHeader('📊 Final Summary', '🏆');
+            
+            const passedTests = results.filter(r => r.passed).length;
+            const totalTests = results.length;
+            const passRate = ((passedTests / totalTests) * 100).toFixed(1);
+            
+            addTestResult(
+                'Overall Results',
+                passedTests === totalTests,
+                `${passedTests}/${totalTests} tests passed (${passRate}%)`
+            );
+
+            if (passedTests === totalTests) {
+                const successDiv = document.createElement('div');
+                successDiv.className = 'success-banner';
+                successDiv.innerHTML = `🎉 ALL TESTS PASSED! The Mom vs Dad game is working correctly!`;
+                document.getElementById('test-results').insertBefore(successDiv, document.getElementById('test-results').firstChild);
+            } else {
+                const failedTests = results.filter(r => !r.passed);
+                addTestResult(
+                    'Next Steps',
+                    true,
+                    `⚠️ ${failedTests.length} test(s) failed. Check specific failures above for details.`
+                );
+            }
+        }
+
+        function testNavigation() {
+            clearResults();
+            addSectionHeader('🧭 Navigation Simulation', '👉');
+            
+            const section = document.getElementById('mom-vs-dad-section');
+            const container = document.getElementById('mom-vs-dad-game');
+            
+            if (!section || !container) {
+                addTestResult('Navigation Test', false, '❌ Required elements missing');
+                return;
+            }
+            
+            addTestResult('Starting State', true, `Section: ${section.className}, Container: ${container.innerHTML.length > 0 ? 'Has content' : 'Empty'}`);
+            
+            // Simulate navigation
+            section.classList.remove('hidden');
+            window.MomVsDadSimplified.reinitializeForSection();
+            
+            setTimeout(() => {
+                const hasContent = container.querySelector('.mvd-section');
+                addTestResult(
+                    'After Navigation',
+                    !!hasContent,
+                    hasContent 
+                        ? '✅ Content rendered after navigation' 
+                        : '❌ No content after navigation'
+                );
+                
+                if (hasContent) {
+                    const lobbyCards = container.querySelectorAll('.lobby-card');
+                    addTestResult('Lobby Cards After Nav', lobbyCards.length === 4, `Found ${lobbyCards.length} cards`);
+                }
+            }, 500);
+        }
+
+        function showGamePreview() {
+            const previewDiv = document.getElementById('game-preview');
+            const container = document.getElementById('mom-vs-dad-game');
+            
+            if (previewDiv.style.display === 'none') {
+                previewDiv.style.display = 'block';
+                
+                if (container.innerHTML.trim()) {
+                    document.getElementById('preview-container').innerHTML = container.innerHTML;
+                    addTestResult('Game Preview', true, '✅ Game preview shown below');
+                } else {
+                    document.getElementById('preview-container').innerHTML = '<p>No game content to preview. Run tests first!</p>';
+                    addTestResult('Game Preview', false, '❌ No game content found');
+                }
+            } else {
+                previewDiv.style.display = 'none';
+            }
+        }
+
+        // Auto-run tests on page load
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                console.log('🎮 Auto-running verification tests...');
+                runAllTests();
+            }, 500); // Small delay to ensure scripts are loaded
+        });
+    </script>
+</body>
+</html>

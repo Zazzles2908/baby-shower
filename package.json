@@ -3,10 +3,15 @@
   "version": "1.0.0",
   "description": "Baby Shower App - A celebration platform with guestbook, voting, pool prediction, quiz, and advice activities",
   "scripts": {
-    "dev": "npx http-server . -p 3000 -c-1",
-    "deploy": "npm run commit && npm run push",
+    "dev": "bun run --hot scripts/dev-server.js",
+    "dev:node": "npx http-server . -p 3000 -c-1",
+    "dev:fast": "bun run --hot --port 3000 .",
+    "deploy": "bun run deploy:commit && bun run push",
+    "deploy:bun": "bun run deploy:commit && bun run push:bun",
+    "deploy:node": "npm run commit && npm run push",
     "commit": "node scripts/commit.js",
     "push": "git push origin main",
+    "push:bun": "bun run commit && git push origin main",
     "status": "git status",
     "add": "git add .",
     "test": "playwright test --config=tests/playwright.config.js",
@@ -29,7 +34,11 @@
     "test:install:firefox": "playwright install firefox",
     "test:install:webkit": "playwright install webkit",
     "test:clean": "rm -rf test-results tests/e2e/.auth",
-    "test:generate": "node tests/e2e/data-generator.js"
+    "test:generate": "node tests/e2e/data-generator.js",
+    "inject:env": "bun run scripts/inject-env.js",
+    "inject:env:node": "node scripts/inject-env.js",
+    "bundle": "bun build ./index.html --outdir ./dist --minify",
+    "bundle:analyze": "bun build ./index.html --outdir ./dist --analyze"
   },
   "dependencies": {
     "playwright": "^1.57.0"
@@ -46,13 +55,16 @@
     "playwright",
     "supabase",
     "edge-functions",
-    "testing"
+    "testing",
+    "bun"
   ],
   "author": "",
   "license": "MIT",
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=18.0.0",
+    "bun": ">=1.0.0"
   },
+  "packageManager": "bun@1.0.0",
   "repository": {
     "type": "git",
     "url": "https://github.com/your-org/baby-shower.git"

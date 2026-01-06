@@ -1,0 +1,453 @@
+/**
+ * Baby Shower V2 - Visual Style Guide
+ * Quick Reference for Developers
+ * Version 1.0.0
+ */
+
+/* ========================================
+   QUICK REFERENCE - DESIGN TOKENS
+   ======================================== */
+
+/* SPACING - 8px Grid */
+/*
+    var(--space-xs)    = 4px   (Icon spacing)
+    var(--space-sm)    = 8px   (Tight spacing)
+    var(--space-md)    = 16px  (Standard spacing)
+    var(--space-lg)    = 24px  (Comfortable spacing)
+    var(--space-xl)    = 32px  (Section spacing)
+    var(--space-2xl)   = 40px  (Large spacing)
+    var(--space-3xl)   = 48px  (Extra large)
+    var(--space-4xl)   = 64px  (Massive spacing)
+
+    Usage:
+    padding: var(--space-lg) var(--space-xl);
+    margin-bottom: var(--space-md);
+    gap: var(--space-sm);
+*/
+
+/* TYPOGRAPHY - Modular Scale */
+/*
+    var(--text-xs)     = 12px  (Captions, labels)
+    var(--text-sm)     = 14px  (Body text, small)
+    var(--text-base)   = 16px  (Base body text)
+    var(--text-lg)     = 18px  (Emphasized body)
+    var(--text-xl)     = 20px  (Subheadings)
+    var(--text-2xl)    = 24px  (Headings)
+    var(--text-3xl)    = 30px  (Large headings)
+    var(--text-4xl)    = 36px  (Hero text)
+    var(--text-5xl)    = 48px  (Display text)
+
+    Font Weights:
+    var(--font-weight-light)     = 400
+    var(--font-weight-normal)    = 500
+    var(--font-weight-semibold)  = 600
+    var(--font-weight-bold)      = 700
+    var(--font-weight-extrabold) = 800
+
+    Line Heights:
+    var(--line-height-tight)     = 1.25
+    var(--line-height-normal)    = 1.5
+    var(--line-height-relaxed)   = 1.75
+
+    Usage:
+    font-size: var(--text-lg);
+    font-weight: var(--font-weight-bold);
+    line-height: var(--line-height-normal);
+*/
+
+/* BORDER RADIUS */
+/*
+    var(--radius-sm)    = 8px   (Small elements)
+    var(--radius-md)    = 12px  (Cards, inputs)
+    var(--radius-lg)    = 16px  (Buttons, cards)
+    var(--radius-xl)    = 24px  (Containers)
+    var(--radius-2xl)   = 32px  (Modals)
+    var(--radius-full)  = 9999px (Avatars, pills)
+
+    Usage:
+    border-radius: var(--radius-lg);
+*/
+
+/* SHADOWS */
+/*
+    var(--shadow-xs)  = Subtle (1px) - Small elements
+    var(--shadow-sm)  = Light (2px)  - Cards
+    var(--shadow-md)  = Medium (4px) - Elevated cards
+    var(--shadow-lg)  = Large (8px)  - Modals, dropdowns
+    var(--shadow-xl)  = XLarge (16px) - Toasts, popovers
+
+    Usage:
+    box-shadow: var(--shadow-md);
+*/
+
+/* TRANSITIONS */
+/*
+    var(--transition-fast)  = 150ms (Micro-interactions)
+    var(--transition-base)  = 300ms (Standard transitions)
+    var(--transition-slow)  = 500ms (Page transitions)
+
+    Usage:
+    transition: all var(--transition-base) cubic-bezier(0.4, 0, 0.2, 1);
+*/
+
+/* ========================================
+   COLOR PALETTE - QUICK REFERENCE
+   ======================================== */
+
+/* PRIMARY COLORS - Sage Green */
+/*
+    --color-primary-50:   #F5F8F2  (Background tint)
+    --color-primary-100:  #EBF0E5  (Light tint)
+    --color-primary-200:  #D4DEC7  (Border)
+    --color-primary-300:  #BDC9A9  (Subtle)
+    --color-primary-400:  #9CAF88  (Primary brand color)
+    --color-primary-500:  #7A8F6A  (Darker brand)
+    --color-primary-600:  #637956  (Darkest)
+*/
+
+/* SECONDARY COLORS - Soft Gold */
+/*
+    --color-secondary-50:  #FEFAF4
+    --color-secondary-100: #FDF5E8
+    --color-secondary-200: #FBECD2
+    --color-secondary-300: #F4E4BC  (Secondary brand)
+    --color-secondary-400: #E9D5A7
+    --color-secondary-500: #DEC68B
+*/
+
+/* ACCENT COLORS - Soft Peach */
+/*
+    --color-accent-100: #FFF1EA
+    --color-accent-200: #FFE3D4
+    --color-accent-300: #E8C4A0  (Accent brand)
+    --color-accent-400: #D9AA80
+    --color-accent-500: #CA9160
+*/
+
+/* NEUTRAL COLORS */
+/*
+    --color-neutral-50:  #FFF8E7  (Background)
+    --color-neutral-100: #F5EDD8  (Border)
+    --color-neutral-400: #5A5247  (Secondary text)
+    --color-neutral-500: #3A3326  (Primary text)
+    --color-neutral-600: #2A251B  (Headings)
+*/
+
+/* FUNCTIONAL COLORS */
+/*
+    Error:
+    --color-error-100: #FFEBEE
+    --color-error-500: #E07A5F  (Primary error)
+
+    Success:
+    --color-success-100: #E8F5E9
+    --color-success-400: #9CAF88  (Primary success)
+*/
+
+/* ========================================
+   COMPONENT PATTERNS
+   ======================================== */
+
+/* BUTTON PATTERN */
+/*
+    .btn-primary {
+        background: linear-gradient(135deg, var(--color-primary-400) 0%, var(--color-primary-500) 100%);
+        color: var(--color-white);
+        padding: var(--space-lg) var(--space-2xl);
+        border-radius: var(--radius-lg);
+        font-size: var(--text-lg);
+        font-weight: var(--font-weight-bold);
+        min-height: 48px;
+        transition: all var(--transition-base) cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .btn-secondary {
+        background: transparent;
+        color: var(--color-text);
+        border: 2px solid var(--color-neutral-100);
+        padding: var(--space-sm) var(--space-lg);
+        border-radius: var(--radius-full);
+        min-height: 48px;
+    }
+*/
+
+/* CARD PATTERN */
+/*
+    .card {
+        background: var(--color-white);
+        border: 2px solid var(--color-neutral-100);
+        border-radius: var(--radius-xl);
+        padding: var(--space-xl) var(--space-lg);
+        box-shadow: var(--shadow-card);
+        transition: all var(--transition-base) cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .card:hover {
+        transform: translateY(-6px);
+        border-color: var(--color-primary-400);
+        box-shadow: var(--shadow-hover);
+    }
+*/
+
+/* INPUT PATTERN */
+/*
+    .input {
+        width: 100%;
+        padding: var(--space-md) var(--space-lg);
+        border: 2px solid var(--color-neutral-100);
+        border-radius: var(--radius-lg);
+        font-size: var(--text-base);
+        min-height: 48px;
+        transition: all var(--transition-base) cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .input:focus {
+        outline: none;
+        border-color: var(--color-primary-400);
+        box-shadow: 0 0 0 4px rgba(156, 175, 136, 0.15);
+    }
+*/
+
+/* ========================================
+   ANIMATION PATTERNS
+   ======================================== */
+
+/* TRANSITIONS */
+/*
+    Standard:
+    transition: all var(--transition-base) cubic-bezier(0.4, 0, 0.2, 1);
+
+    Fast:
+    transition: all var(--transition-fast) ease-out;
+
+    Slow:
+    transition: all var(--transition-slow) cubic-bezier(0.4, 0, 0.2, 1);
+*/
+
+/* KEYFRAME ANIMATIONS */
+/*
+    Fade In:
+    animation: fadeIn var(--transition-base) ease-out;
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+
+    Slide Up:
+    animation: slideUp var(--transition-slow) ease-out;
+    @keyframes slideUp {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    Pop In:
+    animation: popIn var(--transition-base) cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    @keyframes popIn {
+        from { opacity: 0; transform: scale(0.8); }
+        to { opacity: 1; transform: scale(1); }
+    }
+*/
+
+/* ========================================
+   ACCESSIBILITY PATTERNS
+   ======================================== */
+
+/* FOCUS STATES */
+/*
+    *:focus-visible {
+        outline: 3px solid var(--color-primary-400);
+        outline-offset: 2px;
+    }
+
+    .custom-focus:focus-visible {
+        outline: 3px solid var(--color-primary-400);
+        outline-offset: 2px;
+        box-shadow: 0 0 0 4px rgba(156, 175, 136, 0.15);
+    }
+*/
+
+/* REDUCED MOTION */
+/*
+    @media (prefers-reduced-motion: reduce) {
+        *,
+        *::before,
+        *::after {
+            animation-duration: 0.01ms !important;
+            animation-iteration-count: 1 !important;
+            transition-duration: 0.01ms !important;
+        }
+    }
+*/
+
+/* HIGH CONTRAST */
+/*
+    @media (prefers-contrast: high) {
+        body {
+            background: #FFFFFF;
+        }
+
+        .card,
+        .btn {
+            border-width: 3px;
+        }
+    }
+*/
+
+/* ========================================
+   SKELETON LOADER PATTERNS
+   ======================================== */
+
+/* TEXT SKELETON */
+/*
+    .skeleton-text {
+        height: 16px;
+        background: linear-gradient(90deg, var(--color-neutral-100) 25%, var(--color-neutral-50) 50%, var(--color-neutral-100) 75%);
+        background-size: 200% 100%;
+        animation: shimmer 1.5s infinite linear;
+        border-radius: var(--radius-sm);
+        margin-bottom: var(--space-sm);
+    }
+
+    .skeleton-text.heading {
+        height: 28px;
+        margin-bottom: var(--space-md);
+    }
+*/
+
+/* AVATAR SKELETON */
+/*
+    .skeleton-avatar {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        background: linear-gradient(90deg, var(--color-neutral-100) 25%, var(--color-neutral-50) 50%, var(--color-neutral-100) 75%);
+        background-size: 200% 100%;
+        animation: shimmer 1.5s infinite linear;
+    }
+*/
+
+/* ========================================
+   RESPONSIVE PATTERNS
+   ======================================== */
+
+/* MOBILE-FIRST APPROACH */
+/*
+    /* Base styles (mobile) */
+    .component {
+        padding: var(--space-md);
+    }
+
+    /* Tablet */
+    @media (min-width: 601px) {
+        .component {
+            padding: var(--space-lg);
+        }
+    }
+
+    /* Desktop */
+    @media (min-width: 801px) {
+        .component {
+            padding: var(--space-xl);
+        }
+    }
+*/
+
+/* GRID PATTERNS */
+/*
+    .grid-2 {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: var(--space-lg);
+    }
+
+    @media (min-width: 601px) {
+        .grid-2 {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+
+    @media (min-width: 801px) {
+        .grid-2 {
+            grid-template-columns: repeat(3, 1fr);
+        }
+    }
+*/
+
+/* ========================================
+   UTILITY CLASSES
+   ======================================== */
+
+/* SPACING */
+/*
+    .m-sm { margin: var(--space-sm); }
+    .m-md { margin: var(--space-md); }
+    .m-lg { margin: var(--space-lg); }
+    .mt-sm { margin-top: var(--space-sm); }
+    .mt-md { margin-top: var(--space-md); }
+    .mt-lg { margin-top: var(--space-lg); }
+    .mb-sm { margin-bottom: var(--space-sm); }
+    .mb-md { margin-bottom: var(--space-md); }
+    .mb-lg { margin-bottom: var(--space-lg); }
+
+    .p-sm { padding: var(--space-sm); }
+    .p-md { padding: var(--space-md); }
+    .p-lg { padding: var(--space-lg); }
+*/
+
+/* TYPOGRAPHY */
+/*
+    .text-xs { font-size: var(--text-xs); }
+    .text-sm { font-size: var(--text-sm); }
+    .text-base { font-size: var(--text-base); }
+    .text-lg { font-size: var(--text-lg); }
+    .text-xl { font-size: var(--text-xl); }
+    .text-2xl { font-size: var(--text-2xl); }
+
+    .font-normal { font-weight: var(--font-weight-normal); }
+    .font-semibold { font-weight: var(--font-weight-semibold); }
+    .font-bold { font-weight: var(--font-weight-bold); }
+*/
+
+/* DISPLAY */
+/*
+    .hidden { display: none; }
+    .flex { display: flex; }
+    .inline-flex { display: inline-flex; }
+    .grid { display: grid; }
+    .block { display: block; }
+*/
+
+/* ========================================
+   DEVELOPER NOTES
+   ======================================== */
+
+/*
+    1. ALWAYS use design tokens instead of hardcoded values
+    2. Follow the 8px grid for all spacing
+    3. Use modular scale for typography
+    4. Include focus states for all interactive elements
+    5. Add loading states for async operations
+    6. Test responsive behavior
+    7. Ensure 48px minimum touch targets
+    8. Use semantic HTML
+    9. Write accessible code (ARIA labels, etc.)
+    10. Test with keyboard and screen readers
+
+    COMMON MISTAKES TO AVOID:
+    ❌ Hardcoded values: padding: 15px;
+    ❌ Inconsistent spacing: margin-bottom: 22px;
+    ❌ No focus states: .btn:hover { ... }
+    ❌ Small touch targets: height: 32px;
+    ❌ No loading indicators: async operations
+    ❌ Breaking reduced motion: animation: spin 0.3s infinite;
+    ❌ Poor color contrast: #CCCCCC on #FFFFFF
+
+    BEST PRACTICES:
+    ✅ Use tokens: padding: var(--space-md);
+    ✅ Follow grid: margin-bottom: var(--space-lg);
+    ✅ Add focus: .btn:hover, .btn:focus-visible { ... }
+    ✅ Touch targets: min-height: 48px;
+    ✅ Show loading: .loading state with skeleton
+    ✅ Respect preferences: @media (prefers-reduced-motion)
+    ✅ Check contrast: Use WCAG AA colors
+*/

@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Mom vs Dad - Debug Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; max-width: 800px; margin: 0 auto; }
+        .test { padding: 10px; margin: 10px 0; border-radius: 5px; }
+        .pass { background: #d4edda; color: #155724; }
+        .fail { background: #f8d7da; color: #721c24; }
+        .info { background: #d1ecf1; color: #0c5460; }
+        #results { margin-top: 20px; }
+        .console-log { background: #f5f5f5; padding: 10px; margin: 10px 0; font-family: monospace; font-size: 12px; max-height: 200px; overflow-y: auto; }
+    </style>
+</head>
+<body>
+    <h1>🔍 Mom vs Dad Game Debug Test</h1>
+    
+    <div id="tests">
+        <div class="test info">Running diagnostic tests...</div>
+    </div>
+    
+    <div id="results"></div>
+    
+    <h2>Console Output:</h2>
+    <div id="console-log" class="console-log"></div>
+    
+    <!-- Load scripts in order -->
+    <script src="scripts/config.js"></script>
+    <script src="scripts/security.js"></script>
+    <script src="scripts/image-service-enhanced.js"></script>
+    <script src="scripts/gallery.js"></script>
+    <script src="scripts/api-supabase-enhanced.js"></script>
+    <script src="scripts/anime-characters.js"></script>
+    <script src="scripts/ui-utils.js"></script>
+    <script src="scripts/main.js"></script>
+    
+    <!-- Load Mom vs Dad game -->
+    <script>
+        // Intercept console.log
+        const consoleLog = document.getElementById('console-log');
+        const originalLog = console.log;
+        console.log = function(...args) {
+            originalLog.apply(console, args);
+            const msg = args.join(' ');
+            consoleLog.innerHTML += `<div>[LOG] ${msg}</div>`;
+        };
+        console.warn = function(...args) {
+            originalLog.warn.apply(console, args);
+            const msg = args.join(' ');
+            consoleLog.innerHTML += `<div style="color: orange;">[WARN] ${msg}</div>`;
+        };
+        console.error = function(...args) {
+            originalLog.error.apply(console, args);
+            const msg = args.join(' ');
+            consoleLog.innerHTML += `<div style="color: red;">[ERROR] ${msg}</div>`;
+        };
+    </script>
+    <script src="scripts/mom-vs-dad-simplified.js"></script>
+    
+    <script>
+        const tests = document.getElementById('tests');
+        const results = document.getElementById('results');
+        
+        function addTest(name, passed, message) {
+            const div = document.createElement('div');
+            div.className = `test ${passed ? 'pass' : 'fail'}`;
+            div.innerHTML = `${passed ? '✅' : '❌'} ${name}: ${message}`;
+            tests.appendChild(div);
+        }
+        
+        function runTests() {
+            tests.innerHTML = '';
+            
+            // Test 1: Check if script loaded
+            const scriptLoaded = typeof window.MomVsDadSimplified !== 'undefined';
+            addTest('Script Loaded', scriptLoaded, 
+                scriptLoaded ? 'window.MomVsDadSimplified exists' : 'Script NOT loaded');
+            
+            // Test 2: Check if script executed (has init function)
+            const hasInit = scriptLoaded && typeof window.MomVsDadSimplified.init === 'function';
+            addTest('Has init() function', hasInit, 
+                hasInit ? 'init function available' : 'init function missing');
+            
+            // Test 3: Check container exists
+            const containerExists = document.getElementById('mom-vs-dad-game') !== null;
+            addTest('Container exists', containerExists, 
+                containerExists ? '#mom-vs-dad-game found' : '#mom-vs-dad-game NOT found');
+            
+            // Test 4: Check section exists
+            const sectionExists = document.getElementById('mom-vs-dad-section') !== null;
+            addTest('Section exists', sectionExists, 
+                sectionExists ? '#mom-vs-dad-section found' : '#mom-vs-dad-section NOT found');
+            
+            // Test 5: Try to initialize manually
+            let initResult = 'Not tested';
+            try {
+                if (window.MomVsDadSimplified && typeof window.MomVsDadSimplified.init === 'function') {
+                    window.MomVsDadSimplified.init();
+                    initResult = 'init() called successfully';
+                    addTest('Manual init()', true, initResult);
+                    
+                    // Check if lobbies rendered
+                    setTimeout(() => {
+                        const lobbiesRendered = document.querySelectorAll('.lobby-card').length > 0;
+                        addTest('Lobbies Rendered', lobbiesRendered, 
+                            lobbiesRendered ? `Found ${document.querySelectorAll('.lobby-card').length} lobby cards` : 'No lobby cards found');
+                        
+                        if (!lobbiesRendered) {
+                            const containerHTML = document.getElementById('mom-vs-dad-game').innerHTML;
+                            consoleLog.innerHTML += `<div>[DEBUG] Container HTML: ${containerHTML.substring(0, 200)}...</div>`;
+                        }
+                        
+                        // Final summary
+                        const totalTests = document.querySelectorAll('#tests .test').length;
+                        const passedTests = document.querySelectorAll('#tests .pass').length;
+                        
+                        results.innerHTML = `
+                            <h3>📊 Test Results: ${passedTests}/${totalTests} passed</h3>
+                            ${passedTests === totalTests ? 
+                                '<p style="color: green;">🎉 All tests passed! Game should be working.</p>' :
+                                '<p style="color: red;">❌ Some tests failed. Check the issues above.</p>'}
+                        `;
+                    }, 500);
+                } else {
+                    addTest('Manual init()', false, 'init function not available');
+                    results.innerHTML = '<p style="color: red;">❌ Script is not properly loaded.</p>';
+                }
+            } catch (error) {
+                addTest('Manual init()', false, `Error: ${error.message}`);
+                consoleLog.innerHTML += `<div style="color: red;">[FATAL] ${error.stack}</div>`;
+            }
+        }
+        
+        // Run tests after scripts load
+        setTimeout(runTests, 1000);
+    </script>
+    
+    <h2>Game Section:</h2>
+    <div id="game-preview" style="border: 2px solid #ccc; padding: 20px; min-height: 200px;">
+        <em>Loading game preview...</em>
+    </div>
+    
+    <script>
+        // Show game section preview
+        setTimeout(() => {
+            const section = document.getElementById('mom-vs-dad-section');
+            const game = document.getElementById('mom-vs-dad-game');
+            const preview = document.getElementById('game-preview');
+            
+            if (section) {
+                preview.innerHTML = `
+                    <h4>Section found: #mom-vs-dad-section</h4>
+                    <p>Section visible: ${section.classList.contains('hidden') ? 'No (has hidden class)' : 'Yes'}</p>
+                    <h4>Game container: #mom-vs-dad-game</h4>
+                    ${game ? `<div>${game.innerHTML.substring(0, 500)}...</div>` : '<p style="color: red;">Container NOT found!</p>'}
+                `;
+            } else {
+                preview.innerHTML = '<p style="color: red;">❌ Section NOT found in DOM!</p>';
+            }
+        }, 1500);
+    </script>
+</body>
+</html>

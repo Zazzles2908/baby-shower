@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Quick Diagnostic - Mom vs Dad Game</title>
+    <style>
+        body { font-family: Arial, padding: 30px; max-width: 700px; margin: 0 auto; background: #f5f5f5; }
+        h1 { color: #333; }
+        .instructions { background: white; padding: 20px; border-radius: 8px; margin: 20px 0; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        code { background: #e9ecef; padding: 2px 6px; border-radius: 3px; font-family: monospace; }
+        .step { margin: 15px 0; padding: 15px; background: #e7f3ff; border-left: 4px solid #2196F3; border-radius: 4px; }
+        .warning { background: #fff3cd; border-left: 4px solid #ffc107; }
+        .success { background: #d4edda; border-left: 4px solid #28a745; }
+    </style>
+</head>
+<body>
+    <h1>🔍 Mom vs Dad Game - Quick Diagnostic</h1>
+    
+    <div class="instructions">
+        <h3>Steps to run the diagnostic:</h3>
+        
+        <div class="step">
+            <strong>Step 1:</strong> Go to the main app: 
+            <a href="https://baby-shower-v2.vercel.app" target="_blank">https://baby-shower-v2.vercel.app</a>
+        </div>
+        
+        <div class="step">
+            <strong>Step 2:</strong> Open Browser DevTools by pressing 
+            <code>F12</code> or <code>Ctrl+Shift+J</code> (Windows/Linux) or <code>Cmd+Option+J</code> (Mac)
+        </div>
+        
+        <div class="step">
+            <strong>Step 3:</strong> Click on the <strong>"Console"</strong> tab
+        </div>
+        
+        <div class="step">
+            <strong>Step 4:</strong> Copy and paste this code into the console, then press <strong>Enter</strong>:
+        </div>
+        
+        <div style="background: #333; color: #0f0; padding: 15px; border-radius: 5px; font-family: monospace; margin: 15px 0; overflow-x: auto;">
+<pre>(function(){console.log('🔍 QUICK DIAGNOSTIC');console.log('==================');const scriptLoaded=typeof window.MomVsDadSimplified!=='undefined';console.log(`1. Script loaded: ${scriptLoaded?'✅ YES':'❌ NO'}`);if(!scriptLoaded){console.log('❌ Script is not loaded!');return}const section=document.getElementById('mom-vs-dad-section');const container=document.getElementById('mom-vs-dad-game');console.log(`2. Section #mom-vs-dad-section: ${section?'✅ EXISTS':'❌ MISSING'}`);console.log(`3. Container #mom-vs-dad-game: ${container?'✅ EXISTS':'❌ MISSING'}`);if(section){const isHidden=section.classList.contains('hidden');console.log(`4. Section visible: ${!isHidden?'✅ YES':'❌ No (has hidden class)'}`)}console.log('5. Attempting manual initialization...');try{if(container){container.innerHTML='';window.MomVsDadSimplified.init();setTimeout(()=>{const content=container.innerHTML;console.log(`6. After init(), container has content: ${content.length>0?'✅ YES':'❌ NO'}`);if(content.length>0){const lobbyCards=container.querySelectorAll('.lobby-card');console.log(`7. Lobby cards found: ${lobbyCards.length}`);console.log('🎉 GAME IS WORKING!')}else{console.log('❌ Init ran but no content')};const mvdSection=container.querySelector('.mvd-section');console.log(`8. mvd-section rendered: ${mvdSection?'✅ YES':'❌ NO'}`)},100)}else{console.log('❌ Container missing - HTML element not in DOM')}}catch(error){console.log(`❌ Error: ${error.message}`)}console.log('==================')})();</pre>
+        </div>
+        
+        <div class="step warning">
+            <strong>⚠️ IMPORTANT:</strong> First, click on the "Mom vs Dad" activity card ONCE to navigate to that section, THEN run the diagnostic code!
+        </div>
+        
+        <div class="step success">
+            <h4>Expected Results if Working:</h4>
+            <ul>
+                <li>✅ Script loaded: YES</li>
+                <li>✅ Section #mom-vs-dad-section: EXISTS</li>
+                <li>✅ Container #mom-vs-dad-game: EXISTS</li>
+                <li>✅ Section visible: YES</li>
+                <li>✅ Lobby cards found: 4</li>
+                <li>🎉 GAME IS WORKING!</li>
+            </ul>
+        </div>
+        
+        <div class="step">
+            <h4>If you see ❌ MISSING for section or container:</h4>
+            <p>This means the HTML elements <code>&lt;section id="mom-vs-dad-section"&gt;</code> and <code>&lt;div id="mom-vs-dad-game"&gt;</code> are NOT in the DOM.</p>
+            <p><strong>This would be a bug in index.html - the elements would need to be added.</strong></p>
+        </div>
+    </div>
+</body>
+</html>

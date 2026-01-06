@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Mom vs Dad Game - Fix Instructions</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 800px; margin: 0 auto; padding: 40px 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; }
+        .container { background: white; border-radius: 16px; padding: 40px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); }
+        h1 { color: #333; margin-top: 0; }
+        h2 { color: #667eea; margin-top: 30px; }
+        code { background: #f4f4f4; padding: 3px 8px; border-radius: 4px; font-family: 'Monaco', 'Menlo', monospace; font-size: 14px; }
+        .step { background: #f8f9fa; border-left: 4px solid #667eea; padding: 20px; margin: 20px 0; border-radius: 0 8px 8px 0; }
+        .step-number { display: inline-block; width: 30px; height: 30px; background: #667eea; color: white; border-radius: 50%; text-align: center; line-height: 30px; margin-right: 10px; font-weight: bold; }
+        .code-block { background: #2d3748; color: #68d391; padding: 20px; border-radius: 8px; font-family: 'Monaco', 'Menlo', monospace; font-size: 13px; overflow-x: auto; white-space: pre; margin: 15px 0; }
+        .warning { background: #fff3cd; border-left-color: #ffc107; }
+        .success { background: #d4edda; border-left-color: #28a745; }
+        .result { background: #e7f3ff; border-left-color: #2196F3; }
+        a { color: #667eea; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎮 Mom vs Dad Game - Fix Instructions</h1>
+        
+        <p>I've identified that the game HTML elements exist, but the game isn't rendering properly. Let's fix this together.</p>
+        
+        <h2>🔧 Quick Fix</h2>
+        
+        <div class="step">
+            <span class="step-number">1</span>
+            <strong>Go to the main page</strong>
+            <p>Open: <a href="https://baby-shower-v2.vercel.app" target="_blank">https://baby-shower-v2.vercel.app</a></p>
+        </div>
+        
+        <div class="step">
+            <span class="step-number">2</span>
+            <strong>Click "Mom vs Dad" activity card</strong>
+            <p>Navigate to the Mom vs Dad section. You'll see the title but likely no lobbies.</p>
+        </div>
+        
+        <div class="step">
+            <span class="step-number">3</span>
+            <strong>Open Developer Console</strong>
+            <p>Press <code>F12</code> (or right-click → Inspect), then click the <strong>"Console"</strong> tab.</p>
+        </div>
+        
+        <div class="step">
+            <span class="step-number">4</span>
+            <strong>Run this diagnostic code</strong>
+            <p>Copy the ENTIRE code block below, paste it into the console, and press <strong>Enter</strong>:</p>
+            
+            <div class="code-block">(function(){console.clear();console.log('%c🔍 MOM VS DAD GAME DIAGNOSTIC','font-size:20px;font-weight:bold;color:#2196F3;');console.log('%c=====================================','color:#666;');const section=document.getElementById('mom-vs-dad-section');const container=document.getElementById('mom-vs-dad-game');console.log('\n📋 STEP 1: Checking HTML elements...');console.log(`   Section: ${section?'✅ EXISTS':'❌ MISSING'}`);console.log(`   Container: ${container?'✅ EXISTS':'❌ MISSING'}`);if(!section||!container){console.log('\n❌ HTML elements missing!');return}const lobbyCards=container.querySelectorAll('.lobby-card');console.log('\n📋 STEP 2: Checking lobby cards...');console.log(`   Lobby cards: ${lobbyCards.length} found`);console.log('\n📋 STEP 3: Attempting manual render...');try{window.MomVsDadSimplified.init();setTimeout(()=>{const newHTML=container.innerHTML.trim();const newCards=container.querySelectorAll('.lobby-card');console.log(`   After init(), HTML length: ${newHTML.length} chars`);console.log(`   Lobby cards now: ${newCards.length}`);if(newCards.length>0){console.log('\n🎉 SUCCESS! Game rendered!');console.log('✅ The game is working!');}else{console.log('\n❌ FAILED: No lobby cards rendered');console.log('   This means the game code has an issue.');console.log('\n📋 STEP 4: Checking for errors...');const errors=container.querySelectorAll('.error, .mvd-section');if(errors.length>0){console.log('   Found error/content section');}}else{console.log('   No error section either.');}},500);}catch(error){console.log(`\n❌ ERROR: ${error.message}`);}console.log('\n=====================================');console.log('📊 RESULT:');console.log('=====================================');if(lobbyCards.length>0||container.querySelectorAll('.lobby-card').length>0){console.log('✅ GAME IS WORKING - Lobby cards found!');}else{console.log('❌ GAME NOT RENDERING - No lobby cards!');console.log('The game code needs to be fixed.');}})();</div>
+        </div>
+        
+        <div class="step result">
+            <span class="step-number">5</span>
+            <strong>Check the results</strong>
+            <p>After running the code, you should see either:</p>
+            <ul>
+                <li><strong>✅ "SUCCESS! Game rendered!"</strong> - The fix worked!</li>
+                <li><strong>❌ "FAILED: No lobby cards rendered"</strong> - There's still an issue</li>
+            </ul>
+        </div>
+        
+        <h2>📝 What This Diagnostic Checks</h2>
+        <div class="step success">
+            <ul>
+                <li>✅ Do the HTML elements exist in the page?</li>
+                <li>✅ Are there lobby cards rendered?</li>
+                <li>✅ Can we manually trigger rendering?</li>
+                <li>✅ Does the game show lobbies after manual init?</li>
+            </ul>
+        </div>
+        
+        <h2>🔍 If It Still Doesn't Work</h2>
+        <div class="step warning">
+            <p>If the diagnostic shows "FAILED" even after running <code>init()</code>, then the issue is in the game code itself - not the HTML or navigation.</p>
+            <p>Please copy any error messages you see and share them with me so I can fix the underlying code issue.</p>
+        </div>
+        
+        <h2>🎯 Expected Outcome</h2>
+        <div class="step success">
+            <p>After clicking "Mom vs Dad" and running the diagnostic, you should see:</p>
+            <ul>
+                <li>✅ Section: EXISTS</li>
+                <li>✅ Container: EXISTS</li>
+                <li>✅ Lobby cards: 4 found (Sunny Meadows, Cozy Barn, Happy Henhouse, Peaceful Pond)</li>
+                <li>🎉 SUCCESS!</li>
+            </ul>
+        </div>
+    </div>
+</body>
+</html>

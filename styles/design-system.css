@@ -1,0 +1,148 @@
+/**
+ * Baby Shower V2 - Design System
+ * Professional UI/UX Enhancements
+ * Following 8px grid system and consistent design patterns
+ */
+
+:root {
+    /* ========================================
+       COLOR SYSTEM - Semantic Naming
+       ======================================== */
+    --color-primary-50: #F5F8F2;
+    --color-primary-100: #EBF0E5;
+    --color-primary-200: #D4DEC7;
+    --color-primary-300: #BDC9A9;
+    --color-primary-400: #9CAF88;  /* Primary Sage Green */
+    --color-primary-500: #7A8F6A;  /* Primary Dark */
+    --color-primary-600: #637956;
+
+    --color-secondary-50: #FEFAF4;
+    --color-secondary-100: #FDF5E8;
+    --color-secondary-200: #FBECD2;
+    --color-secondary-300: #F4E4BC;  /* Soft Gold */
+    --color-secondary-400: #E9D5A7;
+    --color-secondary-500: #DEC68B;
+
+    --color-accent-100: #FFF1EA;
+    --color-accent-200: #FFE3D4;
+    --color-accent-300: #E8C4A0;  /* Soft Peach */
+    --color-accent-400: #D9AA80;
+    --color-accent-500: #CA9160;
+
+    --color-neutral-50: #FFF8E7;  /* Warm Cream */
+    --color-neutral-100: #F5EDD8; /* Warm Beige */
+    --color-neutral-200: #EBE2CC;
+    --color-neutral-300: #E0D7C1;
+    --color-neutral-400: #5A5247;
+    --color-neutral-500: #3A3326;  /* Primary Text */
+    --color-neutral-600: #2A251B;
+
+    --color-error-100: #FFEBEE;
+    --color-error-200: #FFCDD2;
+    --color-error-300: #EF9A9A;
+    --color-error-400: #E57373;
+    --color-error-500: #E07A5F;  /* Soft Terracotta */
+    --color-error-600: #C62828;
+
+    --color-success-100: #E8F5E9;
+    --color-success-200: #C8E6C9;
+    --color-success-300: #A5D6A7;
+    --color-success-400: #9CAF88;
+    --color-success-500: #66BB6A;
+
+    /* ========================================
+       SPACING SYSTEM - 8px Grid
+       ======================================== */
+    --space-xs: 4px;
+    --space-sm: 8px;
+    --space-md: 16px;
+    --space-lg: 24px;
+    --space-xl: 32px;
+    --space-2xl: 40px;
+    --space-3xl: 48px;
+    --space-4xl: 64px;
+
+    /* ========================================
+       TYPOGRAPHY SYSTEM - Modular Scale
+       ======================================== */
+    --font-family-base: 'Nunito', 'Quicksand', -apple-system, BlinkMacSystemFont, sans-serif;
+    --font-family-display: 'Quicksand', 'Nunito', -apple-system, BlinkMacSystemFont, sans-serif;
+
+    --text-xs: 0.75rem;      /* 12px */
+    --text-sm: 0.875rem;     /* 14px */
+    --text-base: 1rem;       /* 16px */
+    --text-lg: 1.125rem;     /* 18px */
+    --text-xl: 1.25rem;      /* 20px */
+    --text-2xl: 1.5rem;      /* 24px */
+    --text-3xl: 1.875rem;    /* 30px */
+    --text-4xl: 2.25rem;     /* 36px */
+    --text-5xl: 3rem;        /* 48px */
+
+    --font-weight-light: 400;
+    --font-weight-normal: 500;
+    --font-weight-semibold: 600;
+    --font-weight-bold: 700;
+    --font-weight-extrabold: 800;
+
+    --line-height-tight: 1.25;
+    --line-height-normal: 1.5;
+    --line-height-relaxed: 1.75;
+
+    /* ========================================
+       BORDER RADIUS SYSTEM
+       ======================================== */
+    --radius-sm: 8px;
+    --radius-md: 12px;
+    --radius-lg: 16px;
+    --radius-xl: 24px;
+    --radius-2xl: 32px;
+    --radius-full: 9999px;
+
+    /* ========================================
+       SHADOW SYSTEM
+       ======================================== */
+    --shadow-xs: 0 1px 2px rgba(90, 82, 71, 0.05);
+    --shadow-sm: 0 2px 4px rgba(90, 82, 71, 0.08);
+    --shadow-md: 0 4px 12px rgba(90, 82, 71, 0.1);
+    --shadow-lg: 0 8px 24px rgba(90, 82, 71, 0.12);
+    --shadow-xl: 0 16px 40px rgba(90, 82, 71, 0.15);
+
+    --shadow-soft: 0 4px 20px rgba(156, 175, 136, 0.2);
+    --shadow-hover: 0 8px 30px rgba(156, 175, 136, 0.3);
+    --shadow-card: 0 2px 8px rgba(90, 82, 71, 0.08);
+
+    /* ========================================
+       TRANSITIONS
+       ======================================== */
+    --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-base: 300ms cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-slow: 500ms cubic-bezier(0.4, 0, 0.2, 1);
+
+    /* ========================================
+       Z-INDEX SCALE
+       ======================================== */
+    --z-base: 0;
+    --z-dropdown: 100;
+    --z-sticky: 200;
+    --z-modal: 1000;
+    --z-popover: 2000;
+    --z-tooltip: 3000;
+    --z-toast: 9999;
+}
+
+/* ========================================
+   LEGACY COLOR VARIABLES (for backward compatibility)
+   ======================================== */
+:root {
+    --color-primary: var(--color-primary-400);
+    --color-primary-dark: var(--color-primary-500);
+    --color-secondary: var(--color-secondary-300);
+    --color-accent: var(--color-accent-300);
+    --color-cream: var(--color-neutral-50);
+    --color-beige: var(--color-neutral-100);
+    --color-text: var(--color-neutral-500);
+    --color-text-light: var(--color-neutral-400);
+    --color-white: #FFFFFF;
+    --color-success: var(--color-success-400);
+    --color-error: var(--color-error-500);
+}

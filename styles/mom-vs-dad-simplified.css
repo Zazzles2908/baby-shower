@@ -148,6 +148,38 @@
     color: var(--mvd-text-primary);
 }
 
+/* Lobby Icon */
+.lobby-icon {
+    font-size: 2.5rem;
+    margin-bottom: 8px;
+}
+
+/* Lobby Code */
+.lobby-code {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--mvd-text-secondary);
+    background: #F5F5F5;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-family: 'Monaco', 'Menlo', monospace;
+    letter-spacing: 1px;
+}
+
+/* Lobby Hint */
+.lobby-hint {
+    font-size: 0.8rem;
+    color: var(--mvd-success);
+    font-weight: 500;
+}
+
+/* Ready status style */
+.lobby-status.ready {
+    background: linear-gradient(135deg, #E8F5E9 0%, #C8E6C9 100%);
+    color: #2E7D32;
+    font-weight: 700;
+}
+
 /* Lobby Count */
 .lobby-count {
     font-size: 1rem;

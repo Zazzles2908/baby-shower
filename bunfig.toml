@@ -1,0 +1,158 @@
+# Bun Configuration for Baby Shower App
+# Optimized for development with hot module replacement
+
+# Server Configuration
+[server]
+# Development server port
+port = 3000
+
+# Enable hot module replacement for faster development
+hot = true
+
+# Enable live reload for HTML/CSS changes
+liveReload = true
+
+# Origin for CORS (development)
+origin = "http://localhost:3000"
+
+# Public directory to serve
+public = "."
+
+# Handle 404 by serving index.html (SPA mode)
+notFoundFallback = "index.html"
+
+# MIME type additions for custom file types
+[server.mimeTypes]
+".js" = "application/javascript"
+".mjs" = "application/javascript"
+".ts" = "application/typescript"
+".css" = "text/css"
+".html" = "text/html"
+".json" = "application/json"
+".svg" = "image/svg+xml"
+".png" = "image/png"
+".jpg" = "image/jpeg"
+".gif" = "image/gif"
+".ico" = "image/x-icon"
+".woff" = "font/woff"
+".woff2" = "font/woff2"
+
+# Development Optimizations
+[dev]
+# Enable bun's fast transpiler
+jsx = "automatic"
+
+# Enable source maps for debugging
+sourceMap = "inline"
+
+# Watch patterns for file changes
+watchPatterns = [
+  "**/*.html",
+  "**/*.js", 
+  "**/*.css",
+  "**/*.json",
+  "scripts/**/*",
+  "styles/**/*"
+]
+
+# Ignore patterns for watch
+ignoredPatterns = [
+  "node_modules/**/*",
+  ".git/**/*",
+  "test-results/**/*",
+  "tests/e2e/.auth/**/*",
+  "*.lock",
+  "*.log"
+]
+
+# Bundle Configuration for Production Builds
+[bundle]
+# Enable bun's built-in bundler for optimization
+enable = true
+
+# Minify for production
+minify = true
+
+# Target environment
+target = "browser"
+
+# Output directory
+outdir = "./dist"
+
+# External dependencies (don't bundle)
+external = []
+
+# Include polyfills for Node.js globals
+nodeModulesPolyfill = false
+
+# Logging Configuration
+[log]
+# Log level: "error", "warn", "info", "debug"
+level = "info"
+
+# Pretty print JSON logs
+pretty = true
+
+# Timestamp format
+timeFormat = "HH:mm:ss.SSS"
+
+# Performance Monitoring
+[performance]
+# Enable memory usage tracking
+memoryUsage = true
+
+# Enable CPU profiling
+cpuProfiling = false
+
+# Auto-reload delay in milliseconds (for HMR)
+reloadDelay = 100
+
+# Connection handling
+[connection]
+# Max concurrent connections
+maxConnections = 1000
+
+# Request timeout in milliseconds
+requestTimeout = 30000
+
+# Keep-alive timeout in milliseconds
+keepAliveTimeout = 5000
+
+# Headers Configuration
+[headers]
+# Security headers for development
+[headers.dev]
+"X-Content-Type-Options" = "nosniff"
+"X-Frame-Options" = "DENY"
+"X-XSS-Protection" = "1; mode=block"
+"Cache-Control" = "no-cache, no-store, must-revalidate"
+
+# Cache Configuration
+[cache]
+# Enable build cache
+enabled = true
+
+# Cache directory
+dir = ".bun-cache"
+
+# Max cache size in bytes (100MB)
+maxSize = 104857600
+
+# Cache TTL in seconds (1 hour)
+ttl = 3600
+
+# Runtime Environment
+[runtime]
+# Transpile ES modules automatically
+esm = true
+
+# Top-level await support
+topLevelAwait = true
+
+# Import metadata
+imports = []
+
+# Define global variables
+[runtime.env]
+"BUN_ENV" = "development"
+"NODE_ENV" = "development"
