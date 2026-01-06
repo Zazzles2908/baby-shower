@@ -393,6 +393,25 @@
     }
 
     /**
+     * Join Mom vs Dad game lobby
+     * @param {string} sessionCode - Lobby code (LOBBY-A/B/C/D or session code)
+     * @param {string} playerName - Player name
+     * @returns {Promise<Object>} Join response with player data
+     */
+    async function gameJoin(sessionCode, playerName) {
+        const url = getSupabaseFunctionUrl('lobby-join');
+
+        return apiFetch(url, {
+            method: 'POST',
+            body: JSON.stringify({
+                lobby_key: sessionCode,
+                player_name: playerName?.trim() || '',
+                player_type: 'human'
+            }),
+        });
+    }
+
+    /**
      * Get submissions for realtime updates
      * Updated to query baby_shower schema
      */
@@ -670,7 +689,10 @@
         submitQuiz,
         submitAdvice,
         submit,
-        
+
+        // Mom vs Dad Game functions
+        gameJoin,
+
         // Read functions (from baby_shower schema)
         getVoteCounts,
         getSubmissions,
@@ -680,21 +702,21 @@
         getAllQuiz,
         getAllAdvice,
         getAllVotes,
-        
+
         // Realtime subscription functions
         subscribeToGuestbook,
         subscribeToPool,
         subscribeToQuiz,
         subscribeToAdvice,
         subscribeToAllSubmissions,
-        
+
         // Utility functions
         getApiConfig,
         initializeAPI,
-        
+
         // Expose transform function for external use
         transformSubmission: transformSubmissionToFrontendFormat,
-        
+
         // Expose query helper
         queryBabyShower: queryBabyShowerSubmissions
     };

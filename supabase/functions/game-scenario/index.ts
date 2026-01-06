@@ -1,35 +1,38 @@
-import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
-import { Client } from 'https://deno.land/x/postgres@v0.17.0/mod.ts'
+/**
+ * Mom vs Dad Game - Game Scenario Function (Unified Schema)
+ * Updated to use game_* tables from 20260103_mom_vs_dad_game_schema.sql
+ * 
+ * Purpose: Generate and retrieve "who would rather" scenarios using AI
+ * Trigger: GET/POST /game-scenario
+ * 
+ * Schema Mapping:
+ * - Uses baby_shower.game_scenarios table
+ * - session_id: References game_sessions.id
+ */
 
-interface ScenarioRequest {
+import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { 
+  validateEnvironmentVariables, 
+  createErrorResponse, 
+  createSuccessResponse,
+  validateInput,
+  CORS_HEADERS,
+  SECURITY_HEADERS
+} from '../_shared/security.ts'
+
+interface GetScenarioRequest {
+  session_id: string
+}
+
+interface GenerateScenarioRequest {
   session_id: string
   mom_name: string
   dad_name: string
   theme?: string
 }
 
-interface ScenarioResponse {
-  scenario_id: string
-  scenario_text: string
-  mom_option: string
-  dad_option: string
-  intensity: number
-}
-
-/**
- * Get database client using connection string from environment
- */
-function getDbClient(): Client {
-  const connectionString = Deno.env.get('POSTGRES_URL') ?? 
-    Deno.env.get('SUPABASE_DB_URL') ?? 
-    Deno.env.get('DATABASE_URL') ?? ''
-  
-  if (!connectionString) {
-    throw new Error('Missing database connection string: POSTGRES_URL, SUPABASE_DB_URL, or DATABASE_URL')
-  }
-  
-  return new Client(connectionString)
-}
+type ScenarioRequest = GetScenarioRequest | GenerateScenarioRequest
 
 /**
  * Call Z.AI (GLM-4.7) directly or via OpenRouter to generate a funny scenario
@@ -196,23 +199,39 @@ function generateFallbackScenario(momName: string, dadName: string): {
 }
 
 serve(async (req: Request) => {
-  const headers = new Headers({
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-    'Content-Type': 'application/json',
+  const headers = new Headers({ 
+    ...CORS_HEADERS, 
+    ...SECURITY_HEADERS, 
+    'Content-Type': 'application/json' 
   })
 
-  // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response(null, { status: 204, headers })
   }
 
-  let client: Client | null = null
-
   try {
-    client = getDbClient()
-    await client.connect()
+    // Validate environment variables
+    const envValidation = validateEnvironmentVariables([
+      'SUPABASE_URL',
+      'SUPABASE_SERVICE_ROLE_KEY'
+    ], ['Z.AI_API_KEY', 'OPENROUTER_API_KEY']) // Optional AI keys
+
+    if (!envValidation.isValid) {
+      console.error('Game Scenario - Environment validation failed:', envValidation.errors)
+      return createErrorResponse('Server configuration error', 500)
+    }
+
+    if (envValidation.warnings.length > 0) {
+      console.warn('Game Scenario - Environment warnings:', envValidation.warnings)
+    }
+
+    // Initialize Supabase client
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+
+    const supabase = createClient(supabaseUrl, supabaseServiceKey, {
+      auth: { autoRefreshToken: false, persistSession: false },
+    })
 
     // GET: Fetch current scenario
     if (req.method === 'GET') {
@@ -220,171 +239,138 @@ serve(async (req: Request) => {
       const sessionId = url.searchParams.get('session_id')
 
       if (!sessionId) {
-        return new Response(
-          JSON.stringify({ error: 'session_id is required' }),
-          { status: 400, headers }
-        )
+        return createErrorResponse('session_id is required', 400)
       }
 
       console.log(`[game-scenario] GET: Fetching scenario for session: ${sessionId}`)
 
       // Get the most recent scenario for this session
-      const result = await client.queryObject<{
-        id: string
-        scenario_text: string
-        mom_option: string
-        dad_option: string
-        intensity: number
-        created_at: Date
-      }>(
-        `SELECT id, scenario_text, mom_option, dad_option, intensity, created_at
-         FROM baby_shower.game_scenarios 
-         WHERE session_id = $1
-         ORDER BY created_at DESC
-         LIMIT 1`,
-        [sessionId]
-      )
+      const { data: scenario, error } = await supabase
+        .from('baby_shower.game_scenarios')
+        .select('id, scenario_text, mom_option, dad_option, intensity, created_at')
+        .eq('session_id', sessionId)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single()
 
-      if (result.rows.length === 0) {
-        return new Response(
-          JSON.stringify({ 
-            success: true, 
-            data: null,
-            message: 'No active scenario for this session'
-          }),
-          { status: 200, headers }
-        )
+      if (error || !scenario) {
+        console.log('[game-scenario] No active scenario for this session')
+        return createSuccessResponse({
+          data: null,
+          message: 'No active scenario for this session'
+        }, 200)
       }
 
-      const scenario = result.rows[0]
-      return new Response(
-        JSON.stringify({
-          success: true,
-          data: {
-            scenario_id: scenario.id,
-            scenario_text: scenario.scenario_text,
-            mom_option: scenario.mom_option,
-            dad_option: scenario.dad_option,
-            intensity: scenario.intensity,
-            created_at: scenario.created_at.toISOString()
-          }
-        }),
-        { status: 200, headers }
-      )
+      console.log(`[game-scenario] Successfully retrieved scenario: ${scenario.id}`)
+
+      return createSuccessResponse({
+        scenario_id: scenario.id,
+        scenario_text: scenario.scenario_text,
+        mom_option: scenario.mom_option,
+        dad_option: scenario.dad_option,
+        intensity: scenario.intensity,
+        created_at: scenario.created_at
+      }, 200)
     }
 
     // POST: Generate new scenario
     if (req.method !== 'POST') {
-      return new Response(
-        JSON.stringify({ error: 'Method not allowed' }),
-        { status: 405, headers }
-      )
+      return createErrorResponse('Method not allowed', 405)
     }
 
-    const body: ScenarioRequest = await req.json()
-
-    // Validation
-    const errors: string[] = []
-    if (!body.session_id || body.session_id.trim().length === 0) {
-      errors.push('session_id is required')
-    }
-    if (!body.mom_name || body.mom_name.trim().length === 0) {
-      errors.push('mom_name is required')
-    }
-    if (!body.dad_name || body.dad_name.trim().length === 0) {
-      errors.push('dad_name is required')
+    let body: ScenarioRequest
+    try {
+      body = await req.json()
+    } catch {
+      return createErrorResponse('Invalid JSON in request body', 400)
     }
 
-    // Validate names length
-    if (body.mom_name?.length > 100) errors.push('mom_name must be 100 chars or less')
-    if (body.dad_name?.length > 100) errors.push('dad_name must be 100 chars or less')
+    // Input validation
+    const validation = validateInput(body, {
+      session_id: { type: 'string', required: true },
+      mom_name: { type: 'string', required: false, minLength: 1, maxLength: 100 },
+      dad_name: { type: 'string', required: false, minLength: 1, maxLength: 100 },
+      theme: { type: 'string', required: false, enum: ['general', 'farm', 'funny', 'sleep', 'feeding', 'messy', 'emotional'] }
+    })
 
-    // Validate theme if provided
-    const validThemes = ['general', 'farm', 'funny', 'sleep', 'feeding', 'messy', 'emotional']
-    if (body.theme && !validThemes.includes(body.theme.toLowerCase())) {
-      errors.push(`theme must be one of: ${validThemes.join(', ')}`)
+    if (!validation.isValid) {
+      console.error('Game Scenario - Validation failed:', validation.errors)
+      return createErrorResponse('Validation failed', 400, validation.errors)
     }
 
-    if (errors.length > 0) {
-      return new Response(
-        JSON.stringify({ error: 'Validation failed', details: errors }),
-        { status: 400, headers }
-      )
+    const { session_id, mom_name, dad_name, theme } = validation.sanitized as ScenarioRequest
+
+    console.log(`[game-scenario] Generating scenario for session: ${session_id}`)
+
+    // Generate scenario using AI if mom_name and dad_name are provided
+    let scenarioText: string
+    let momOption: string
+    let dadOption: string
+    let intensity: number
+    let aiGenerated = false
+
+    if (mom_name && dad_name) {
+      console.log(`[game-scenario] Mom: ${mom_name}, Dad: ${dad_name}, Theme: ${theme || 'general'}`)
+      
+      const aiResult = await generateScenario(mom_name, dad_name, theme || 'general')
+      
+      if (aiResult) {
+        scenarioText = aiResult.scenario
+        momOption = aiResult.momOption
+        dadOption = aiResult.dadOption
+        intensity = aiResult.intensity
+        aiGenerated = true
+        console.log('[game-scenario] AI scenario generated successfully')
+      } else {
+        console.warn('[game-scenario] AI generation failed, using fallback')
+        const fallback = generateFallbackScenario(mom_name, dad_name)
+        scenarioText = fallback.scenario
+        momOption = fallback.momOption
+        dadOption = fallback.dadOption
+        intensity = fallback.intensity
+      }
+    } else {
+      // Use default fallback if names not provided
+      const fallback = generateFallbackScenario('Mom', 'Dad')
+      scenarioText = fallback.scenario
+      momOption = fallback.momOption
+      dadOption = fallback.dadOption
+      intensity = fallback.intensity
+      console.log('[game-scenario] Using default fallback scenario')
     }
 
-    const sanitizedMomName = body.mom_name.trim().slice(0, 100)
-    const sanitizedDadName = body.dad_name.trim().slice(0, 100)
-    const theme = body.theme?.toLowerCase() || 'general'
+    // Insert scenario into database
+    const { data: scenarioData, error: insertError } = await supabase
+      .from('baby_shower.game_scenarios')
+      .insert({
+        session_id: session_id,
+        round_number: 1,
+        scenario_text: scenarioText,
+        mom_option: momOption,
+        dad_option: dadOption,
+        intensity: intensity
+      })
+      .select('id, scenario_text, mom_option, dad_option, intensity')
+      .single()
 
-    console.log(`[game-scenario] Generating scenario for session: ${body.session_id}`)
-    console.log(`[game-scenario] Mom: ${sanitizedMomName}, Dad: ${sanitizedDadName}, Theme: ${theme}`)
-
-    // Generate scenario using AI
-    const aiResult = await generateScenario(sanitizedMomName, sanitizedDadName, theme)
-
-    if (!aiResult) {
-      console.warn('[game-scenario] AI generation failed, using fallback')
+    if (insertError) {
+      console.error('Game Scenario - Insert failed:', insertError)
+      throw new Error('Failed to insert scenario')
     }
 
-    const scenarioText = aiResult?.scenario || generateFallbackScenario(sanitizedMomName, sanitizedDadName).scenario
-    const momOption = aiResult?.momOption || `${sanitizedMomName} would handle it with grace`
-    const dadOption = aiResult?.dadOption || `${sanitizedDadName} would figure it out`
-    const intensity = aiResult?.intensity || 0.5
-
-    // Insert scenario into database using direct SQL
-    const insertResult = await client.queryObject<{
-      id: string
-      scenario_text: string
-      mom_option: string
-      dad_option: string
-      intensity: number
-    }>(
-      `INSERT INTO baby_shower.game_scenarios 
-        (session_id, round_number, scenario_text, mom_option, dad_option, intensity)
-       VALUES ($1, $2, $3, $4, $5, $6)
-       RETURNING id, scenario_text, mom_option, dad_option, intensity`,
-      [body.session_id, 1, scenarioText, momOption, dadOption, intensity]
-    )
-
-    if (insertResult.rows.length === 0) {
-      throw new Error('Failed to insert scenario: No rows returned')
-    }
-
-    const scenarioData = insertResult.rows[0]
     console.log(`[game-scenario] Successfully created scenario: ${scenarioData.id}`)
 
-    const response: ScenarioResponse = {
+    return createSuccessResponse({
       scenario_id: scenarioData.id,
       scenario_text: scenarioData.scenario_text,
       mom_option: scenarioData.mom_option,
       dad_option: scenarioData.dad_option,
       intensity: scenarioData.intensity,
-    }
+      ai_generated: aiGenerated
+    }, 201)
 
-    return new Response(
-      JSON.stringify({
-        success: true,
-        data: response,
-        ai_generated: aiResult !== null
-      }),
-      { status: 201, headers }
-    )
-
-  } catch (err) {
-    console.error('[game-scenario] Edge Function error:', err)
-    return new Response(
-      JSON.stringify({ 
-        error: err instanceof Error ? err.message : 'Internal server error' 
-      }),
-      { status: 500, headers }
-    )
-  } finally {
-    if (client) {
-      try {
-        await client.end()
-      } catch (e) {
-        console.error('[game-scenario] Error closing database connection:', e)
-      }
-    }
+  } catch (error) {
+    console.error('[game-scenario] Edge Function error:', error)
+    return createErrorResponse('Internal server error', 500)
   }
 })

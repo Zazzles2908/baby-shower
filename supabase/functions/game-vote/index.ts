@@ -159,14 +159,32 @@ serve(async (req: Request) => {
       throw insertVoteError
     }
 
-    // Get updated vote counts using helper function
-    const { data: voteStats, error: statsError } = await supabase
-      .rpc('baby_shower.calculate_vote_stats', { scenario_id: scenario_id })
-      .single()
+    // Get updated vote counts using direct SQL query (replaces missing RPC function)
+    let voteStats = null
+    try {
+      const { data: stats, error: statsError } = await supabase
+        .from('baby_shower.game_votes')
+        .select('vote_choice')
+        .eq('scenario_id', scenario_id)
 
-    if (statsError) {
-      console.warn('Game Vote - Could not get vote stats:', statsError)
-      // Continue without stats - not critical
+      if (!statsError && stats) {
+        const momCount = stats.filter(v => v.vote_choice === 'mom').length
+        const dadCount = stats.filter(v => v.vote_choice === 'dad').length
+        const totalVotes = stats.length
+        const momPercentage = totalVotes > 0 ? (momCount / totalVotes) * 100 : 0
+        const dadPercentage = totalVotes > 0 ? (dadCount / totalVotes) * 100 : 0
+
+        voteStats = {
+          mom_count: momCount,
+          dad_count: dadCount,
+          mom_percentage: Math.round(momPercentage * 100) / 100,
+          dad_percentage: Math.round(dadPercentage * 100) / 100
+        }
+      } else if (statsError) {
+        console.warn('Game Vote - Could not get vote stats:', statsError)
+      }
+    } catch (e) {
+      console.warn('Game Vote - Error calculating vote stats:', e)
     }
 
     // Broadcast vote update via realtime
