@@ -42,13 +42,13 @@ async function generateScenario(
   dadName: string,
   theme: string = 'general'
 ): Promise<{ scenario: string; momOption: string; dadOption: string; intensity: number } | null> {
-  // Check for Z.AI API key first (note the period in the name)
-  const zaiApiKey = Deno.env.get('Z.AI_API_KEY')
+  // Check for Z.AI API key (using consistent naming)
+  const zaiApiKey = Deno.env.get('Z_AI_API_KEY')
   // Fall back to OpenRouter API key
   const openrouterApiKey = Deno.env.get('OPENROUTER_API_KEY')
   
   if (!zaiApiKey && !openrouterApiKey) {
-    console.warn('No AI API keys configured (Z.AI_API_KEY or OPENROUTER_API_KEY)')
+    console.warn('No AI API keys configured (Z_AI_API_KEY or OPENROUTER_API_KEY)')
     return null
   }
 
@@ -214,7 +214,7 @@ serve(async (req: Request) => {
     const envValidation = validateEnvironmentVariables([
       'SUPABASE_URL',
       'SUPABASE_SERVICE_ROLE_KEY'
-    ], ['Z.AI_API_KEY', 'OPENROUTER_API_KEY']) // Optional AI keys
+    ], ['Z_AI_API_KEY', 'OPENROUTER_API_KEY']) // Optional AI keys
 
     if (!envValidation.isValid) {
       console.error('Game Scenario - Environment validation failed:', envValidation.errors)

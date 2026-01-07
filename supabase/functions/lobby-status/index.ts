@@ -113,8 +113,10 @@ serve(async (req: Request) => {
     // Get vote counts for each scenario
     const scenariosWithVotes = await Promise.all(
       (scenarios as Array<{ id: string }>).map(async (scenario) => {
+        // Call RPC function to get vote statistics
         const { data: voteStats } = await supabase
           .rpc('baby_shower.calculate_vote_stats', { scenario_id: scenario.id })
+          .select('mom_count, dad_count, total_votes, mom_percentage, dad_percentage')
           .single()
         
         // Get results if revealed
@@ -124,10 +126,19 @@ serve(async (req: Request) => {
           .eq('scenario_id', scenario.id)
           .maybeSingle()
 
+        // Map RPC response to expected format for frontend compatibility
+        const vote_stats = voteStats ? {
+          mom_votes: voteStats.mom_count,
+          dad_votes: voteStats.dad_count,
+          total_votes: voteStats.total_votes,
+          mom_pct: voteStats.mom_percentage,
+          dad_pct: voteStats.dad_percentage
+        } : null
+
         return {
           ...scenario,
-          vote_stats: voteStats,
-          results: results
+          vote_stats,
+          results
         }
       })
     )

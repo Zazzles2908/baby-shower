@@ -135,13 +135,34 @@ serve(async (req: Request) => {
     const actualChoice = crowdChoice
     const perceptionGap = Math.abs(voteStats.mom_percentage - voteStats.dad_percentage)
 
-    // Generate roast commentary (simplified - no AI in this version)
-    const roastCommentary = generateRoastCommentary(
-      voteStats.mom_percentage,
-      voteStats.dad_percentage,
-      crowdChoice,
-      perceptionGap
-    )
+    // Generate roast commentary using Moonshot AI
+    let roastProvider = 'fallback'
+    let roastCommentary: string
+
+    try {
+      const roastResult = await generateRoastCommentaryWithAI(
+        voteStats.mom_percentage,
+        voteStats.dad_percentage,
+        crowdChoice,
+        perceptionGap,
+        session.mom_name,
+        session.dad_name,
+        scenario
+      )
+      roastCommentary = roastResult.roast
+      roastProvider = roastResult.provider
+    } catch (roastError) {
+      console.warn('Game Reveal - AI roast generation failed, using fallback:', roastError)
+      roastCommentary = generateFallbackRoast(
+        voteStats.mom_percentage,
+        voteStats.dad_percentage,
+        crowdChoice,
+        perceptionGap,
+        session.mom_name,
+        session.dad_name
+      )
+      roastProvider = 'fallback'
+    }
 
     // Insert results
     const { error: insertError } = await supabase
@@ -154,7 +175,7 @@ serve(async (req: Request) => {
         actual_choice: actualChoice,
         perception_gap: perceptionGap,
         roast_commentary: roastCommentary,
-        roast_provider: 'fallback',
+        roast_provider: roastProvider,
         revealed_at: new Date().toISOString()
       })
 
@@ -209,16 +230,129 @@ serve(async (req: Request) => {
 })
 
 /**
- * Generate roast commentary (fallback - replace with AI in production)
+ * Generate roast commentary using Moonshot AI (Kimi)
+ * Falls back to template roasts if AI fails
  */
-function generateRoastCommentary(momPct: number, dadPct: number, crowdChoice: string, perceptionGap: number): string {
-  if (perceptionGap < 10) {
-    return "🎯 Spot on! The crowd knew exactly what would happen!"
-  } else if (perceptionGap < 30) {
-    return "🤔 Close, but the reality was a bit different..."
-  } else if (perceptionGap < 50) {
-    return "😱 Wow, the crowd was WAY off! What were you thinking?!"
+async function generateRoastCommentaryWithAI(
+  momPct: number,
+  dadPct: number,
+  crowdChoice: string,
+  perceptionGap: number,
+  momName: string,
+  dadName: string,
+  scenario: any
+): Promise<{ roast: string; provider: string }> {
+  const kimiApiKey = Deno.env.get('KIMI_API_KEY')
+  
+  if (!kimiApiKey) {
+    console.warn('Game Reveal - KIMI_API_KEY not configured, using fallback')
+    return { 
+      roast: generateFallbackRoast(momPct, dadPct, crowdChoice, perceptionGap, momName, dadName),
+      provider: 'fallback'
+    }
+  }
+
+  const controller = new AbortController()
+  const timeoutId = setTimeout(() => controller.abort(), 10000) // 10 second timeout
+
+  try {
+    const response = await fetch('https://api.moonshot.cn/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${kimiApiKey}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        model: 'kimi-k2-thinking',
+        messages: [
+          {
+            role: 'system',
+            content: `You are a witty, playful host for a baby shower game called "Mom vs Dad: The Truth Revealed". 
+Your job is to roast the crowd for their predictions about what mom or dad would do in silly scenarios.
+Be funny, teasing, and family-friendly. Use emojis and keep it SHORT (under 100 characters).
+Never be mean-spirited - the goal is playful teasing that makes everyone laugh.`
+          },
+          {
+            role: 'user',
+            content: `Generate a witty roast for this "Mom vs Dad" round:
+
+📊 VOTE RESULTS:
+- Mom got ${momPct.toFixed(1)}% of votes (${crowdChoice === 'mom' ? '🗳️ Crowd picked MOM' : 'Dad won this round'})
+- Dad got ${dadPct.toFixed(1)}% of votes
+- Perception gap: ${perceptionGap.toFixed(1)}%
+
+👨‍👩‍👧 THE CONTESTANTS:
+- Mom: ${momName}
+- Dad: ${dadName}
+
+📝 THE SCENARIO:
+"${scenario.scenario_text}"
+- Mom's choice: "${scenario.mom_option}"
+- Dad's choice: "${scenario.dad_option}"
+
+🎯 ROAST THE CROWD:
+Be funny and teasing! ${perceptionGap < 15 ? 'They were spot-on, roast them for being too predictable!' :
+  perceptionGap < 35 ? 'They were somewhat wrong, tease them gently!' :
+  perceptionGap < 55 ? 'They were way off! Give them a good roasting!' :
+  'They were completely clueless! Destroy them with wit!'}
+
+Keep it SHORT, punchy, and family-friendly!`
+          }
+        ],
+        temperature: 0.8,
+        max_tokens: 150
+      }),
+      signal: controller.signal
+    })
+
+    clearTimeout(timeoutId)
+
+    if (!response.ok) {
+      const errorText = await response.text()
+      console.error('Game Reveal - Moonshot API error:', response.status, errorText)
+      throw new Error(`Moonshot API returned ${response.status}`)
+    }
+
+    const aiData = await response.json()
+    
+    // Extract roast text from AI response
+    const roastText = aiData.choices?.[0]?.message?.content?.trim() || ''
+    
+    if (!roastText) {
+      console.warn('Game Reveal - Empty AI response, using fallback')
+      return { 
+        roast: generateFallbackRoast(momPct, dadPct, crowdChoice, perceptionGap, momName, dadName),
+        provider: 'fallback'
+      }
+    }
+
+    console.log('Game Reveal - AI roast generated successfully')
+    return { roast: roastText, provider: 'moonshot-kimi-k2' }
+
+  } catch (error) {
+    clearTimeout(timeoutId)
+    
+    if (error.name === 'AbortError') {
+      console.warn('Game Reveal - Moonshot API timeout after 10 seconds')
+    } else {
+      console.error('Game Reveal - Moonshot API error:', error.message)
+    }
+    
+    throw error
+  }
+}
+
+/**
+ * Generate fallback roast commentary when AI is unavailable
+ */
+function generateFallbackRoast(momPct: number, dadPct: number, crowdChoice: string, perceptionGap: number, momName: string, dadName: string): string {
+  if (perceptionGap < 15) {
+    return `🎯 Spot on! You really know ${crowdChoice === 'mom' ? momName : dadName}!`
+  } else if (perceptionGap < 35) {
+    return `🤔 Close, but clearly nobody knows ${crowdChoice === 'mom' ? dadName : momName} well enough!`
+  } else if (perceptionGap < 55) {
+    return `😱 What were you thinking?! Clearly nobody has seen ${crowdChoice === 'mom' ? momName : dadName} in action!`
   } else {
-    return "🤡 Complete disaster! The crowd has NO idea how this family works!"
+    return `🤡 Complete disaster! The crowd has NO idea how this family works!`
   }
 }

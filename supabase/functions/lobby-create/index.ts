@@ -110,17 +110,17 @@ serve(async (req: Request) => {
     const finalAdminCode = admin_code || generateAdminCode()
 
     // Generate session code using database function
+    let session_code: string
     const { data: sessionCode, error: codeError } = await supabase
       .rpc('baby_shower.generate_session_code')
       .single()
 
     if (codeError || !sessionCode) {
-      console.error('Session Create - Failed to generate session code:', codeError)
-      // Fallback to client-side generation
-      var generatedCode = generateSessionCode()
+      console.warn('Session Create - RPC failed, using fallback generation')
+      session_code = generateSessionCode()
+    } else {
+      session_code = sessionCode
     }
-
-    const session_code = generatedCode || sessionCode
 
     // Check if session code already exists (shouldn't happen but safety check)
     const { data: existingSession } = await supabase
@@ -130,22 +130,19 @@ serve(async (req: Request) => {
       .single()
 
     if (existingSession) {
-      console.error('Session Create - Session code collision, retrying...')
-      // Try one more time
-      var retryCode = generateSessionCode()
+      console.warn('Session Create - Session code collision, regenerating...')
+      session_code = generateSessionCode()
     }
-
-    const finalSessionCode = retryCode || session_code
 
     // Create session
     const { data: session, error: createError } = await supabase
       .from('baby_shower.game_sessions')
       .insert({
-        session_code: finalSessionCode,
-        mom_name: mom_name,
-        dad_name: dad_name,
+        session_code,
+        mom_name,
+        dad_name,
         admin_code: finalAdminCode,
-        total_rounds: total_rounds,
+        total_rounds,
         status: 'setup',
         current_round: 0
       })
@@ -157,8 +154,8 @@ serve(async (req: Request) => {
       throw createError
     }
 
-    console.log('Session Create - Successfully created session:', { 
-      session_code: finalSessionCode,
+    console.log('Session Create - Successfully created session:', {
+      session_code,
       mom_name,
       dad_name
     })

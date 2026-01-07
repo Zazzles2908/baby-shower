@@ -112,13 +112,23 @@ serve(async (req: Request) => {
       return createErrorResponse('Session is not accepting players', 400)
     }
 
-    // Check if player with same name already exists in session
-    // Note: In a real implementation, we'd also filter by scenario_id
-    const { data: existingVotes } = await supabase
-      .from('baby_shower.game_votes')
-      .select('id, guest_name')
-      .eq('guest_name', player_name)
-      .limit(1)
+    // Check if player with same name already exists in this specific session
+    // We need to check game_votes that are linked to scenarios belonging to this session
+    const { data: scenarioIds } = await supabase
+      .from('baby_shower.game_scenarios')
+      .select('id')
+      .eq('session_id', session.id)
+
+    const scenarioIdList = scenarioIds?.map(s => s.id) || []
+
+    const { data: existingVotes } = scenarioIdList.length > 0
+      ? await supabase
+          .from('baby_shower.game_votes')
+          .select('id, guest_name')
+          .eq('guest_name', player_name)
+          .in('scenario_id', scenarioIdList)
+          .limit(1)
+      : { data: null }
 
     if (existingVotes && existingVotes.length > 0) {
       console.warn('[lobby-join] Player already in this session:', player_name)
@@ -126,11 +136,13 @@ serve(async (req: Request) => {
     }
 
     // Determine if this is the first player (admin)
-    // Check existing votes to count players (simplified approach)
-    const { data: existingPlayers } = await supabase
-      .from('baby_shower.game_votes')
-      .select('id')
-      .eq('guest_name', player_name)
+    // Check existing votes to count players in this session
+    const { data: existingPlayers } = scenarioIdList.length > 0
+      ? await supabase
+          .from('baby_shower.game_votes')
+          .select('id')
+          .in('scenario_id', scenarioIdList)
+      : { data: null }
 
     const isFirstPlayer = !existingPlayers || existingPlayers.length === 0
     const isAdmin = isFirstPlayer

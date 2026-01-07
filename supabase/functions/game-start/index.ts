@@ -28,6 +28,14 @@ interface StartGameRequest {
   intensity?: number
 }
 
+interface GeneratedScenario {
+  scenario_text: string
+  mom_option: string
+  dad_option: string
+  intensity: number
+  theme_tags: string[]
+}
+
 serve(async (req: Request) => {
   const headers = new Headers({ 
     ...CORS_HEADERS, 
@@ -114,9 +122,34 @@ serve(async (req: Request) => {
       return createErrorResponse('Invalid admin code', 403)
     }
 
-    // Generate scenarios for each round (simplified - uses fallback scenarios)
-    // In production, this would call Z.AI or another AI provider
-    const scenarios = generateFallbackScenarios(session.mom_name, session.dad_name, total_rounds, intensity)
+    // Generate personalized scenarios using Z.AI (BigModel/ChatGLM)
+    let scenarios: GeneratedScenario[]
+    let aiProvider: string = 'fallback'
+    const zaiApiKey = Deno.env.get('Z_AI_API_KEY')
+    
+    if (zaiApiKey) {
+      console.log('Game Start - Attempting Z.AI scenario generation...')
+      
+      try {
+        scenarios = await generateAIScenariosWithZAI(
+          session.mom_name, 
+          session.dad_name, 
+          total_rounds, 
+          intensity,
+          zaiApiKey
+        )
+        aiProvider = 'z_ai'
+        console.log('Game Start - Successfully generated AI scenarios')
+      } catch (zaiError) {
+        console.error('Game Start - Z.AI generation failed, using fallback:', zaiError)
+        scenarios = generateFallbackScenarios(session.mom_name, session.dad_name, total_rounds, intensity)
+        aiProvider = 'fallback'
+      }
+    } else {
+      console.log('Game Start - No Z.AI API key configured, using fallback scenarios')
+      scenarios = generateFallbackScenarios(session.mom_name, session.dad_name, total_rounds, intensity)
+      aiProvider = 'fallback'
+    }
 
     // Insert scenarios
     const { error: scenariosError } = await supabase
@@ -125,11 +158,12 @@ serve(async (req: Request) => {
         scenarios.map((scenario, index) => ({
           session_id: session.id,
           round_number: index + 1,
-          scenario_text: scenario.text,
+          scenario_text: scenario.scenario_text,
           mom_option: scenario.mom_option,
           dad_option: scenario.dad_option,
-          intensity: intensity,
-          theme_tags: ['funny', 'parenting'],
+          intensity: scenario.intensity,
+          theme_tags: scenario.theme_tags,
+          ai_provider: aiProvider,
           is_active: true
         }))
       )
@@ -202,34 +236,286 @@ serve(async (req: Request) => {
 })
 
 /**
- * Generate fallback scenarios (replace with AI generation in production)
+ * Generate personalized scenarios using Z.AI (BigModel/ChatGLM)
+ * Falls back to template scenarios if AI fails or times out
  */
-function generateFallbackScenarios(momName: string, dadName: string, count: number, intensity: number) {
-  const fallbackScenarios = [
+async function generateAIScenariosWithZAI(
+  momName: string, 
+  dadName: string, 
+  count: number, 
+  intensity: number,
+  apiKey: string
+): Promise<GeneratedScenario[]> {
+  console.log(`Game Start - Generating ${count} scenarios with Z.AI (intensity: ${intensity})`)
+  
+  const controller = new AbortController()
+  const timeoutId = setTimeout(() => {
+    console.warn('Game Start - Z.AI request timeout after 10 seconds')
+    controller.abort()
+  }, 10000)
+
+  try {
+    const response = await fetch('https://open.bigmodel.cn/api/paas/v4/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        model: 'glm-4-flash',
+        messages: [
+          {
+            role: 'system',
+            content: `You are a witty, warm host for a baby shower game called "Mom vs Dad: The Truth Revealed". 
+Your job is to generate funny, relatable "who would rather" scenarios that compare what ${momName} (mom) and ${dadName} (dad) would do in parenting situations.
+
+Requirements:
+- Be playful and humorous, never mean-spirited
+- Reference both names naturally in the scenarios
+- Create situations that are relatable new parent experiences
+- Make the options funny and distinct (not obviously one is "right")
+- Keep the tone warm and inclusive for a baby shower
+- Each scenario should be a different parenting challenge`
+          },
+          {
+            role: 'user',
+            content: `Generate ${count} funny "who would rather" scenarios comparing ${momName} vs ${dadName} in parenting situations.
+
+Return ONLY a valid JSON array (no markdown, no explanation) with exactly ${count} objects, each containing:
+- scenario_text: The situation description (funny, relatable parenting moment)
+- mom_option: What ${momName} would do (funny, specific)
+- dad_option: What ${dadName} would do (funny, specific)  
+- intensity: Comedy level from 0.1 (mild) to 1.0 (chaotic) - use around ${intensity}
+- theme_tags: Array of 2-3 tags like ["sleep", "feeding", "public", "mess", "sleep_deprivation"]
+
+Example format:
+[
+  {
+    "scenario_text": "It's 3 AM and the baby starts crying uncontrollably...",
+    "mom_option": "${momName} would gently rock and sing lullabies",
+    "dad_option": "${dadName} would stumble in, half-asleep, offering a pacifier",
+    "intensity": 0.6,
+    "theme_tags": ["sleep_deprivation", "nighttime", "comfort"]
+  }
+]
+
+Make each scenario unique and funny! Return ONLY the JSON array.`
+          }
+        ],
+        temperature: 0.8,
+        max_tokens: 1500,
+        stream: false
+      }),
+      signal: controller.signal
+    })
+
+    clearTimeout(timeoutId)
+
+    if (!response.ok) {
+      const errorText = await response.text()
+      console.error('Game Start - Z.AI API error:', response.status, errorText)
+      throw new Error(`Z.AI API returned status ${response.status}`)
+    }
+
+    const aiData = await response.json()
+    
+    if (!aiData.choices?.[0]?.message?.content) {
+      console.error('Game Start - Invalid Z.AI response structure:', aiData)
+      throw new Error('Invalid Z.AI response structure')
+    }
+
+    const content = aiData.choices[0].message.content
+    console.log('Game Start - Z.AI raw response:', content.substring(0, 200) + '...')
+
+    // Parse and validate the AI response
+    const scenarios = parseAndValidateAIResponse(content, momName, dadName, count, intensity)
+    
+    console.log(`Game Start - Successfully parsed ${scenarios.length} scenarios from Z.AI`)
+    return scenarios
+
+  } catch (error) {
+    clearTimeout(timeoutId)
+    
+    if (error instanceof Error && error.name === 'AbortError') {
+      console.error('Game Start - Z.AI request timed out')
+      throw new Error('Z.AI request timed out after 10 seconds')
+    }
+    
+    console.error('Game Start - Z.AI generation error:', error)
+    throw error
+  }
+}
+
+/**
+ * Parse and validate AI response as JSON array
+ * Sanitizes content and validates required fields
+ */
+function parseAndValidateAIResponse(
+  content: string, 
+  momName: string, 
+  dadName: string, 
+  expectedCount: number,
+  defaultIntensity: number
+): GeneratedScenario[] {
+  // Clean up the response - remove markdown code blocks if present
+  let jsonContent = content.trim()
+  
+  // Remove markdown code block markers
+  if (jsonContent.startsWith('```json')) {
+    jsonContent = jsonContent.slice(7)
+  } else if (jsonContent.startsWith('```')) {
+    jsonContent = jsonContent.slice(3)
+  }
+  
+  if (jsonContent.endsWith('```')) {
+    jsonContent = jsonContent.slice(0, -3)
+  }
+  
+  jsonContent = jsonContent.trim()
+
+  // Parse JSON
+  let parsed: any
+  try {
+    parsed = JSON.parse(jsonContent)
+  } catch (parseError) {
+    console.error('Game Start - Failed to parse AI response as JSON:', parseError)
+    console.error('Game Start - Raw content:', jsonContent.substring(0, 500))
+    throw new Error('AI response is not valid JSON')
+  }
+
+  // Validate it's an array
+  if (!Array.isArray(parsed)) {
+    console.error('Game Start - AI response is not an array:', typeof parsed)
+    throw new Error('AI response must be an array of scenarios')
+  }
+
+  // Validate each scenario has required fields
+  const scenarios: GeneratedScenario[] = []
+  
+  for (let i = 0; i < parsed.length; i++) {
+    const scenario = parsed[i]
+    
+    if (!scenario.scenario_text || typeof scenario.scenario_text !== 'string') {
+      console.warn(`Game Start - Missing scenario_text at index ${i}, skipping`)
+      continue
+    }
+    
+    if (!scenario.mom_option || typeof scenario.mom_option !== 'string') {
+      console.warn(`Game Start - Missing mom_option at index ${i}, skipping`)
+      continue
+    }
+    
+    if (!scenario.dad_option || typeof scenario.dad_option !== 'string') {
+      console.warn(`Game Start - Missing dad_option at index ${i}, skipping`)
+      continue
+    }
+
+    // Ensure names are included in the options
+    const sanitizedScenario: GeneratedScenario = {
+      scenario_text: scenario.scenario_text,
+      mom_option: scenario.mom_option.includes(momName) 
+        ? scenario.mom_option 
+        : `${momName} ${scenario.mom_option}`,
+      dad_option: scenario.dad_option.includes(dadName) 
+        ? scenario.dad_option 
+        : `${dadName} ${scenario.dad_option}`,
+      intensity: typeof scenario.intensity === 'number' 
+        ? Math.max(0.1, Math.min(1.0, scenario.intensity)) 
+        : defaultIntensity,
+      theme_tags: Array.isArray(scenario.theme_tags) 
+        ? scenario.theme_tags.slice(0, 5) 
+        : ['funny', 'parenting']
+    }
+
+    scenarios.push(sanitizedScenario)
+  }
+
+  if (scenarios.length === 0) {
+    console.error('Game Start - No valid scenarios found in AI response')
+    throw new Error('AI response contained no valid scenarios')
+  }
+
+  // Return exactly the expected number of scenarios, or fewer if validation failed
+  const result = scenarios.slice(0, expectedCount)
+  console.log(`Game Start - Validated ${result.length}/${expectedCount} scenarios`)
+  
+  return result
+}
+
+/**
+ * Generate fallback scenarios (template-based, no AI)
+ */
+function generateFallbackScenarios(momName: string, dadName: string, count: number, intensity: number): GeneratedScenario[] {
+  const fallbackScenarios: GeneratedScenario[] = [
     {
-      text: `It's 3 AM and the baby starts crying uncontrollably...`,
+      scenario_text: `It's 3 AM and the baby starts crying uncontrollably...`,
       mom_option: `${momName} would gently rock and sing lullabies`,
-      dad_option: `${dadName} would stumble in, half-asleep, offering a pacifier`
+      dad_option: `${dadName} would stumble in, half-asleep, offering a pacifier`,
+      intensity: Math.min(1.0, Math.max(0.1, intensity)),
+      theme_tags: ['sleep_deprivation', 'nighttime', 'comfort']
     },
     {
-      text: `The diaper explosion reaches the ceiling...`,
+      scenario_text: `The diaper explosion reaches the ceiling...`,
       mom_option: `${momName} would retch but handle it like a pro`,
-      dad_option: `${dadName} would run for the hills, then come back with wipes`
+      dad_option: `${dadName} would run for the hills, then come back with wipes`,
+      intensity: Math.min(1.0, Math.max(0.1, intensity + 0.2)),
+      theme_tags: ['mess', 'diapers', 'chaos']
     },
     {
-      text: `Someone forgot to pack the diaper bag for outing...`,
-      mom_option: `${momName} would improvisation with handkerchiefs`,
-      dad_option: `${dadName} would panic and call for emergency backup`
+      scenario_text: `Someone forgot to pack the diaper bag for the outing...`,
+      mom_option: `${momName} would improvise with handkerchiefs`,
+      dad_option: `${dadName} would panic and call for emergency backup`,
+      intensity: Math.min(1.0, Math.max(0.1, intensity + 0.1)),
+      theme_tags: ['外出', 'planning', 'chaos']
     },
     {
-      text: `Baby's first solid food ends up everywhere except mouth...`,
+      scenario_text: `Baby's first solid food ends up everywhere except the mouth...`,
       mom_option: `${momName} would document everything for memories`,
-      dad_option: `${dadName} would be too busy taking video to help clean`
+      dad_option: `${dadName} would be too busy taking video to help clean`,
+      intensity: Math.min(1.0, Math.max(0.1, intensity)),
+      theme_tags: ['feeding', 'mess', 'memories']
     },
     {
-      text: `It's 2 AM and baby finally falls asleep...`,
+      scenario_text: `It's 2 AM and the baby finally falls asleep...`,
       mom_option: `${momName} would stare at them lovingly for an hour`,
-      dad_option: `${dadName} would immediately collapse on the couch`
+      dad_option: `${dadName} would immediately collapse on the couch`,
+      intensity: Math.min(1.0, Math.max(0.1, intensity)),
+      theme_tags: ['sleep_deprivation', 'nighttime', 'exhaustion']
+    },
+    {
+      scenario_text: `The baby refuses to eat the broccoli...`,
+      mom_option: `${momName} would try creative presentation tricks`,
+      dad_option: `${dadName} would shrug and say "they'll eat when hungry"`,
+      intensity: Math.min(1.0, Math.max(0.1, intensity)),
+      theme_tags: ['feeding', 'food', 'negotiation']
+    },
+    {
+      scenario_text: `Public meltdown at the grocery store...`,
+      mom_option: `${momName} would calmly try to distract with snacks`,
+      dad_option: `${dadName} would turn red and rush to checkout`,
+      intensity: Math.min(1.0, Math.max(0.1, intensity + 0.1)),
+      theme_tags: ['public', 'chaos', 'embarrassment']
+    },
+    {
+      scenario_text: `Baby discovers they can scream just for fun...`,
+      mom_option: `${momName} would giggle and join in the fun`,
+      dad_option: `${dadName} would fake-exclaim "the lungs!"`,
+      intensity: Math.min(1.0, Math.max(0.1, intensity + 0.15)),
+      theme_tags: ['fun', 'noise', 'entertainment']
+    },
+    {
+      scenario_text: `The baby finally sleeps through the night for the first time...`,
+      mom_option: `${momName} would check on them 47 times`,
+      dad_option: `${dadName} would sleep through it completely`,
+      intensity: Math.min(1.0, Math.max(0.1, intensity)),
+      theme_tags: ['sleep', 'nighttime', 'relief']
+    },
+    {
+      scenario_text: `Someone stepped on a Lego at 3 AM...`,
+      mom_option: `${momName} would yelp and hop to the bathroom`,
+      dad_option: `${dadName} would let out a creative exclamation`,
+      intensity: Math.min(1.0, Math.max(0.1, intensity + 0.1)),
+      theme_tags: ['pain', 'toys', 'nighttime']
     }
   ]
 

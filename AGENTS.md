@@ -1009,5 +1009,33 @@ supabase projects list
 
 ---
 
-**Document Version: 3.3**  
-**Added: Supabase CLI configuration for future agents**
+## 🗑️ Deprecated Functions Removal
+
+### execute-sql Edge Function - REMOVED (2026-01-07)
+
+**Status:** ✅ Successfully deleted from Supabase project
+
+**Reason:** The execute-sql Edge Function was non-functional because it required a missing database RPC function. The Supabase MCP `supabase_execute_sql()` tool provides a better solution for database operations.
+
+**Replacement:** Use the Supabase MCP `supabase_execute_sql()` tool instead:
+
+```typescript
+// ✅ CORRECT - Use MCP tool for SQL operations
+supabase_execute_sql({
+  query: "SELECT * FROM baby_shower.guestbook_entries ORDER BY created_at DESC LIMIT 10"
+})
+
+// ❌ DEPRECATED - execute-sql Edge Function removed
+// Do not attempt to call /functions/v1/execute-sql endpoint
+```
+
+**Benefits of MCP approach:**
+- Direct database access without function deployment
+- Better error handling and response formatting
+- No authentication complexity in Edge Functions
+- Faster execution for simple queries
+
+---
+
+**Document Version: 3.4**  
+**Added: execute-sql function removal and MCP replacement documentation**

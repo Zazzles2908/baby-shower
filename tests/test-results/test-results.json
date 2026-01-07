@@ -138,13 +138,13 @@
   "suites": [],
   "errors": [
     {
-      "message": "Error: No tests found.\nMake sure that arguments are regular expressions matching test files.\nYou may need to escape symbols like \"$\" or \"*\" and quote the arguments.",
-      "stack": "Error: No tests found.\nMake sure that arguments are regular expressions matching test files.\nYou may need to escape symbols like \"$\" or \"*\" and quote the arguments."
+      "message": "Error: Timed out waiting 60000ms from config.webServer.",
+      "stack": "Error: Timed out waiting 60000ms from config.webServer."
     }
   ],
   "stats": {
-    "startTime": "2026-01-05T21:07:16.763Z",
-    "duration": 635.264,
+    "startTime": "2026-01-07T01:10:56.479Z",
+    "duration": 60728.88,
     "expected": 0,
     "skipped": 0,
     "unexpected": 0,

@@ -12,7 +12,7 @@ import { file, serve } from "bun";
 // Configuration
 const PORT = 3000;
 const INDEX_FILE = "index.html";
-const CACHE-Control = "no-cache, no-store, must-revalidate";
+const CACHE_CONTROL = "no-cache, no-store, must-revalidate";
 
 // MIME types for static assets
 const MIME_TYPES = {
