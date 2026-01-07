@@ -309,9 +309,9 @@
         return apiFetch(url, {
             method: 'POST',
             body: JSON.stringify({
-                name: data.name?.trim() || '',
-                advice: data.advice?.trim() || '',
-                type: data.type || 'advice', // 'advice' or 'wish'
+                name: data.name?.trim() || data.adviceName?.trim() || '',
+                message: data.message?.trim() || data.advice?.trim() || '',
+                type: data.type || data.adviceType || 'advice', // 'advice' or 'wish'
             }),
         });
     }
