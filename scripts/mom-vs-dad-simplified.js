@@ -589,19 +589,11 @@
                     <div class="modal-content">
                         <h2>Join Lobby <span id="modal-lobby-key">A</span></h2>
                         <input type="text" id="player-name" placeholder="Enter your name" maxlength="20" />
-                        <input type="text" id="admin-code" placeholder="Admin Code (4 digits, optional)" maxlength="4" style="display: none;" />
                         <div class="modal-actions">
                             <button id="join-cancel" class="btn-secondary">Cancel</button>
                             <button id="join-confirm" class="btn-primary">Join Lobby</button>
                         </div>
                     </div>
-                </div>
-
-                <!-- Admin Code Toggle -->
-                <div style="margin-top: 20px; text-align: center;">
-                    <button id="show-admin-code" class="btn-secondary" style="font-size: 12px;">
-                        🔑 I'm an Admin (Enter Code)
-                    </button>
                 </div>
             </div>
         `;
@@ -773,18 +765,6 @@
                 handleJoinLobby();
             }
         });
-
-        // Admin code toggle
-        document.getElementById('show-admin-code')?.addEventListener('click', () => {
-            const adminCodeInput = document.getElementById('admin-code');
-            const toggleBtn = document.getElementById('show-admin-code');
-            if (adminCodeInput && toggleBtn) {
-                adminCodeInput.style.display = adminCodeInput.style.display === 'none' ? 'block' : 'none';
-                toggleBtn.textContent = adminCodeInput.style.display === 'none' 
-                    ? '🔑 I\'m an Admin (Enter Code)' 
-                    : '❌ Hide Admin Code';
-            }
-        });
     }
 
     /**
@@ -820,7 +800,6 @@
         clearError();
         const modalLobbyKey = document.getElementById('modal-lobby-key');
         const playerNameInput = document.getElementById('player-name');
-        const adminCodeInput = document.getElementById('admin-code');
 
         const lobbyKeyEl = modalLobbyKey?.textContent || '';
         // Find the full lobby key
@@ -833,7 +812,6 @@
         });
 
         const playerName = playerNameInput?.value.trim() || '';
-        const adminCode = adminCodeInput?.value.trim() || '';
 
         if (!playerName) {
             showError('Please enter your name');
@@ -861,10 +839,10 @@
                 GameState.playerName = playerName;
                 GameState.currentPlayerId = result.current_player_id;
                 
-                // Check if provided admin code matches session admin code
-                const sessionAdminCode = result.admin_code || '';
-                GameState.isAdmin = adminCode === sessionAdminCode;
-                GameState.adminCode = adminCode; // Store provided admin code
+                // First player to join becomes admin automatically
+                const playerCount = result.players?.length || 0;
+                GameState.isAdmin = playerCount === 0;
+                GameState.adminCode = null;
                 
                 GameState.players = result.players || [];
                 GameState.adminPlayerId = GameState.isAdmin ? result.current_player_id : null;

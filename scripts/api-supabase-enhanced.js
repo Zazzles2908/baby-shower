@@ -303,15 +303,18 @@
 
     /**
      * Submit advice/wishes
+     * Maps main.js field names to Edge Function expected fields
      */
     async function submitAdvice(data) {
         const url = getSupabaseFunctionUrl('advice');
         return apiFetch(url, {
             method: 'POST',
             body: JSON.stringify({
-                name: data.name?.trim() || data.adviceName?.trim() || '',
+                name: data.name?.trim() || '',
+                // Edge Function accepts 'message' or 'advice'
                 message: data.message?.trim() || data.advice?.trim() || '',
-                type: data.type || data.adviceType || data.category || 'advice',
+                // Edge Function accepts 'adviceType' or 'category'
+                adviceType: data.adviceType?.trim() || data.category?.trim() || 'For Parents',
             }),
         });
     }
