@@ -99,9 +99,10 @@
       'new_images/jazeel/chibi_jazeel_sad.png': 'Pictures/New Images/Jazeel/chibi_jazeel_sad.png',
       'new_images/jazeel/chibi_jazeel_think.png': 'Pictures/New Images/Jazeel/chibi_jazeel_think.png',
 
-      // New Images - Duo (1 image)
-      'new_images/duo/': 'Pictures/New Images/Duo/',
-      'new_images/duo/chibi_duo_highfive.png': 'Pictures/New Images/Duo/chibi_duo_highfive.png'
+       // New Images - Duo (1 image)
+       'new_images/duo/': 'Pictures/New Images/Duo/',
+       'new_images/duo/chibi_duo_highfive.png': 'Pictures/New Images/Duo/chibi_duo_highfive.png',
+       'new_images/duo/chibi_duo_thinking.png': 'Pictures/New Images/Jazeel/chibi_jazeel_think.png'  // Fallback to single thinking chibi
     };
 
     // Check for exact matches first, then prefix matches

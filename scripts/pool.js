@@ -50,6 +50,12 @@ async function loadPoolStats() {
             return;
         }
         
+        // Check if getSubmissions is available (graceful degradation)
+        if (typeof window.API.getSubmissions !== 'function') {
+            console.log('[Pool] ℹ️ getSubmissions not available - stats will not be loaded');
+            return;
+        }
+        
         const submissions = await window.API.getSubmissions('pool');
         
         if (submissions && submissions.length > 0) {

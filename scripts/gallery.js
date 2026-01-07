@@ -90,8 +90,8 @@
         quiz: 'Pictures/New Images/Jazeel/chibi_jazeel_confused.png',
         advice: 'Pictures/New Images/Michelle/chibi_michelle_sweet_smile.png',
         voting: 'Pictures/New Images/Duo/chibi_duo_highfive.png',
-        'mom-vs-dad': 'Pictures/New Images/Duo/chibi_duo_highfive.png'
-        // 'who-would-rather' removed - deprecated functionality
+        'mom-vs-dad': 'Pictures/New Images/Duo/chibi_duo_highfive.png',
+        'who-would-rather': 'Pictures/New Images/Duo/chibi_duo_highfive.png'
     };
 
     /**
@@ -133,9 +133,9 @@
 
         console.log('[Gallery] Loading hero image...');
 
-        // Use the new Duo high-five image for better presentation
+        // Use the Michelle & Jazeel chibi portrait for better presentation
         // Use 'original' size since we don't have sized variants
-        const heroImageUrl = ImageService.getImageUrl('Pictures/New Images/Duo/chibi_duo_highfive.png', 'original');
+        const heroImageUrl = ImageService.getImageUrl('Pictures/Michelle_Jazeel/app_hero_chibi.png', 'original');
         
         if (heroImageUrl) {
             // Set loading state immediately
@@ -145,7 +145,7 @@
             heroContainer.innerHTML = `
                 <img 
                     src="${heroImageUrl}" 
-                    alt="Jazeel and Michelle expecting their baby girl - High Five"
+                    alt="Jazeel and Michelle expecting their baby girl"
                     class="hero-img"
                     loading="eager"
                 >

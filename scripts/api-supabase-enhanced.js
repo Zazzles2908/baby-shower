@@ -199,6 +199,33 @@
     }
 
     /**
+     * Get submissions for realtime updates
+     * Updated to query baby_shower schema
+     */
+    async function getSubmissions(activityType) {
+        if (!SUPABASE_URL) {
+            throw new Error('Supabase URL not configured');
+        }
+
+        const url = `${SUPABASE_URL}/rest/v1/submissions?activity_type=eq.${activityType}&order=created_at.desc`;
+
+        const headers = {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+            'apikey': SUPABASE_ANON_KEY,
+            'Accept-Profile': 'baby_shower' // Query from baby_shower schema
+        };
+
+        const response = await fetch(url, { headers });
+
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+
+        return await response.json();
+    }
+
+    /**
      * Submit baby pool prediction
      */
     async function submitPool(data) {
@@ -207,275 +234,11 @@
             method: 'POST',
             body: JSON.stringify({
                 name: data.name?.trim() || '',
-                prediction: data.prediction || '',
+                prediction: data.prediction || (data.dateGuess && data.timeGuess ? `${data.dateGuess} at ${data.timeGuess}` : data.dateGuess || ''),
                 dueDate: data.due_date || data.dueDate || data.dateGuess || '',
                 due_date: data.due_date || '', // Keep for compatibility
                 weight: parseFloat(data.weight) || parseFloat(data.weightGuess) || 0,
                 length: parseFloat(data.length) || parseFloat(data.lengthGuess) || 0,
-            }),
-        });
-    }
-
-    /**
-     * Submit quiz answers
-     */
-    async function submitQuiz(data) {
-        const url = getSupabaseFunctionUrl('quiz');
-        return apiFetch(url, {
-            method: 'POST',
-            body: JSON.stringify({
-                name: data.name?.trim() || '',
-                score: data.score || 0,
-                totalQuestions: data.totalQuestions || 5,
-                answers: data.answers || {},
-            }),
-        });
-    }
-
-    /**
-     * Submit advice for parents
-      */
-     async function submitAdvice(data) {
-         const url = getSupabaseFunctionUrl('advice');
-         
-         // Handle both category (from main.js) and adviceType (direct calls)
-         const adviceType = data.adviceType?.trim() || data.category || 'For Parents';
-         
-         return apiFetch(url, {
-             method: 'POST',
-             body: JSON.stringify({
-                 name: data.name?.trim() || '',
-                 message: data.message?.trim() || '',
-                 advice: data.advice?.trim() || '',  // Also support 'advice' field
-                 adviceType: adviceType,
-                 category: data.category,  // Pass through for backend compatibility
-             }),
-         });
-     }
-
-    /**
-     * Generic submit function for any activity
-     */
-    function submit(activityType, data) {
-        switch(activityType) {
-            case 'guestbook': return submitGuestbook(data);
-            case 'vote': return submitVote(data);
-            case 'baby_pool':
-            case 'pool': return submitPool(data);
-            case 'quiz': return submitQuiz(data);
-            case 'advice': return submitAdvice(data);
-            default: return Promise.reject(new Error(`Unknown activity type: ${activityType}`));
-        }
-    }
-
-    /**
-     * Generic fetch wrapper with error handling and retry logic
-     */
-    async function apiFetch(url, options = {}, maxRetries = RETRY_ATTEMPTS) {
-        const headers = {
-            'Content-Type': 'application/json',
-            ...options.headers,
-        };
-
-        // Add Supabase authorization header
-        if (SUPABASE_ANON_KEY) {
-            headers['apikey'] = SUPABASE_ANON_KEY;
-            headers['Authorization'] = `Bearer ${SUPABASE_ANON_KEY}`;
-        }
-
-        for (let attempt = 1; attempt <= maxRetries; attempt++) {
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), API_TIMEOUT);
-
-            try {
-                const response = await fetch(url, {
-                    ...options,
-                    headers,
-                    signal: controller.signal,
-                });
-
-                clearTimeout(timeoutId);
-
-                if (!response.ok) {
-                    const errorData = await response.json().catch(() => ({}));
-                    throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`);
-                }
-
-                return await response.json();
-                
-            } catch (err) {
-                clearTimeout(timeoutId);
-
-                if (err.name === 'AbortError') {
-                    if (attempt === maxRetries) {
-                        throw new Error('Request timed out after multiple attempts. Please check your connection.');
-                    }
-                    console.warn(`[API] Request timeout on attempt ${attempt}, retrying...`);
-                } else {
-                    console.warn(`[API] Request failed on attempt ${attempt}:`, err.message);
-                    
-                    if (attempt === maxRetries) {
-                        // Log to error monitor
-                        if (root.ErrorMonitor) {
-                            root.ErrorMonitor.logCustom('api_request_failed', err.message, {
-                                url: url,
-                                method: options.method || 'GET',
-                                attempt: attempt,
-                                maxRetries: maxRetries
-                            });
-                        }
-                        
-                        throw err;
-                    }
-                }
-
-                // Exponential backoff delay
-                const delay = RETRY_DELAY * Math.pow(2, attempt - 1);
-                console.log(`[API] Retrying request in ${delay}ms...`);
-                await new Promise(resolve => setTimeout(resolve, delay));
-            }
-        }
-    }
-
-    /**
-     * Enhanced health check with detailed diagnostics
-     */
-    async function performHealthCheck() {
-        console.log('[API] Performing comprehensive health check...');
-        
-        const results = {
-            supabaseUrl: SUPABASE_URL ? 'configured' : 'missing',
-            supabaseKey: SUPABASE_ANON_KEY ? 'configured' : 'missing',
-            clientAvailable: false,
-            realtimeAvailable: false,
-            edgeFunctions: {},
-            database: false,
-            overall: 'unknown'
-        };
-
-        try {
-            // Test Supabase client
-            const client = await getSupabaseClient();
-            results.clientAvailable = !!client;
-            
-            if (client) {
-                // Test realtime capability
-                try {
-                    const { error } = await client.auth.getSession();
-                    results.realtimeAvailable = !error;
-                } catch (error) {
-                    results.realtimeAvailable = false;
-                }
-            }
-
-            // Test database connection
-            try {
-                const healthUrl = `${SUPABASE_URL}/rest/v1/submissions?select=id&limit=1`;
-                const response = await apiFetch(healthUrl, {
-                    headers: {
-                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-                        'apikey': SUPABASE_ANON_KEY,
-                        'Accept-Profile': 'baby_shower'
-                    }
-                });
-                results.database = response && response.length >= 0;
-            } catch (error) {
-                results.database = false;
-                console.error('[API] Database health check failed:', error.message);
-            }
-
-            // Test edge functions
-            const functionsToTest = ['vote', 'guestbook'];
-            for (const functionName of functionsToTest) {
-                try {
-                    const url = getSupabaseFunctionUrl(functionName);
-                    const response = await fetch(url, {
-                        method: 'OPTIONS',
-                        headers: {
-                            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
-                        }
-                    });
-                    results.edgeFunctions[functionName] = response.ok;
-                } catch (error) {
-                    results.edgeFunctions[functionName] = false;
-                    console.error(`[API] Edge function ${functionName} health check failed:`, error.message);
-                }
-            }
-
-            // Determine overall health
-            const criticalComponents = [
-                results.supabaseUrl === 'configured',
-                results.supabaseKey === 'configured',
-                results.database
-            ];
-            
-            results.overall = criticalComponents.every(Boolean) ? 'healthy' : 'degraded';
-            
-            console.log('[API] Health check completed:', results);
-            return results;
-            
-        } catch (error) {
-            console.error('[API] Health check failed:', error.message);
-            results.overall = 'failed';
-            return results;
-        }
-    }
-
-    /**
-     * Submit baby name vote
-     */
-    async function submitVote(data) {
-        const url = getSupabaseFunctionUrl('vote');
-
-        return apiFetch(url, {
-            method: 'POST',
-            body: JSON.stringify({
-                selected_names: Array.isArray(data.selected_names) ? data.selected_names : [],
-            }),
-        });
-    }
-    
-    /**
-     * Initialize API and verify connection with enhanced diagnostics
-     */
-    async function initializeAPI() {
-        console.log('[API] Client initializing with enhanced retry logic...');
-        
-        // CRITICAL: Don't run blocking health check on page load!
-        // Health check is now optional and runs only when needed
-        // This improves initial page load time significantly
-        
-        console.log('[API] Client ready - deferred health check available');
-        return { 
-            success: true, 
-            message: 'API client initialized. Run performHealthCheck() for status.' 
-        };
-    }
-    
-    /**
-     * Run health check (optional - only when needed)
-     * Call this function explicitly when you want to check API status
-     */
-    async function runOptionalHealthCheck() {
-        console.log('[API] Running optional health check...');
-        return await performHealthCheck();
-    }
-
-    /**
-     * Join Mom vs Dad game session via Edge Function
-     * @param {string} sessionCode - 6-character session code
-     * @param {string} guestName - Guest's name
-     * @returns {Promise<Object>} Join result
-     */
-    async function gameJoin(sessionCode, guestName) {
-        const url = getSupabaseFunctionUrl('game-session');
-        return apiFetch(url, {
-            method: 'POST',
-            body: JSON.stringify({
-                action: 'join',
-                session_code: sessionCode,
-                guest_name: guestName,
-                is_admin: false
             }),
         });
     }
@@ -489,6 +252,8 @@
         submitQuiz,
         submitAdvice,
         submit,
+        // Data retrieval functions
+        getSubmissions,
         // Game functions (via Edge Functions)
         gameJoin,
         // Supabase client accessor
