@@ -1,8 +1,3 @@
-/**
- * Mom vs Dad Game - Game Session Function (Unified Schema)
- * Purpose: Create/manage game sessions, generate session codes, handle admin login
- */
-
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
@@ -21,9 +16,13 @@ const SECURITY_HEADERS = {
   'Content-Security-Policy': "default-src 'self'"
 }
 
-function createErrorResponse(message: string, status: number = 500): Response {
+function createErrorResponse(message: string, status: number = 500, details?: unknown): Response {
   const headers = new Headers({ ...CORS_HEADERS, ...SECURITY_HEADERS, 'Content-Type': 'application/json' })
-  return new Response(JSON.stringify({ success: false, error: message, timestamp: new Date().toISOString() }), { status, headers })
+  const body: Record<string, unknown> = { success: false, error: message, timestamp: new Date().toISOString() }
+  if (details) {
+    body.details = typeof details === 'string' ? details : JSON.stringify(details)
+  }
+  return new Response(JSON.stringify(body), { status, headers })
 }
 
 function createSuccessResponse(data: unknown, status: number = 200): Response {
@@ -81,10 +80,11 @@ serve(async (req: Request) => {
   }
 
   try {
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
 
     if (!supabaseUrl || !supabaseServiceKey) {
+      console.error('[game-session] Missing env vars')
       return createErrorResponse('Server configuration error', 500)
     }
 
@@ -100,26 +100,17 @@ serve(async (req: Request) => {
         return createErrorResponse('Session code is required', 400)
       }
 
-      const { data: session, error } = await supabase
-        .from('baby_shower.game_sessions')
-        .select('id, session_code, mom_name, dad_name, status, current_round, total_rounds, created_at')
-        .eq('session_code', sessionCode.toUpperCase())
-        .single()
+      console.log('[game-session] GET session:', sessionCode.toUpperCase())
       
-      if (error || !session) {
+      const { data: session, error } = await supabase
+        .rpc('get_session_by_code', { session_code_input: sessionCode.toUpperCase() })
+      
+      console.log('[game-session] GET result:', { error, sessionCount: session?.length })
+      if (error || !session || session.length === 0) {
         return createErrorResponse('Session not found', 404)
       }
 
-      return createSuccessResponse({
-        session_id: session.id,
-        session_code: session.session_code,
-        mom_name: session.mom_name,
-        dad_name: session.dad_name,
-        status: session.status,
-        current_round: session.current_round,
-        total_rounds: session.total_rounds,
-        created_at: session.created_at
-      }, 200)
+      return createSuccessResponse(session[0], 200)
     }
 
     if (req.method !== 'POST') {
@@ -132,6 +123,8 @@ serve(async (req: Request) => {
     } catch {
       return createErrorResponse('Invalid JSON in request body', 400)
     }
+
+    console.log('[game-session] POST action:', body.action)
 
     if (!body.action) {
       return createErrorResponse('Action is required', 400)
@@ -151,26 +144,25 @@ serve(async (req: Request) => {
     }
 
   } catch (error) {
-    console.error('[game-session] Error:', error)
-    return createErrorResponse('Internal server error', 500)
+    console.error('[game-session] Fatal error:', error)
+    return createErrorResponse('Internal server error', 500, error instanceof Error ? error.message : String(error))
   }
 })
 
 async function handleCreateSession(supabase: any, body: CreateSessionRequest): Promise<Response> {
   const { mom_name, dad_name, total_rounds } = body
 
+  console.log('[game-session] Creating session for:', mom_name, dad_name)
+
   let sessionCode = generateSessionCode()
   const adminCode = generateAdminPIN()
 
   let attempts = 0
   while (attempts < 10) {
-    const { data: existing } = await supabase
-      .from('baby_shower.game_sessions')
-      .select('session_code')
-      .eq('session_code', sessionCode)
-      .single()
+    const { data: exists } = await supabase
+      .rpc('check_session_exists', { session_code_input: sessionCode })
     
-    if (existing) {
+    if (exists) {
       sessionCode = generateSessionCode()
       attempts++
     } else {
@@ -183,33 +175,32 @@ async function handleCreateSession(supabase: any, body: CreateSessionRequest): P
   }
 
   const { data: session, error: insertError } = await supabase
-    .from('baby_shower.game_sessions')
-    .insert({
-      session_code: sessionCode,
-      admin_code: adminCode,
-      mom_name: mom_name,
-      dad_name: dad_name,
-      status: 'setup',
-      current_round: 0,
-      total_rounds: total_rounds || 5
+    .rpc('create_game_session', {
+      session_code_input: sessionCode,
+      admin_code_input: adminCode,
+      mom_name_input: mom_name,
+      dad_name_input: dad_name,
+      total_rounds_input: total_rounds || 5
     })
-    .select('id, session_code, admin_code, mom_name, dad_name, status, current_round, total_rounds, created_at')
-    .single()
   
-  if (insertError || !session) {
-    return createErrorResponse('Database operation failed', 500)
+  console.log('[game-session] Insert result:', { insertError, sessionData: session })
+
+  if (insertError || !session || session.length === 0) {
+    console.error('[game-session] Insert failed:', insertError)
+    return createErrorResponse('Database operation failed', 500, insertError)
   }
 
+  const result = session[0]
   return createSuccessResponse({
-    session_id: session.id,
-    session_code: session.session_code,
-    admin_code: session.admin_code,
-    mom_name: session.mom_name,
-    dad_name: session.dad_name,
-    status: session.status,
-    current_round: session.current_round,
-    total_rounds: session.total_rounds,
-    created_at: session.created_at
+    session_id: result.id,
+    session_code: result.session_code,
+    admin_code: result.admin_code,
+    mom_name: result.mom_name,
+    dad_name: result.dad_name,
+    status: result.status,
+    current_round: result.current_round,
+    total_rounds: result.total_rounds,
+    created_at: result.created_at
   }, 201)
 }
 
@@ -217,29 +208,30 @@ async function handleJoinSession(supabase: any, body: JoinSessionRequest): Promi
   const { session_code, guest_name } = body
   const normalizedCode = session_code.toUpperCase()
 
+  console.log('[game-session] Joining session:', normalizedCode)
+
   const { data: session, error } = await supabase
-    .from('baby_shower.game_sessions')
-    .select('session_code, mom_name, dad_name, status, current_round, total_rounds')
-    .eq('session_code', normalizedCode)
-    .single()
+    .rpc('get_session_details', { session_code_input: normalizedCode })
   
-  if (error || !session) {
+  if (error || !session || session.length === 0) {
+    console.error('[game-session] Join failed:', error)
     return createErrorResponse('Session not found', 404)
   }
 
+  const result = session[0]
   const validStatuses = ['setup', 'voting']
-  if (!validStatuses.includes(session.status)) {
-    return createErrorResponse(`Cannot join session in ${session.status} status`, 400)
+  if (!validStatuses.includes(result.status)) {
+    return createErrorResponse(`Cannot join session in ${result.status} status`, 400)
   }
 
   return createSuccessResponse({
     message: `Welcome to the game, ${guest_name}!`,
-    session_code: session.session_code,
-    mom_name: session.mom_name,
-    dad_name: session.dad_name,
-    status: session.status,
-    current_round: session.current_round,
-    total_rounds: session.total_rounds
+    session_code: result.session_code,
+    mom_name: result.mom_name,
+    dad_name: result.dad_name,
+    status: result.status,
+    current_round: result.current_round,
+    total_rounds: result.total_rounds
   }, 200)
 }
 
@@ -247,17 +239,17 @@ async function handleUpdateSession(supabase: any, body: UpdateSessionRequest): P
   const { session_code, admin_code, status, current_round } = body
   const normalizedCode = session_code.toUpperCase()
 
+  console.log('[game-session] Updating session:', normalizedCode)
+
   const { data: session, error } = await supabase
-    .from('baby_shower.game_sessions')
-    .select('session_code, admin_code, status, current_round, total_rounds')
-    .eq('session_code', normalizedCode)
-    .single()
+    .rpc('get_session_details', { session_code_input: normalizedCode })
   
-  if (error || !session) {
+  if (error || !session || session.length === 0) {
     return createErrorResponse('Session not found', 404)
   }
 
-  if (session.admin_code !== admin_code) {
+  const currentSession = session[0]
+  if (currentSession.admin_code !== admin_code) {
     return createErrorResponse('Invalid admin code', 401)
   }
 
@@ -266,23 +258,25 @@ async function handleUpdateSession(supabase: any, body: UpdateSessionRequest): P
   if (current_round !== undefined) updates.current_round = current_round
 
   if (Object.keys(updates).length === 0) {
-    return createSuccessResponse({ message: 'No changes to apply', ...session }, 200)
+    return createSuccessResponse({ message: 'No changes to apply', ...currentSession }, 200)
   }
 
   const { data: updatedSession, error: updateError } = await supabase
-    .from('baby_shower.game_sessions')
-    .update(updates)
-    .eq('session_code', normalizedCode)
-    .select('session_code, status, current_round, total_rounds')
-    .single()
+    .rpc('update_session', { 
+      session_code_input: normalizedCode,
+      status_input: status,
+      current_round_input: current_round
+    })
   
-  if (updateError || !updatedSession) {
-    return createErrorResponse('Database operation failed', 500)
+  if (updateError || !updatedSession || updatedSession.length === 0) {
+    console.error('[game-session] Update failed:', updateError)
+    return createErrorResponse('Database operation failed', 500, updateError)
   }
 
+  const result = updatedSession[0]
   return createSuccessResponse({
     message: 'Session updated successfully',
-    ...updatedSession
+    ...result
   }, 200)
 }
 
@@ -290,28 +284,28 @@ async function handleAdminLogin(supabase: any, body: AdminLoginRequest): Promise
   const { session_code, admin_code } = body
   const normalizedCode = session_code.toUpperCase()
 
+  console.log('[game-session] Admin login for:', normalizedCode)
+
   const { data: session, error } = await supabase
-    .from('baby_shower.game_sessions')
-    .select('id, session_code, admin_code, mom_name, dad_name, status, current_round, total_rounds')
-    .eq('session_code', normalizedCode)
-    .single()
+    .rpc('get_session_details', { session_code_input: normalizedCode })
   
-  if (error || !session) {
+  if (error || !session || session.length === 0) {
     return createErrorResponse('Session not found', 404)
   }
 
-  if (session.admin_code !== admin_code) {
+  const result = session[0]
+  if (result.admin_code !== admin_code) {
     return createErrorResponse('Invalid admin code', 401)
   }
 
   return createSuccessResponse({
     message: 'Admin login successful',
-    session_id: session.id,
-    session_code: session.session_code,
-    mom_name: session.mom_name,
-    dad_name: session.dad_name,
-    status: session.status,
-    current_round: session.current_round,
-    total_rounds: session.total_rounds
+    session_id: result.id,
+    session_code: result.session_code,
+    mom_name: result.mom_name,
+    dad_name: result.dad_name,
+    status: result.status,
+    current_round: result.current_round,
+    total_rounds: result.total_rounds
   }, 200)
 }
