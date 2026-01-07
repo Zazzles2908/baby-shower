@@ -224,6 +224,20 @@ async function handleJoinSession(supabase: any, body: JoinSessionRequest): Promi
     return createErrorResponse(`Cannot join session in ${result.status} status`, 400)
   }
 
+  // Add player to session using RPC
+  const { data: player, error: playerError } = await supabase
+    .rpc('add_game_player', { 
+      p_session_id: result.id, 
+      p_player_name: guest_name 
+    })
+
+  if (playerError) {
+    console.error('[game-session] Failed to add player:', playerError)
+    return createErrorResponse('Failed to join session', 500, playerError)
+  }
+
+  console.log('[game-session] Player added:', player)
+
   return createSuccessResponse({
     message: `Welcome to the game, ${guest_name}!`,
     session_code: result.session_code,
@@ -231,7 +245,10 @@ async function handleJoinSession(supabase: any, body: JoinSessionRequest): Promi
     dad_name: result.dad_name,
     status: result.status,
     current_round: result.current_round,
-    total_rounds: result.total_rounds
+    total_rounds: result.total_rounds,
+    current_player_id: player[0]?.id,
+    is_admin: player[0]?.is_admin,
+    players: result.players
   }, 200)
 }
 

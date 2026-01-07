@@ -163,8 +163,8 @@
             
             render();
         } catch (error) {
-            console.error('[WhoWouldRather]);
-            alert(' Join error:', errorFailed to join game. Please check the code and try again.');
+            console.error('[WhoWouldRather] Join error:', error);
+            alert('Failed to join game. Please check the code and try again.');
         }
     }
 
