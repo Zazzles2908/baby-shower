@@ -33,6 +33,48 @@
     let initializationAttempts = 0;
 
     /**
+     * Generic fetch wrapper with error handling
+     */
+    async function apiFetch(url, options = {}) {
+        const headers = {
+            'Content-Type': 'application/json',
+            ...options.headers,
+        };
+
+        if (SUPABASE_ANON_KEY) {
+            headers['apikey'] = SUPABASE_ANON_KEY;
+            headers['Authorization'] = `Bearer ${SUPABASE_ANON_KEY}`;
+        }
+
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), API_TIMEOUT);
+
+        try {
+            const response = await fetch(url, {
+                ...options,
+                headers,
+                signal: controller.signal,
+            });
+
+            clearTimeout(timeoutId);
+
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`);
+            }
+
+            return await response.json();
+        } catch (err) {
+            clearTimeout(timeoutId);
+
+            if (err.name === 'AbortError') {
+                throw new Error('Request timed out. Please try again.');
+            }
+            throw err;
+        }
+    }
+
+    /**
      * Initialize Supabase client with retry logic
      */
     async function initializeSupabaseClient(maxRetries = RETRY_ATTEMPTS) {
@@ -243,6 +285,124 @@
         });
     }
 
+    /**
+     * Submit quiz answers
+     */
+    async function submitQuiz(data) {
+        const url = getSupabaseFunctionUrl('quiz');
+        return apiFetch(url, {
+            method: 'POST',
+            body: JSON.stringify({
+                name: data.name?.trim() || '',
+                answers: data.answers || [],
+                score: data.score || 0,
+                totalQuestions: data.totalQuestions || 5,
+            }),
+        });
+    }
+
+    /**
+     * Submit advice/wishes
+     */
+    async function submitAdvice(data) {
+        const url = getSupabaseFunctionUrl('advice');
+        return apiFetch(url, {
+            method: 'POST',
+            body: JSON.stringify({
+                name: data.name?.trim() || '',
+                advice: data.advice?.trim() || '',
+                type: data.type || 'advice', // 'advice' or 'wish'
+            }),
+        });
+    }
+
+    /**
+     * Generic submit function that routes to appropriate handler
+     */
+    async function submit(activityType, data) {
+        switch (activityType) {
+            case 'guestbook':
+                return submitGuestbook(data);
+            case 'vote':
+                return submitVote(data);
+            case 'pool':
+                return submitPool(data);
+            case 'quiz':
+                return submitQuiz(data);
+            case 'advice':
+                return submitAdvice(data);
+            default:
+                throw new Error(`Unknown activity type: ${activityType}`);
+        }
+    }
+
+    /**
+     * Join Mom vs Dad game session
+     */
+    async function gameJoin(data) {
+        const url = getSupabaseFunctionUrl('game-session');
+        return apiFetch(url, {
+            method: 'POST',
+            body: JSON.stringify({
+                action: 'join',
+                sessionCode: data.sessionCode?.trim().toUpperCase() || '',
+                guestName: data.guestName?.trim() || '',
+            }),
+        });
+    }
+
+    /**
+     * Create Mom vs Dad game session
+     */
+    async function gameCreate(data) {
+        const url = getSupabaseFunctionUrl('game-session');
+        return apiFetch(url, {
+            method: 'POST',
+            body: JSON.stringify({
+                action: 'create',
+                momName: data.momName?.trim() || '',
+                dadName: data.dadName?.trim() || '',
+            }),
+        });
+    }
+
+    /**
+     * Submit Who Would Rather vote
+     */
+    async function submitWhoWouldRather(data) {
+        const url = getSupabaseFunctionUrl('who-would-rather');
+        return apiFetch(url, {
+            method: 'POST',
+            body: JSON.stringify({
+                name: data.name?.trim() || '',
+                votes: data.votes || [], // Array of {questionId, choice}
+            }),
+        });
+    }
+
+    /**
+     * Optional health check for API connectivity
+     */
+    async function runOptionalHealthCheck() {
+        const results = {
+            supabase: false,
+            edgeFunctions: [],
+            timestamp: new Date().toISOString(),
+        };
+
+        try {
+            const client = await getSupabaseClient();
+            if (client) {
+                const { error } = await client.auth.getSession();
+                results.supabase = !error;
+            }
+        } catch (error) {
+            console.warn('[API] Health check failed:', error.message);
+        }
+
+        return results;
+    }
+
     // Create API object with functions actually defined in this file
     const API = {
         // Submit functions (via Edge Functions)
@@ -252,78 +412,35 @@
         submitQuiz,
         submitAdvice,
         submit,
-        // Data retrieval functions
-        getSubmissions,
+        submitWhoWouldRather,
         // Game functions (via Edge Functions)
         gameJoin,
+        gameCreate,
+        // Data retrieval functions
+        getSubmissions,
         // Supabase client accessor
         getSupabaseClient,
         // Health checks
-        performHealthCheck: runOptionalHealthCheck, // Renamed to clarify it's optional
-        initialize: initializeAPI,
+        performHealthCheck: runOptionalHealthCheck,
+        // Initialize function for deferred loading
+        initialize: async function() {
+            console.log('[API] initialize() called - initializing Supabase client');
+            try {
+                await initializeSupabaseClient();
+                console.log('[API] initialize() completed');
+                return { success: true };
+            } catch (error) {
+                console.error('[API] initialize() failed:', error);
+                return { success: false, error: error.message };
+            }
+        },
     };
-
-    // Legacy function name for compatibility (removed - functions now in main.js)
 
     // Attach to global scope
     if (typeof root !== 'undefined') {
         root.API = API;
     }
 
-    // CRITICAL: Defer API initialization to improve page load time!
-    // Don't run blocking initialization on page load
-    // Initialize only when first API call is made
-    
-    let apiInitialized = false;
-    const originalInitialize = initializeAPI;
-    
-    initializeAPI = async function() {
-        if (apiInitialized) return { success: true, cached: true };
-        
-        const result = await originalInitialize();
-        if (result.success) {
-            apiInitialized = true;
-        }
-        return result;
-    };
-    
-    // Lazy initialization wrapper for all API calls
-    const originalSubmitGuestbook = submitGuestbook;
-    submitGuestbook = async function(data) {
-        await initializeAPI();
-        return originalSubmitGuestbook(data);
-    };
-    
-    const originalSubmitVote = submitVote;
-    submitVote = async function(data) {
-        await initializeAPI();
-        return originalSubmitVote(data);
-    };
-    
-    const originalSubmitPool = submitPool;
-    submitPool = async function(data) {
-        await initializeAPI();
-        return originalSubmitPool(data);
-    };
-    
-    const originalSubmitQuiz = submitQuiz;
-    submitQuiz = async function(data) {
-        await initializeAPI();
-        return originalSubmitQuiz(data);
-    };
-    
-    const originalSubmitAdvice = submitAdvice;
-    submitAdvice = async function(data) {
-        await initializeAPI();
-        return originalSubmitAdvice(data);
-    };
-    
-    const originalGameJoin = gameJoin;
-    gameJoin = async function(sessionCode, guestName) {
-        await initializeAPI();
-        return originalGameJoin(sessionCode, guestName);
-    };
-
-    console.log('[API] Client (api-supabase.js) loaded successfully with lazy initialization');
+    console.log('[API] Client (api-supabase-enhanced.js) loaded successfully');
 
 })(typeof window !== 'undefined' ? window : this);
