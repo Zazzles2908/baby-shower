@@ -113,7 +113,7 @@ graph TD
 ## Key Links
 
 ### Live Application
-- **Production URL**: https://baby-shower-qr-app.vercel.app
+- **Production URL**: https://baby-shower-v2.vercel.app
 
 ### Supabase Project
 - **Project ID**: bkszmvfsfgvdwzacgmfz

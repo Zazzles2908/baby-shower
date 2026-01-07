@@ -51,7 +51,7 @@
 
 | Component | Platform | URL/Endpoint | Status |
 |-----------|----------|--------------|--------|
-| Frontend | Vercel | https://baby-shower-qr-app.vercel.app | ✅ Active |
+| Frontend | Vercel | https://baby-shower-v2.vercel.app | ✅ Active |
 | API | Supabase Edge Functions | https://bkszmvfsfgvdwzacgmfz.supabase.co/functions/v1/ | ✅ Active |
 | Database | Supabase PostgreSQL | Project: bkszmvfsfgvdwzacgmfz | ✅ Active |
 | Export | Google Sheets | Webhook Configured | ✅ Active |
@@ -242,7 +242,7 @@ In Vercel Dashboard > Settings > Environment Variables:
 ### 5.3 Verify Production URL
 
 Your app is available at:
-**https://baby-shower-qr-app.vercel.app**
+**https://baby-shower-v2.vercel.app**
 
 This URL:
 - Never changes

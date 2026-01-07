@@ -2,7 +2,7 @@
 
 A fun, interactive QR-code-based web app for baby showers with multiple activities and milestone surprises.
 
-**Live Site**: https://baby-shower-qr-app.vercel.app
+**Live Site**: https://baby-shower-v2.vercel.app
 
 ---
 

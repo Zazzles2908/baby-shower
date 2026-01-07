@@ -252,7 +252,7 @@ Total Time: < 2 seconds end-to-end
 
 | Component | Platform | URL/Config |
 |-----------|----------|------------|
-| Frontend | Vercel | https://baby-shower-qr-app.vercel.app |
+| Frontend | Vercel | https://baby-shower-v2.vercel.app |
 | API | Supabase Edge | https://bkszmvfsfgvdwzacgmfz.supabase.co/functions/v1/ |
 | Database | Supabase Pro | Project: bkszmvfsfgvdwzacgmfz, Region: Sydney |
 | Export | Google Sheets | Webhook via Google Apps Script |
