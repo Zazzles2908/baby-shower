@@ -3,12 +3,13 @@
   "version": "1.0.0",
   "description": "Baby Shower App - A celebration platform with guestbook, voting, pool prediction, quiz, and advice activities",
   "scripts": {
-    "dev": "bun run --hot scripts/dev-server.js",
+    "dev": "node scripts/dev-server.js",
     "dev:node": "npx http-server . -p 3000 -c-1",
-    "dev:fast": "bun run --hot --port 3000 .",
-    "deploy": "bun run deploy:commit && bun run push",
-    "deploy:bun": "bun run deploy:commit && bun run push:bun",
+    "dev:fast": "npx http-server . -p 3000 -c-1",
+    "dev:bun": "bun run --hot --port 3000 scripts/dev-server.js",
+    "deploy": "node scripts/commit.js && git push origin main",
     "deploy:node": "npm run commit && npm run push",
+    "deploy:bun": "bun run commit && git push origin main",
     "commit": "node scripts/commit.js",
     "push": "git push origin main",
     "push:bun": "bun run commit && git push origin main",
@@ -35,10 +36,11 @@
     "test:install:webkit": "playwright install webkit",
     "test:clean": "rm -rf test-results tests/e2e/.auth",
     "test:generate": "node tests/e2e/data-generator.js",
-    "inject:env": "bun run scripts/inject-env.js",
+    "inject:env": "node scripts/inject-env.js",
     "inject:env:node": "node scripts/inject-env.js",
-    "bundle": "bun build ./index.html --outdir ./dist --minify",
-    "bundle:analyze": "bun build ./index.html --outdir ./dist --analyze"
+    "inject:env:bun": "bun run scripts/inject-env.js",
+    "bundle": "npx esbuild index.html --bundle --outdir=./dist --minify --loader:.html=text",
+    "bundle:analyze": "npx esbuild index.html --bundle --outdir=./dist --analyze --loader:.html=text"
   },
   "dependencies": {
     "playwright": "^1.57.0"
@@ -56,17 +58,17 @@
     "supabase",
     "edge-functions",
     "testing",
-    "bun"
+    "nodejs"
   ],
   "author": "",
   "license": "MIT",
   "engines": {
-    "node": ">=18.0.0",
-    "bun": ">=1.0.0"
+    "node": ">=18.0.0"
   },
-  "packageManager": "bun@1.0.0",
+  "packageManager": "node@18.0.0",
   "repository": {
     "type": "git",
     "url": "https://github.com/your-org/baby-shower.git"
-  }
+  },
+  "description": "Baby Shower App - Node.js for cross-platform compatibility (Bun has segmentation fault issues on Windows)"
 }

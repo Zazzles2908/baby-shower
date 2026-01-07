@@ -494,13 +494,8 @@
                 maxPlayers: 10,
                 rounds: 5,
                 timePerRound: 60
-            },
-            'who-would-rather': {
-                name: 'Who Would Rather',
-                maxPlayers: 20,
-                questions: 24,
-                timePerQuestion: 30
             }
+            // 'who-would-rather' removed - deprecated functionality
         };
         
         return configs[gameId] || {
@@ -529,23 +524,10 @@
                     momOption: "Mom will lay down the law",
                     dadOption: "Dad will be the enforcer"
                 }
-            ],
-            'who-would-rather': [
-                {
-                    id: 1,
-                    text: "Who would rather eat baby food for a week?",
-                    category: "food",
-                    difficulty: "easy"
-                },
-                {
-                    id: 2,
-                    text: "Who would rather change 100 diapers in one day?",
-                    category: "chores",
-                    difficulty: "hard"
-                }
             ]
+            // 'who-would-rather' removed - deprecated functionality
         };
-        
+
         return questions[gameId] || [];
     }
     

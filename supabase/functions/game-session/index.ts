@@ -1,26 +1,48 @@
 /**
  * Mom vs Dad Game - Game Session Function (Unified Schema)
- * Updated to use game_* tables from 20260103_mom_vs_dad_game_schema.sql
- * 
  * Purpose: Create/manage game sessions, generate session codes, handle admin login
- * Trigger: POST /game-session
- * 
- * Schema Mapping:
- * - Uses baby_shower.game_sessions table
- * - session_code: 6-char alphanumeric code (excludes confusing chars)
- * - admin_code: 4-digit PIN for parent access
  */
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-import { 
-  validateEnvironmentVariables, 
-  createErrorResponse, 
-  createSuccessResponse,
-  validateInput,
-  CORS_HEADERS,
-  SECURITY_HEADERS
-} from '../_shared/security.ts'
+
+const CORS_HEADERS = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization, apikey',
+  'Access-Control-Max-Age': '86400'
+}
+
+const SECURITY_HEADERS = {
+  'X-Content-Type-Options': 'nosniff',
+  'X-Frame-Options': 'DENY',
+  'X-XSS-Protection': '1; mode=block',
+  'Referrer-Policy': 'strict-origin-when-cross-origin',
+  'Content-Security-Policy': "default-src 'self'"
+}
+
+function createErrorResponse(message: string, status: number = 500): Response {
+  const headers = new Headers({ ...CORS_HEADERS, ...SECURITY_HEADERS, 'Content-Type': 'application/json' })
+  return new Response(JSON.stringify({ success: false, error: message, timestamp: new Date().toISOString() }), { status, headers })
+}
+
+function createSuccessResponse(data: unknown, status: number = 200): Response {
+  const headers = new Headers({ ...CORS_HEADERS, ...SECURITY_HEADERS, 'Content-Type': 'application/json' })
+  return new Response(JSON.stringify({ success: true, data, timestamp: new Date().toISOString() }), { status, headers })
+}
+
+function generateSessionCode(): string {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
+  let code = ''
+  for (let i = 0; i < 6; i++) {
+    code += chars.charAt(Math.floor(Math.random() * chars.length))
+  }
+  return code
+}
+
+function generateAdminPIN(): string {
+  return Math.floor(1000 + Math.random() * 9000).toString()
+}
 
 interface CreateSessionRequest {
   action: 'create'
@@ -51,62 +73,25 @@ interface AdminLoginRequest {
 
 type GameSessionRequest = CreateSessionRequest | JoinSessionRequest | UpdateSessionRequest | AdminLoginRequest
 
-/**
- * Generate a 6-character alphanumeric session code
- * Excludes confusing characters: I, 1, O, 0
- */
-function generateSessionCode(): string {
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
-  let code = ''
-  for (let i = 0; i < 6; i++) {
-    code += chars.charAt(Math.floor(Math.random() * chars.length))
-  }
-  return code
-}
-
-/**
- * Generate a 4-digit PIN
- */
-function generateAdminPIN(): string {
-  return Math.floor(1000 + Math.random() * 9000).toString()
-}
-
 serve(async (req: Request) => {
-  const headers = new Headers({ 
-    ...CORS_HEADERS, 
-    ...SECURITY_HEADERS, 
-    'Content-Type': 'application/json' 
-  })
+  const headers = new Headers({ ...CORS_HEADERS, ...SECURITY_HEADERS, 'Content-Type': 'application/json' })
 
   if (req.method === 'OPTIONS') {
     return new Response(null, { status: 204, headers })
   }
 
   try {
-    // Validate environment variables
-    const envValidation = validateEnvironmentVariables([
-      'SUPABASE_URL',
-      'SUPABASE_SERVICE_ROLE_KEY'
-    ])
-
-    if (!envValidation.isValid) {
-      console.error('Game Session - Environment validation failed:', envValidation.errors)
-      return createErrorResponse('Server configuration error', 500)
-    }
-
-    if (envValidation.warnings.length > 0) {
-      console.warn('Game Session - Environment warnings:', envValidation.warnings)
-    }
-
-    // Initialize Supabase client
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+
+    if (!supabaseUrl || !supabaseServiceKey) {
+      return createErrorResponse('Server configuration error', 500)
+    }
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey, {
       auth: { autoRefreshToken: false, persistSession: false },
     })
 
-    // GET: Retrieve session by code
     if (req.method === 'GET') {
       const url = new URL(req.url)
       const sessionCode = url.searchParams.get('code')
@@ -115,36 +100,15 @@ serve(async (req: Request) => {
         return createErrorResponse('Session code is required', 400)
       }
 
-      console.log(`[game-session] Retrieving session: ${sessionCode}`)
-
-      let session;
-      try {
-        const result = await supabase
-          .from('baby_shower.game_sessions')
-          .select('id, session_code, mom_name, dad_name, status, current_round, total_rounds, created_at')
-          .eq('session_code', sessionCode.toUpperCase())
-          .single()
-        
-        if (result.error) {
-          if (result.data && Array.isArray(result.data)) {
-            session = result.data[0]
-          } else {
-            throw new Error(result.error.message)
-          }
-        } else {
-          session = result.data
-        }
-      } catch (err) {
-        console.error('[game-session] Database error retrieving session:', err)
-        return createErrorResponse('Database operation failed', 500)
-      }
-
-      if (!session) {
-        console.error('[game-session] Session not found:', sessionCode)
+      const { data: session, error } = await supabase
+        .from('baby_shower.game_sessions')
+        .select('id, session_code, mom_name, dad_name, status, current_round, total_rounds, created_at')
+        .eq('session_code', sessionCode.toUpperCase())
+        .single()
+      
+      if (error || !session) {
         return createErrorResponse('Session not found', 404)
       }
-
-      console.log(`[game-session] Successfully retrieved session: ${session.session_code}`)
 
       return createSuccessResponse({
         session_id: session.id,
@@ -158,7 +122,6 @@ serve(async (req: Request) => {
       }, 200)
     }
 
-    // POST: Create session, join session, or update session
     if (req.method !== 'POST') {
       return createErrorResponse('Method not allowed', 405)
     }
@@ -174,9 +137,6 @@ serve(async (req: Request) => {
       return createErrorResponse('Action is required', 400)
     }
 
-    console.log(`[game-session] Action: ${body.action}`)
-
-    // Route to appropriate handler
     switch (body.action) {
       case 'create':
         return await handleCreateSession(supabase, body as CreateSessionRequest)
@@ -187,68 +147,28 @@ serve(async (req: Request) => {
       case 'admin_login':
         return await handleAdminLogin(supabase, body as AdminLoginRequest)
       default:
-        return createErrorResponse('Invalid action. Must be create, join, admin_login, or update', 400)
+        return createErrorResponse('Invalid action', 400)
     }
 
   } catch (error) {
-    console.error('[game-session] Edge Function error:', error)
+    console.error('[game-session] Error:', error)
     return createErrorResponse('Internal server error', 500)
   }
 })
 
-/**
- * Handle creating a new game session
- */
-async function handleCreateSession(
-  supabase: any,
-  body: CreateSessionRequest
-): Promise<Response> {
-  // Input validation
-  const validation = validateInput(body, {
-    action: { type: 'string', required: true },
-    mom_name: { type: 'string', required: true, minLength: 1, maxLength: 100 },
-    dad_name: { type: 'string', required: true, minLength: 1, maxLength: 100 },
-    total_rounds: { type: 'number', required: false, min: 1, max: 20 }
-  })
+async function handleCreateSession(supabase: any, body: CreateSessionRequest): Promise<Response> {
+  const { mom_name, dad_name, total_rounds } = body
 
-  if (!validation.isValid) {
-    console.error('Game Session - Validation failed:', validation.errors)
-    return createErrorResponse('Validation failed', 400, validation.errors)
-  }
-
-  const { mom_name, dad_name, total_rounds } = validation.sanitized as CreateSessionRequest
-
-  // Generate unique session code and admin PIN
   let sessionCode = generateSessionCode()
   const adminCode = generateAdminPIN()
 
-  console.log(`[game-session] Creating session with code: ${sessionCode}`)
-
-  // Ensure unique session code (collision prevention)
   let attempts = 0
   while (attempts < 10) {
-    let existing = null
-    try {
-      const result = await supabase
-        .from('baby_shower.game_sessions')
-        .select('session_code')
-        .eq('session_code', sessionCode)
-        .single()
-      
-      if (result.error) {
-        if (result.data && Array.isArray(result.data)) {
-          existing = result.data[0]
-        } else {
-          // No existing session found with this code
-          existing = null
-        }
-      } else {
-        existing = result.data
-      }
-    } catch (err) {
-      console.error('[game-session] Database error checking session code:', err)
-      // Continue with the assumption that code doesn't exist
-    }
+    const { data: existing } = await supabase
+      .from('baby_shower.game_sessions')
+      .select('session_code')
+      .eq('session_code', sessionCode)
+      .single()
     
     if (existing) {
       sessionCode = generateSessionCode()
@@ -259,41 +179,26 @@ async function handleCreateSession(
   }
 
   if (attempts >= 10) {
-    throw new Error('Failed to generate unique session code after 10 attempts')
+    return createErrorResponse('Failed to generate unique session code', 500)
   }
 
-  // Insert the new session
-  let session;
-  try {
-    const result = await supabase
-      .from('baby_shower.game_sessions')
-      .insert({
-        session_code: sessionCode,
-        admin_code: adminCode,
-        mom_name: mom_name,
-        dad_name: dad_name,
-        status: 'setup',
-        current_round: 0,
-        total_rounds: total_rounds || 5
-      })
-      .select('id, session_code, admin_code, mom_name, dad_name, status, current_round, total_rounds, created_at')
-      .single()
-    
-    if (result.error) {
-      if (result.data && Array.isArray(result.data)) {
-        session = result.data[0]
-      } else {
-        throw new Error(result.error.message)
-      }
-    } else {
-      session = result.data
-    }
-  } catch (err) {
-    console.error('[game-session] Database error inserting session:', err)
+  const { data: session, error: insertError } = await supabase
+    .from('baby_shower.game_sessions')
+    .insert({
+      session_code: sessionCode,
+      admin_code: adminCode,
+      mom_name: mom_name,
+      dad_name: dad_name,
+      status: 'setup',
+      current_round: 0,
+      total_rounds: total_rounds || 5
+    })
+    .select('id, session_code, admin_code, mom_name, dad_name, status, current_round, total_rounds, created_at')
+    .single()
+  
+  if (insertError || !session) {
     return createErrorResponse('Database operation failed', 500)
   }
-
-  console.log(`[game-session] Session created successfully: ${session.id}`)
 
   return createSuccessResponse({
     session_id: session.id,
@@ -308,65 +213,24 @@ async function handleCreateSession(
   }, 201)
 }
 
-/**
- * Handle joining a session as a guest
- */
-async function handleJoinSession(
-  supabase: any,
-  body: JoinSessionRequest
-): Promise<Response> {
-  // Input validation
-  const validation = validateInput(body, {
-    action: { type: 'string', required: true },
-    session_code: { type: 'string', required: true, minLength: 6, maxLength: 6 },
-    guest_name: { type: 'string', required: true, minLength: 1, maxLength: 100 }
-  })
-
-  if (!validation.isValid) {
-    console.error('Game Session - Validation failed:', validation.errors)
-    return createErrorResponse('Validation failed', 400, validation.errors)
-  }
-
-  const { session_code, guest_name } = validation.sanitized as JoinSessionRequest
+async function handleJoinSession(supabase: any, body: JoinSessionRequest): Promise<Response> {
+  const { session_code, guest_name } = body
   const normalizedCode = session_code.toUpperCase()
 
-  console.log(`[game-session] Guest "${guest_name}" joining session: ${normalizedCode}`)
-
-  // Check if session exists and is active
-  let session;
-  try {
-    const result = await supabase
-      .from('baby_shower.game_sessions')
-      .select('session_code, mom_name, dad_name, status, current_round, total_rounds')
-      .eq('session_code', normalizedCode)
-      .single()
-    
-    if (result.error) {
-      if (result.data && Array.isArray(result.data)) {
-        session = result.data[0]
-      } else {
-        throw new Error(result.error.message)
-      }
-    } else {
-      session = result.data
-    }
-  } catch (err) {
-    console.error('[game-session] Database error checking session:', err)
-    return createErrorResponse('Database operation failed', 500)
-  }
-
-  if (!session) {
-    console.error('[game-session] Session not found:', normalizedCode)
+  const { data: session, error } = await supabase
+    .from('baby_shower.game_sessions')
+    .select('session_code, mom_name, dad_name, status, current_round, total_rounds')
+    .eq('session_code', normalizedCode)
+    .single()
+  
+  if (error || !session) {
     return createErrorResponse('Session not found', 404)
   }
 
-  // Check if session is in a valid state for joining
   const validStatuses = ['setup', 'voting']
   if (!validStatuses.includes(session.status)) {
     return createErrorResponse(`Cannot join session in ${session.status} status`, 400)
   }
-
-  console.log(`[game-session] Successfully joined session: ${normalizedCode}`)
 
   return createSuccessResponse({
     message: `Welcome to the game, ${guest_name}!`,
@@ -379,176 +243,66 @@ async function handleJoinSession(
   }, 200)
 }
 
-/**
- * Handle updating session status (admin only)
- */
-async function handleUpdateSession(
-  supabase: any,
-  body: UpdateSessionRequest
-): Promise<Response> {
-  // Input validation
-  const validation = validateInput(body, {
-    action: { type: 'string', required: true },
-    session_code: { type: 'string', required: true, minLength: 6, maxLength: 6 },
-    admin_code: { type: 'string', required: true, pattern: /^\d{4}$/ },
-    status: { type: 'string', required: false, enum: ['setup', 'voting', 'revealed', 'complete'] },
-    current_round: { type: 'number', required: false, min: 0 }
-  })
-
-  if (!validation.isValid) {
-    console.error('Game Session - Validation failed:', validation.errors)
-    return createErrorResponse('Validation failed', 400, validation.errors)
-  }
-
-  const { session_code, admin_code, status, current_round } = validation.sanitized as UpdateSessionRequest
+async function handleUpdateSession(supabase: any, body: UpdateSessionRequest): Promise<Response> {
+  const { session_code, admin_code, status, current_round } = body
   const normalizedCode = session_code.toUpperCase()
 
-  console.log(`[game-session] Updating session: ${normalizedCode}`)
-
-  // Get session
-  let session;
-  try {
-    const result = await supabase
-      .from('baby_shower.game_sessions')
-      .select('session_code, admin_code, status, current_round, total_rounds')
-      .eq('session_code', normalizedCode)
-      .single()
-    
-    if (result.error) {
-      if (result.data && Array.isArray(result.data)) {
-        session = result.data[0]
-      } else {
-        throw new Error(result.error.message)
-      }
-    } else {
-      session = result.data
-    }
-  } catch (err) {
-    console.error('[game-session] Database error getting session:', err)
-    return createErrorResponse('Database operation failed', 500)
-  }
-
-  if (!session) {
-    console.error('[game-session] Session not found:', normalizedCode)
+  const { data: session, error } = await supabase
+    .from('baby_shower.game_sessions')
+    .select('session_code, admin_code, status, current_round, total_rounds')
+    .eq('session_code', normalizedCode)
+    .single()
+  
+  if (error || !session) {
     return createErrorResponse('Session not found', 404)
   }
 
-  // Verify admin code
   if (session.admin_code !== admin_code) {
-    console.warn(`[game-session] Invalid admin code for session: ${normalizedCode}`)
     return createErrorResponse('Invalid admin code', 401)
   }
 
-  // Build update object
   const updates: Record<string, unknown> = {}
   if (status) updates.status = status
   if (current_round !== undefined) updates.current_round = current_round
 
-  // Don't update if nothing changed
   if (Object.keys(updates).length === 0) {
-    return createSuccessResponse({
-      message: 'No changes to apply',
-      session_code: session.session_code,
-      status: session.status,
-      current_round: session.current_round,
-      total_rounds: session.total_rounds
-    }, 200)
+    return createSuccessResponse({ message: 'No changes to apply', ...session }, 200)
   }
 
-  // Perform update
-  let updatedSession;
-  try {
-    const result = await supabase
-      .from('baby_shower.game_sessions')
-      .update(updates)
-      .eq('session_code', normalizedCode)
-      .select('session_code, status, current_round, total_rounds')
-      .single()
-    
-    if (result.error) {
-      if (result.data && Array.isArray(result.data)) {
-        updatedSession = result.data[0]
-      } else {
-        throw new Error(result.error.message)
-      }
-    } else {
-      updatedSession = result.data
-    }
-  } catch (err) {
-    console.error('[game-session] Database error updating session:', err)
+  const { data: updatedSession, error: updateError } = await supabase
+    .from('baby_shower.game_sessions')
+    .update(updates)
+    .eq('session_code', normalizedCode)
+    .select('session_code, status, current_round, total_rounds')
+    .single()
+  
+  if (updateError || !updatedSession) {
     return createErrorResponse('Database operation failed', 500)
   }
-
-  console.log(`[game-session] Session updated successfully: ${normalizedCode}`)
 
   return createSuccessResponse({
     message: 'Session updated successfully',
-    session_code: updatedSession.session_code,
-    status: updatedSession.status,
-    current_round: updatedSession.current_round,
-    total_rounds: updatedSession.total_rounds
+    ...updatedSession
   }, 200)
 }
 
-/**
- * Handle admin login to manage game session
- */
-async function handleAdminLogin(
-  supabase: any,
-  body: AdminLoginRequest
-): Promise<Response> {
-  // Input validation
-  const validation = validateInput(body, {
-    action: { type: 'string', required: true },
-    session_code: { type: 'string', required: true, minLength: 6, maxLength: 6 },
-    admin_code: { type: 'string', required: true, pattern: /^\d{4}$/ }
-  })
-
-  if (!validation.isValid) {
-    console.error('Game Session - Validation failed:', validation.errors)
-    return createErrorResponse('Validation failed', 400, validation.errors)
-  }
-
-  const { session_code, admin_code } = validation.sanitized as AdminLoginRequest
+async function handleAdminLogin(supabase: any, body: AdminLoginRequest): Promise<Response> {
+  const { session_code, admin_code } = body
   const normalizedCode = session_code.toUpperCase()
 
-  console.log(`[game-session] Admin login attempt for session: ${normalizedCode}`)
-
-  // Get session with admin code verification
-  let session;
-  try {
-    const result = await supabase
-      .from('baby_shower.game_sessions')
-      .select('id, session_code, admin_code, mom_name, dad_name, status, current_round, total_rounds')
-      .eq('session_code', normalizedCode)
-      .single()
-    
-    if (result.error) {
-      if (result.data && Array.isArray(result.data)) {
-        session = result.data[0]
-      } else {
-        throw new Error(result.error.message)
-      }
-    } else {
-      session = result.data
-    }
-  } catch (err) {
-    console.error('[game-session] Database error getting session:', err)
-    return createErrorResponse('Database operation failed', 500)
-  }
-
-  if (!session) {
-    console.error('[game-session] Session not found:', normalizedCode)
+  const { data: session, error } = await supabase
+    .from('baby_shower.game_sessions')
+    .select('id, session_code, admin_code, mom_name, dad_name, status, current_round, total_rounds')
+    .eq('session_code', normalizedCode)
+    .single()
+  
+  if (error || !session) {
     return createErrorResponse('Session not found', 404)
   }
 
-  // Verify admin code
   if (session.admin_code !== admin_code) {
-    console.warn(`[game-session] Invalid admin code for session: ${normalizedCode}`)
     return createErrorResponse('Invalid admin code', 401)
   }
-
-  console.log(`[game-session] Admin login successful for session: ${normalizedCode}`)
 
   return createSuccessResponse({
     message: 'Admin login successful',

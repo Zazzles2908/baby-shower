@@ -210,10 +210,10 @@
         }
     }
 
-      /**
-       * Join lobby - using lobby-join Edge Function
-       * Works with baby_shower.mom_dad_lobbies schema
-       */
+       /**
+        * Join lobby - using lobby-join Edge Function
+        * Works with baby_shower.game_sessions schema
+        */
       async function joinLobby(lobbyKey, playerName) {
           setLoading(true);
           const startTime = Date.now();
@@ -625,7 +625,7 @@
 
     /**
       * Demo lobby configuration - 4 always-available demo lobbies
-      * Uses LOBBY-A/B/C/D format with mom_dad_lobbies table
+      * Uses LOBBY-A/B/C/D format with game_sessions table
       */
     const DEMO_LOBBIES = {
         'LOBBY-A': { name: 'Sunny Meadows', theme: 'farm', icon: '☀️' },
@@ -664,10 +664,10 @@
         `).join('');
     }
 
-    /**
-      * Update lobby status from API (FIXES ISSUE #6)
-      * Updated to use LOBBY-A/B/C/D format directly with mom_dad_lobbies table
-      */
+      /**
+       * Update lobby status from API (FIXES ISSUE #6)
+       * Updated to use LOBBY-A/B/C/D format directly with game_sessions table
+       */
     async function updateLobbyStatus() {
         console.log('[MomVsDadSimplified] Updating lobby status...');
 

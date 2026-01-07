@@ -138,13 +138,13 @@
   "suites": [],
   "errors": [
     {
-      "message": "Error: Timed out waiting 60000ms from config.webServer.",
-      "stack": "Error: Timed out waiting 60000ms from config.webServer."
+      "message": "Error: No tests found",
+      "stack": "Error: No tests found"
     }
   ],
   "stats": {
-    "startTime": "2026-01-07T01:10:56.479Z",
-    "duration": 60728.88,
+    "startTime": "2026-01-07T02:05:42.948Z",
+    "duration": 637.758,
     "expected": 0,
     "skipped": 0,
     "unexpected": 0,

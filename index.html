@@ -122,6 +122,14 @@
                             <span class="card-title">Mom vs Dad</span>
                             <span class="card-subtitle">The Truth Revealed</span>
                         </button>
+                        <button class="activity-card" data-section="who-would-rather" aria-label="Who Would Rather - Fun party game">
+                            <div class="card-background-image"></div>
+                            <div class="card-icon anime-character-wrapper">
+                                <img src="https://bkszmvfsfgvdwzacgmfz.supabase.co/storage/v1/object/public/baby-shower-pictures/Pictures/New Images/Duo/chibi_duo_thinking.png" alt="Who Would Rather" class="anime-character" style="max-width: 80px; max-height: 100px;">
+                            </div>
+                            <span class="card-title">Who Would Rather</span>
+                            <span class="card-subtitle">Fun party game!</span>
+                        </button>
                     </div>
                 </div>
             </div>
@@ -378,25 +386,13 @@
         <section id="who-would-rather-section" class="hidden">
             <div class="container">
                 <button class="back-btn">← Back to Activities</button>
-                <div class="section-decoration">
-                    <div class="corner-decoration top-left">
-                        <img src="https://bkszmvfsfgvdwzacgmfz.supabase.co/storage/v1/object/public/baby-shower-pictures/Pictures/Michelle_Jazeel/app_hero_chibi.png" alt="Couple" loading="lazy" decoding="async" class="corner-decoration-img">
-                    </div>
-                    <div class="corner-decoration top-right">
-                        <img src="https://bkszmvfsfgvdwzacgmfz.supabase.co/storage/v1/object/public/baby-shower-pictures/Pictures/Michelle_Baby/chibi_michelle_garden.png" alt="Baby Michelle" loading="lazy" decoding="async" class="corner-decoration-img">
-                    </div>
-                    <div class="corner-decoration bottom-left">
-                        <img src="https://bkszmvfsfgvdwzacgmfz.supabase.co/storage/v1/object/public/baby-shower-pictures/Pictures/Jazeel_Baby/chibi_jazeel_dad_couch_edit.png" alt="Baby Jazeel" loading="lazy" decoding="async" class="corner-decoration-img">
-                    </div>
-                    <div class="corner-decoration bottom-right">
-                        <img src="https://bkszmvfsfgvdwzacgmfz.supabase.co/storage/v1/object/public/baby-shower-pictures/Pictures/Michelle_Jazeel/app_hero_illustration.png" alt="Couple" loading="lazy" decoding="async" class="corner-decoration-img">
-                    </div>
-                </div>
-                <h1>👟 The Shoe Game</h1>
-                <p class="subtitle">Predict: Who would do this? Tap Michelle or Jazeel!</p>
-
+                <h1>🤔 Who Would Rather</h1>
+                <p class="subtitle">Answer fun questions about the parents-to-be!</p>
+                
                 <!-- Game container -->
-                <div id="who-would-rather-container"></div>
+                <div id="who-would-rather-game">
+                    <!-- Game content renders here -->
+                </div>
             </div>
         </section>
 
@@ -444,6 +440,21 @@
         
         console.log('[ENV] Waiting for inject-env.js to populate credentials...');
     </script>
+
+    <script>
+        // Environment variables injected at build time by Vercel
+        // Only public (anon) key is exposed to client - service role stays server-side!
+        window.ENV = window.ENV || {};
+        window.ENV.NEXT_PUBLIC_SUPABASE_URL = 'https://bkszmvfsfgvdwzacgmfz.supabase.co';
+        window.ENV.NEXT_PUBLIC_SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJrc3ptdmZzZmd2ZHd6YWNnbWZ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQzODI1NjMsImV4cCI6MjA3OTk1ODU2M30.BswusP1pfDUStzAU8k-VKPailISimApapNeJGlid8sI';
+        
+        // CRITICAL: Service role key is NEVER exposed to client-side!
+        // Only accessed server-side in Edge Functions via Deno.env.get()
+        
+        console.log('[ENV] Supabase URL configured:', window.ENV.NEXT_PUBLIC_SUPABASE_URL ? '***configured***' : 'missing');
+        console.log('[ENV] Supabase Anon Key configured:', window.ENV.NEXT_PUBLIC_SUPABASE_ANON_KEY ? '***configured***' : 'missing');
+        console.log('[ENV] Security: Service role key NOT exposed to client (as it should be)');
+    </script>
 <script src="scripts/config.js"></script>
     <script src="scripts/security.js"></script>
 
@@ -468,7 +479,7 @@
     <!-- Enhanced Game Scripts -->
     <script src="scripts/realtime-manager-enhanced.js"></script>
     <script src="scripts/mom-vs-dad-simplified.js?v=20260106d"></script>
-    <script src="scripts/who-would-rather.js"></script>
+    <!-- Note: who-would-rather.js removed - deprecated functionality -->
     <script src="scripts/game-init-enhanced.js"></script>
 
     <!-- Activity Ticker -->

@@ -7,34 +7,17 @@
  * SECURITY: Only injects public (anon) key to client-side
  * Service role key is NEVER exposed to client - used only in Edge Functions
  * 
- * Optimized for Bun with ES modules support while maintaining Node.js compatibility
+ * Uses Node.js fs for maximum compatibility across all platforms
  */
 
-// Universal module detection for Bun vs Node.js
-const isBun = typeof Bun !== 'undefined';
-const isNode = typeof process !== 'undefined' && process.versions?.node;
+// Use Node.js fs module for reliable cross-platform compatibility
+import fs from 'fs';
+import { fileURLToPath } from 'url';
+import path from 'path';
 
-// Use Bun's native file operations if available (faster), fallback to Node.js fs
-let fs;
-if (isBun) {
-    // Bun's native file system API - significantly faster than Node.js
-    fs = {
-        readFileSync: (path, encoding) => Bun.file(path).text(),
-        writeFileSync: (path, content) => Bun.write(path, content),
-        existsSync: (path) => {
-            try {
-                return Bun.file(path).exists();
-            } catch {
-                return false;
-            }
-        }
-    };
-} else {
-    // Node.js fallback
-    fs = require('fs');
-}
-
-const path = require('path');
+// Get __dirname equivalent in ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Read index.html
 const indexPath = path.join(__dirname, 'index.html');

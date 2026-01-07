@@ -1,13 +1,20 @@
-#!/usr/bin/env bun
+#!/usr/bin/env node
 /**
  * Baby Shower App - Development Server
- * Optimized for Bun runtime with hot module replacement
+ * Node.js version for Windows compatibility
  * 
- * This script replaces http-server with Bun's built-in server
- * for faster startup and native HMR support
+ * This script provides a reliable development server that works
+ * consistently across all platforms including Windows.
  */
 
-import { file, serve } from "bun";
+import http from 'http';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+// Get __dirname equivalent in ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Configuration
 const PORT = 3000;
@@ -16,22 +23,22 @@ const CACHE_CONTROL = "no-cache, no-store, must-revalidate";
 
 // MIME types for static assets
 const MIME_TYPES = {
-    ".html": "text/html; charset=utf-8",
-    ".js": "application/javascript; charset=utf-8",
-    ".mjs": "application/javascript; charset=utf-8",
-    ".ts": "application/typescript; charset=utf-8",
-    ".css": "text/css; charset=utf-8",
-    ".json": "application/json; charset=utf-8",
-    ".svg": "image/svg+xml",
-    ".png": "image/png",
-    ".jpg": "image/jpeg",
-    ".jpeg": "image/jpeg",
-    ".gif": "image/gif",
-    ".ico": "image/x-icon",
-    ".woff": "font/woff",
-    ".woff2": "font/woff2",
-    ".ttf": "font/ttf",
-    ".eot": "application/vnd.ms-fontobject"
+    '.html': 'text/html; charset=utf-8',
+    '.js': 'application/javascript; charset=utf-8',
+    '.mjs': 'application/javascript; charset=utf-8',
+    '.ts': 'application/typescript; charset=utf-8',
+    '.css': 'text/css; charset=utf-8',
+    '.json': 'application/json; charset=utf-8',
+    '.svg': 'image/svg+xml',
+    '.png': 'image/png',
+    '.jpg': 'image/jpeg',
+    '.jpeg': 'image/jpeg',
+    '.gif': 'image/gif',
+    '.ico': 'image/x-icon',
+    '.woff': 'font/woff',
+    '.woff2': 'font/woff2',
+    '.ttf': 'font/ttf',
+    '.eot': 'application/vnd.ms-fontobject'
 };
 
 // Directories to serve
@@ -43,112 +50,115 @@ const STATIC_DIRS = [
     "fonts"
 ];
 
-console.log("🚀 Baby Shower App - Bun Development Server");
-console.log("==========================================");
+console.log("🚀 Baby Shower App - Node.js Development Server");
+console.log("=============================================");
 console.log(`📍 Server running at http://localhost:${PORT}`);
 console.log(`📁 Serving files from: ${PUBLIC_DIR}`);
 console.log("");
-console.log("⚡ Bun Performance Benefits:");
-console.log("   • Hot Module Replacement enabled");
-console.log("   • Native ES module support");
-console.log("   • 3-10x faster than http-server");
-console.log("   • Built-in bundler available");
+console.log("✅ Windows-Compatible Features:");
+console.log("   • Stable file system operations");
+console.log("   • Cross-platform compatibility");
+console.log("   • No native module dependencies");
 console.log("");
 console.log("🔧 Available Commands:");
 console.log("   Ctrl+C - Stop server");
-console.log("   r + Enter - Restart server");
-console.log("   h + Enter - Show this help");
+console.log("");
+console.log("✨ Server is ready!");
 console.log("");
 
-// Serve static files
-const server = serve({
-    port: PORT,
+// Create HTTP server
+const server = http.createServer((req, res) => {
+    const url = new URL(req.url, `http://localhost:${PORT}`);
+    let pathname = url.pathname;
     
-    fetch(req) {
-        const url = new URL(req.url);
-        let pathname = url.pathname;
-        
-        // Default to index.html for root
-        if (pathname === "/") {
-            pathname = `/${INDEX_FILE}`;
-        }
-        
-        // Security: prevent directory traversal
-        if (pathname.includes("..")) {
-            return new Response("Forbidden", { status: 403 });
-        }
-        
-        // Check each static directory
-        for (const staticDir of STATIC_DIRS) {
-            const filePath = `${staticDir}${pathname}`;
-            if (exists(filePath)) {
-                return serveFile(filePath);
-            }
-        }
-        
-        // Check public directory
-        const publicPath = `.${pathname}`;
-        if (exists(publicPath)) {
-            return serveFile(publicPath);
-        }
-        
-        // 404 - Return index.html for SPA routing
-        if (exists(INDEX_FILE)) {
-            return serveFile(INDEX_FILE);
-        }
-        
-        return new Response("Not Found", { status: 404 });
-    },
-    
-    error(error) {
-        console.error("❌ Server Error:", error.message);
-        return new Response("Internal Server Error", { status: 500 });
+    // Default to index.html for root
+    if (pathname === "/") {
+        pathname = `/${INDEX_FILE}`;
     }
+    
+    // Security: prevent directory traversal
+    if (pathname.includes("..")) {
+        res.writeHead(403, { 'Content-Type': 'text/plain' });
+        res.end("Forbidden");
+        return;
+    }
+    
+    // Check each static directory
+    for (const staticDir of STATIC_DIRS) {
+        const filePath = path.join(staticDir, pathname);
+        if (existsSync(filePath)) {
+            serveFile(filePath, res);
+            return;
+        }
+    }
+    
+    // Check public directory
+    const publicPath = path.join(".", pathname);
+    if (existsSync(publicPath)) {
+        serveFile(publicPath, res);
+        return;
+    }
+    
+    // 404 - Return index.html for SPA routing
+    if (existsSync(INDEX_FILE)) {
+        serveFile(INDEX_FILE, res);
+        return;
+    }
+    
+    res.writeHead(404, { 'Content-Type': 'text/plain' });
+    res.end("Not Found");
 });
 
-function exists(path) {
+// Check if file exists using fs.existsSync
+function existsSync(filePath) {
     try {
-        return Bun.file(path).exists();
+        return fs.existsSync(filePath);
     } catch {
         return false;
     }
 }
 
-function serveFile(filePath) {
-    const ext = "." + filePath.split(".").pop();
-    const contentType = MIME_TYPES[ext] || "application/octet-stream";
+// Serve a file with proper headers
+function serveFile(filePath, res) {
+    const ext = path.extname(filePath).toLowerCase();
+    const contentType = MIME_TYPES[ext] || 'application/octet-stream';
     
     try {
-        const file = Bun.file(filePath);
-        return new Response(file, {
-            headers: {
-                "Content-Type": contentType,
-                "Cache-Control": CACHE-Control
-            }
+        const content = fs.readFileSync(filePath);
+        res.writeHead(200, {
+            'Content-Type': contentType,
+            'Cache-Control': CACHE_CONTROL
         });
+        res.end(content);
     } catch (error) {
         console.error(`❌ Error serving ${filePath}:`, error.message);
-        return new Response("Error reading file", { status: 500 });
+        res.writeHead(500, { 'Content-Type': 'text/plain' });
+        res.end("Error reading file");
     }
 }
 
 // Handle graceful shutdown
-process.on("SIGINT", () => {
-    console.log("\n\n🛑 Stopping Bun development server...");
-    server.stop();
-    console.log("✅ Server stopped. Goodbye!");
-    process.exit(0);
+process.on('SIGINT', () => {
+    console.log("\n\n🛑 Stopping Node.js development server...");
+    server.close(() => {
+        console.log("✅ Server stopped. Goodbye!");
+        process.exit(0);
+    });
 });
 
-process.on("SIGTERM", () => {
+process.on('SIGTERM', () => {
     console.log("\n\n🛑 Received SIGTERM, stopping server...");
-    server.stop();
-    process.exit(0);
+    server.close(() => {
+        console.log("✅ Server stopped. Goodbye!");
+        process.exit(0);
+    });
 });
 
-// Keep the script running
-console.log("✨ Bun development server is ready!");
-console.log("Press Ctrl+C to stop\n");
+// Start server
+server.listen(PORT, () => {
+    console.log(`🌐 Access the app at: http://localhost:${PORT}`);
+    console.log("");
+});
 
 // Export for testing
 export { server };
