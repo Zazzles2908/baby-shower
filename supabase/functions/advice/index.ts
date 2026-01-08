@@ -140,6 +140,7 @@ serve(async (req: Request) => {
         p_name: name,
         p_advice: sanitizedAdvice,
         p_category: finalCategory,
+        p_submitted_by: name,
       })
 
     if (error) {
@@ -230,6 +231,7 @@ async function handleAIRoast(supabase: any, name: string, topic: string, headers
         p_name: name,
         p_advice: generatedAdvice,
         p_category: 'ai_roast',
+        p_submitted_by: name,
       })
 
     if (error) {

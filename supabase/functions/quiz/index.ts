@@ -117,14 +117,17 @@ serve(async (req: Request) => {
     // Use existing RPC function to insert (bypasses RLS)
     const { data, error } = await supabase
       .rpc('insert_quiz_result', {
-        p_name: participantName,
-        p_p1: answersData.puzzle1 || null,
-        p_p2: answersData.puzzle2 || null,
-        p_p3: answersData.puzzle3 || null,
-        p_p4: answersData.puzzle4 || null,
-        p_p5: answersData.puzzle5 || null,
+        p_participant_name: participantName,
+        p_answers: JSON.stringify(answersData),
         p_score: score,
-        p_total: totalQuestions,
+        p_total_questions: totalQuestions,
+        p_percentage: percentage,
+        p_puzzle1: answersData.puzzle1 || null,
+        p_puzzle2: answersData.puzzle2 || null,
+        p_puzzle3: answersData.puzzle3 || null,
+        p_puzzle4: answersData.puzzle4 || null,
+        p_puzzle5: answersData.puzzle5 || null,
+        p_submitted_by: participantName,
       })
 
     if (error) {

@@ -223,6 +223,7 @@ serve(async (req: Request) => {
         hair_color: body.hairColor,
         eye_color: body.eyeColor,
         favourite_colour: body.favourite_colour,
+        submitted_by: sanitizedName,
       })
       .select()
       .single()
