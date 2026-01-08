@@ -18,7 +18,7 @@ interface PoolRequest {
   gender?: string
   hairColor?: string
   eyeColor?: string
-  personality?: string
+  favourite_colour?: string
 }
 
 // Baby average statistics for roasts
@@ -179,7 +179,7 @@ serve(async (req: Request) => {
       gender: { type: 'string', required: false, enum: ['boy', 'girl', 'surprise'] },
       hairColor: { type: 'string', required: false, maxLength: 50 },
       eyeColor: { type: 'string', required: false, maxLength: 50 },
-      personality: { type: 'string', required: false, maxLength: 200 }
+      favourite_colour: { type: 'string', required: false, maxLength: 50 }
     })
 
     if (!validation.isValid) {
@@ -211,18 +211,23 @@ serve(async (req: Request) => {
     const currentCount = totalCount || 0
     const isMilestone = currentCount + 1 === 50
 
-    console.log(`[pool] Writing prediction to baby_shower.pool_predictions via RPC, current count: ${currentCount}`)
+    console.log(`[pool] Writing prediction to baby_shower.pool_predictions, current count: ${currentCount}`)
 
-    // Use existing RPC function to insert (bypasses RLS)
+    // Direct insert (bypasses RLS using service role)
     const { data, error } = await supabase
-      .rpc('insert_pool_prediction', {
-        p_name: sanitizedName,
-        p_prediction: sanitizedPrediction,
-        p_due_date: body.dueDate,
-        p_weight: body.weight,
-        p_length: body.length,
-        p_ai_roast: null, // Will be filled in later if AI generates a roast
+      .from('baby_shower.pool_predictions')
+      .insert({
+        predictor_name: sanitizedName,
+        birth_date: body.dueDate,
+        prediction: sanitizedPrediction,
+        weight_kg: body.weight,
+        length_cm: body.length,
+        hair_color: body.hairColor,
+        eye_color: body.eyeColor,
+        favourite_colour: body.favourite_colour,
       })
+      .select()
+      .single()
 
     if (error) {
       console.error('Supabase RPC error:', JSON.stringify(error, null, 2))
@@ -233,7 +238,7 @@ serve(async (req: Request) => {
       })
     }
 
-    console.log(`[pool] Successfully inserted prediction with id: ${data[0]?.id}`)
+    console.log(`[pool] Successfully inserted prediction with id: ${data?.id}`)
 
     // Generate AI roast (wrapped in try/catch - never block submission)
     let roast: string | null = null
@@ -255,7 +260,7 @@ serve(async (req: Request) => {
     // Return success response
     return createSuccessResponse({
       data: { 
-        id: data[0]?.id, 
+        id: data?.id, 
         predictor_name: sanitizedName, 
         birth_date: body.dueDate,
         weight_kg: body.weight,

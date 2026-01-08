@@ -988,17 +988,17 @@ form {
 }
 
 /* ========================================
-   PERSONALITY GRID
-   ======================================== */
+    COLOUR GRID (Baby's Favourite Colour)
+    ======================================== */
 
-.personality-grid {
+.colour-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
     gap: 16px;
     margin-top: 12px;
 }
 
-.personality-option {
+.colour-option {
     position: relative;
     display: flex;
     flex-direction: column;
@@ -1013,20 +1013,24 @@ form {
     text-align: center;
 }
 
-.personality-option:hover {
+.colour-option:hover {
     border-color: var(--color-primary);
     box-shadow: 0 6px 20px rgba(156, 175, 136, 0.25);
     transform: translateY(-4px);
-    background: linear-gradient(135deg, rgba(156, 175, 136, 0.1) 0%, rgba(156, 175, 136, 0.05) 100%);
 }
 
-.personality-option.selected {
+.colour-option.selected {
     border-color: var(--color-primary);
-    background: var(--color-primary);
+    background: linear-gradient(135deg, rgba(156, 175, 136, 0.15) 0%, rgba(156, 175, 136, 0.08) 100%);
     box-shadow: 0 0 0 4px rgba(156, 175, 136, 0.25);
 }
 
-.personality-option .check-mark {
+.colour-option.selected .colour-preview {
+    transform: scale(1.15);
+    box-shadow: 0 0 0 3px var(--color-primary);
+}
+
+.colour-option .check-mark {
     position: absolute;
     top: 8px;
     right: 8px;
@@ -1038,66 +1042,50 @@ form {
     transition: opacity 0.3s ease;
 }
 
-.personality-option.selected .check-mark {
+.colour-option.selected .check-mark {
     opacity: 1;
 }
 
-.personality-emoji {
+.colour-preview {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    border: 3px solid var(--color-white);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    transition: all 0.3s ease;
+}
+
+.colour-option:hover .colour-preview {
+    transform: scale(1.1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.colour-emoji {
     font-size: 1.5rem;
     line-height: 1;
 }
 
-.personality-icon {
-    width: 64px;
-    height: 64px;
-    object-fit: contain;
-    border-radius: 12px;
-    transition: transform 0.3s ease;
-}
-
-.personality-option:hover .personality-icon {
-    transform: scale(1.05);
-}
-
-.personality-label {
+.colour-label {
     font-size: 0.9rem;
     font-weight: 600;
     color: var(--color-text);
     margin-top: 4px;
 }
 
-.personality-option[data-personality] {
-    background-color: var(--personality-color, var(--color-primary));
-}
-
-.personality-option.selected {
-    background-color: var(--personality-color, var(--color-primary));
-    border-color: var(--personality-color, var(--color-primary));
-}
-
-/* Responsive personality grid */
+/* Responsive colour grid */
 @media (max-width: 640px) {
-    .personality-grid {
+    .colour-grid {
         grid-template-columns: repeat(2, 1fr);
-        gap: 10px;
+        gap: 12px;
     }
     
-    .color-picker {
-        gap: 8px;
+    .colour-option {
+        padding: 12px 8px;
     }
     
-    .color-option {
-        padding: 8px 12px;
-    }
-    
-    .color-circle {
-        width: 36px;
-        height: 36px;
-    }
-    
-    .personality-icon {
-        width: 56px;
-        height: 56px;
+    .colour-preview {
+        width: 48px;
+        height: 48px;
     }
 }
 

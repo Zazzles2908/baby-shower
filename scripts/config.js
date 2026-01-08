@@ -260,42 +260,43 @@
             'Emma', 'Olivia', 'Sophia', 'Charlotte', 'Amelia',
             'Ava', 'Mia', 'Isabella', 'Lily', 'Harper'
         ],
-        PERSONALITY_OPTIONS: [
+        PERSONALITY_OPTIONS: [],
+        FAVOURITE_COLOUR_OPTIONS: [
             {
-                id: 'happy',
-                label: 'Happy',
-                emoji: '😊',
-                icon: 'Michelle/chibi_mix_icon_2.png'
+                id: 'pink',
+                label: 'Pink',
+                emoji: '🎀',
+                color: '#FFB6C1'
             },
             {
-                id: 'energetic',
-                label: 'Energetic',
-                emoji: '⚡',
-                icon: 'Jazeel/chibi_jazeel_eating.png'
+                id: 'blue',
+                label: 'Blue',
+                emoji: '💎',
+                color: '#87CEEB'
             },
             {
-                id: 'calm',
-                label: 'Calm',
-                emoji: '😌',
-                icon: 'Michelle/chibi_michelle_sweet_smile.png'
+                id: 'purple',
+                label: 'Purple',
+                emoji: '💜',
+                color: '#DDA0DD'
             },
             {
-                id: 'curious',
-                label: 'Curious',
-                emoji: '👀',
-                icon: 'Jazeel/chibi_jazeel_confused.png'
+                id: 'green',
+                label: 'Green',
+                emoji: '🍃',
+                color: '#98FB98'
             },
             {
-                id: 'playful',
-                label: 'Playful',
-                emoji: '🎈',
-                icon: 'Michelle/chibi_china_031.png'
+                id: 'yellow',
+                label: 'Yellow',
+                emoji: '⭐',
+                color: '#FFFACD'
             },
             {
-                id: 'loving',
-                label: 'Loving',
-                emoji: '💕',
-                icon: 'Jazeel/chibi_boy_mix_icon_3.png'
+                id: 'orange',
+                label: 'Orange',
+                emoji: '🧡',
+                color: '#FFB347'
             }
         ],
         QUIZ_PUZZLES: {

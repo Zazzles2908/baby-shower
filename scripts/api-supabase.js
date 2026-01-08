@@ -301,6 +301,7 @@
                 length: lengthGuess,
                 hair_color: hairColor,
                 eye_color: eyeColor,
+                favourite_colour: data.favouriteColour || data.favourite_colour || '',
             }),
         });
     }
