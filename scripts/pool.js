@@ -371,7 +371,6 @@ if (typeof module !== 'undefined' && module.exports) {
 // Create global Pool object for programmatic access
 window.Pool = {
     init: initializePool,
-    initColorPickers: initializeColorPickers,
     initColourGrid: initializeFavouriteColourGrid,
     selectColour: selectFavouriteColour,
     loadStats: loadPoolStats,
