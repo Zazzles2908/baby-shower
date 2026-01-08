@@ -265,7 +265,7 @@
                 id: 'happy',
                 label: 'Happy',
                 emoji: '😊',
-                icon: 'Michelle/chibi_michelle_excited_red.png'
+                icon: 'Michelle/chibi_mix_icon_2.png'
             },
             {
                 id: 'energetic',
