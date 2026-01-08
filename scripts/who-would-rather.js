@@ -1,7 +1,7 @@
 /**
  * Baby Shower App - The Shoe Game
  * Traditional wedding shoe game adapted for baby shower!
- * Simple face-tapping game - no lobby, no auto-advance
+ * Simple face-tapping game with configurable parent names
  */
 
 (function() {
@@ -9,9 +9,17 @@
 
     console.log('[ShoeGame] loading...');
 
-    const AVATAR_URLS = {
-        michelle: 'https://bkszmvfsfgvdwzacgmfz.supabase.co/storage/v1/object/public/baby-shower-pictures/Pictures/Michelle_Icon/asset_chibi_avatar_f.png',
-        jazeel: 'https://bkszmvfsfgvdwzacgmfz.supabase.co/storage/v1/object/public/baby-shower-pictures/Pictures/Jazeel_Icon/asset_chibi_avatar_m.png'
+    // Configuration - can be customized per event via window.ShoeGameConfig
+    const CONFIG = window.ShoeGameConfig || {
+        parentA: { name: 'Mom', avatar: '' },
+        parentB: { name: 'Dad', avatar: '' },
+        autoAdvanceDelay: 800
+    };
+
+    // Default avatar URLs (fallback if not configured)
+    const DEFAULT_AVATARS = {
+        parentA: 'https://bkszmvfsfgvdwzacgmfz.supabase.co/storage/v1/object/public/baby-shower-pictures/Pictures/New Images/Michelle/chibi_michelle_excited_red.png',
+        parentB: 'https://bkszmvfsfgvdwzacgmfz.supabase.co/storage/v1/object/public/baby-shower-pictures/Pictures/New Images/Jazeel/chibi_jazeel_eating.png'
     };
 
     const QUESTIONS = [
@@ -46,12 +54,22 @@
 
     let container = null;
 
+    function getAvatar(key) {
+        const avatar = key === 'parentA' ? CONFIG.parentA.avatar : CONFIG.parentB.avatar;
+        return avatar || (key === 'parentA' ? DEFAULT_AVATARS.parentA : DEFAULT_AVATARS.parentB);
+    }
+
+    function getName(key) {
+        return key === 'parentA' ? CONFIG.parentA.name : CONFIG.parentB.name;
+    }
+
     function init() {
         container = document.getElementById('who-would-rather-container');
         if (!container) {
-            console.warn('[ShoeGame] Container not found');
+            console.warn('[ShoeGame] Container #who-would-rather-container not found');
             return;
         }
+        console.log('[ShoeGame] Initialized with parent names:', CONFIG.parentA.name, '&', CONFIG.parentB.name);
         render();
     }
 
@@ -86,26 +104,26 @@
                 <div class="shoe-game-avatars">
                     <button 
                         type="button"
-                        id="btn-michelle"
+                        id="btn-parentA"
                         class="shoe-avatar-btn shoe-avatar-left ${state.hasVoted ? 'disabled' : ''}"
                         ${state.hasVoted ? 'disabled' : ''}
-                        onclick="window.ShoeGame.vote('michelle')"
+                        onclick="window.ShoeGame.vote('parentA')"
                     >
-                        <img src="${AVATAR_URLS.michelle}" alt="Michelle" class="shoe-avatar-img">
-                        <span class="shoe-avatar-name">Michelle</span>
+                        <img src="${getAvatar('parentA')}" alt="${getName('parentA')}" class="shoe-avatar-img">
+                        <span class="shoe-avatar-name">${getName('parentA')}</span>
                     </button>
 
                     <div class="shoe-vs-badge">VS</div>
 
                     <button 
                         type="button"
-                        id="btn-jazeel"
+                        id="btn-parentB"
                         class="shoe-avatar-btn shoe-avatar-right ${state.hasVoted ? 'disabled' : ''}"
                         ${state.hasVoted ? 'disabled' : ''}
-                        onclick="window.ShoeGame.vote('jazeel')"
+                        onclick="window.ShoeGame.vote('parentB')"
                     >
-                        <img src="${AVATAR_URLS.jazeel}" alt="Jazeel" class="shoe-avatar-img">
-                        <span class="shoe-avatar-name">Jazeel</span>
+                        <img src="${getAvatar('parentB')}" alt="${getName('parentB')}" class="shoe-avatar-img">
+                        <span class="shoe-avatar-name">${getName('parentB')}</span>
                     </button>
                 </div>
 
@@ -117,45 +135,44 @@
             </div>
         `;
         
-        // Auto-advance to next question after short delay
         if (state.hasVoted) {
             setTimeout(() => {
                 state.currentQuestion++;
                 state.hasVoted = false;
                 render();
-            }, 800);
+            }, CONFIG.autoAdvanceDelay);
         }
     }
 
     function renderResults() {
-        const michelleVotes = state.votes.filter(v => v === 'michelle').length;
-        const jazeelVotes = state.votes.filter(v => v === 'jazeel').length;
+        const parentAVotes = state.votes.filter(v => v === 'parentA').length;
+        const parentBVotes = state.votes.filter(v => v === 'parentB').length;
         const totalVotes = state.votes.length;
         
-        const michellePercent = totalVotes > 0 ? Math.round((michelleVotes / totalVotes) * 100) : 0;
-        const jazeelPercent = totalVotes > 0 ? Math.round((jazeelVotes / totalVotes) * 100) : 0;
+        const percentA = totalVotes > 0 ? Math.round((parentAVotes / totalVotes) * 100) : 0;
+        const percentB = totalVotes > 0 ? Math.round((parentBVotes / totalVotes) * 100) : 0;
         
-        let winner = 'Tie';
-        if (michellePercent > jazeelPercent) winner = 'Michelle';
-        else if (jazeelPercent > michellePercent) winner = 'Jazeel';
+        let winner = null;
+        if (percentA > percentB) winner = 'parentA';
+        else if (percentB > percentA) winner = 'parentB';
 
         container.innerHTML = `
             <div class="shoe-game-results">
                 <h2>🎉 Game Complete!</h2>
                 
                 <div class="results-summary">
-                    <p>You answered ${totalVotes} questions about Michelle & Jazeel!</p>
+                    <p>You answered ${totalVotes} questions about ${CONFIG.parentA.name} & ${CONFIG.parentB.name}!</p>
                 </div>
 
-                ${winner !== 'Tie' ? `
+                ${winner ? `
                 <div class="winner-banner">
                     <div class="winner-avatar">
-                        <img src="${winner === 'Michelle' ? AVATAR_URLS.michelle : AVATAR_URLS.jazeel}" alt="${winner}" class="winner-img">
+                        <img src="${getAvatar(winner)}" alt="${getName(winner)}" class="winner-img">
                     </div>
                     <div class="winner-text">
                         <div class="winner-label">Predicted Winner</div>
-                        <div class="winner-name">${winner}</div>
-                        <div class="winner-percent">${Math.max(michellePercent, jazeelPercent)}%</div>
+                        <div class="winner-name">${getName(winner)}</div>
+                        <div class="winner-percent">${winner === 'parentA' ? percentA : percentB}%</div>
                     </div>
                 </div>
                 ` : `
@@ -166,19 +183,19 @@
                 `}
 
                 <div class="results-breakdown">
-                    <div class="breakdown-item michelle">
-                        <div class="breakdown-name">Michelle</div>
+                    <div class="breakdown-item">
+                        <div class="breakdown-name">${CONFIG.parentA.name}</div>
                         <div class="breakdown-bar">
-                            <div class="breakdown-fill" style="width: ${michellePercent}%"></div>
+                            <div class="breakdown-fill" style="width: ${percentA}%"></div>
                         </div>
-                        <div class="breakdown-percent">${michellePercent}%</div>
+                        <div class="breakdown-percent">${percentA}%</div>
                     </div>
-                    <div class="breakdown-item jazeel">
-                        <div class="breakdown-name">Jazeel</div>
+                    <div class="breakdown-item">
+                        <div class="breakdown-name">${CONFIG.parentB.name}</div>
                         <div class="breakdown-bar">
-                            <div class="breakdown-fill" style="width: ${jazeelPercent}%"></div>
+                            <div class="breakdown-fill" style="width: ${percentB}%"></div>
                         </div>
-                        <div class="breakdown-percent">${jazeelPercent}%</div>
+                        <div class="breakdown-percent">${percentB}%</div>
                     </div>
                 </div>
 
@@ -193,28 +210,26 @@
     function vote(choice) {
         if (state.hasVoted) return;
         
-        console.log('[ShoeGame] Vote:', choice);
+        console.log('[ShoeGame] Vote:', choice, `(${getName(choice)})`);
         
         state.votes.push(choice);
         state.hasVoted = true;
         
-        console.log('[ShoeGame] Vote recorded. Total votes:', state.votes.length, 'Votes:', state.votes);
+        const btnA = document.getElementById('btn-parentA');
+        const btnB = document.getElementById('btn-parentB');
         
-        const btnMichelle = document.getElementById('btn-michelle');
-        const btnJazeel = document.getElementById('btn-jazeel');
-        
-        if (btnMichelle && btnJazeel) {
-            btnMichelle.disabled = true;
-            btnJazeel.disabled = true;
+        if (btnA && btnB) {
+            btnA.disabled = true;
+            btnB.disabled = true;
             
-            if (choice === 'michelle') {
-                btnMichelle.classList.add('voted');
-                btnJazeel.classList.add('disabled');
-                addRippleEffect(btnMichelle);
+            if (choice === 'parentA') {
+                btnA.classList.add('voted');
+                btnB.classList.add('disabled');
+                addRippleEffect(btnA);
             } else {
-                btnJazeel.classList.add('voted');
-                btnMichelle.classList.add('disabled');
-                addRippleEffect(btnJazeel);
+                btnB.classList.add('voted');
+                btnA.classList.add('disabled');
+                addRippleEffect(btnB);
             }
         }
         
@@ -233,12 +248,6 @@
         }, 600);
     }
 
-    function nextQuestion() {
-        state.currentQuestion++;
-        state.hasVoted = false;
-        render();
-    }
-
     function restart() {
         state.currentQuestion = 0;
         state.votes = [];
@@ -254,12 +263,17 @@
         }
     }
 
+    function configure(config) {
+        Object.assign(CONFIG, config);
+        console.log('[ShoeGame] Config updated:', CONFIG.parentA.name, '&', CONFIG.parentB.name);
+    }
+
     window.ShoeGame = {
         init: init,
         vote: vote,
-        nextQuestion: nextQuestion,
         restart: restart,
-        backToActivities: backToActivities
+        backToActivities: backToActivities,
+        configure: configure
     };
 
     if (document.readyState === 'loading') {
