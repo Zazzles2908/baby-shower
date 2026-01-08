@@ -103,14 +103,14 @@ serve(async (req: Request) => {
       console.log('[game-session] GET session:', sessionCode.toUpperCase())
       
       const { data: session, error } = await supabase
-        .rpc('get_session_by_code', { session_code_input: sessionCode.toUpperCase() })
+        .rpc('get_session_details', { p_session_code: sessionCode.toUpperCase() })
       
-      console.log('[game-session] GET result:', { error, sessionCount: session?.length })
-      if (error || !session || session.length === 0) {
+      console.log('[game-session] GET result:', { error, session })
+      if (error || !session) {
         return createErrorResponse('Session not found', 404)
       }
 
-      return createSuccessResponse(session[0], 200)
+      return createSuccessResponse(session, 200)
     }
 
     if (req.method !== 'POST') {
@@ -211,14 +211,14 @@ async function handleJoinSession(supabase: any, body: JoinSessionRequest): Promi
   console.log('[game-session] Joining session:', normalizedCode)
 
   const { data: session, error } = await supabase
-    .rpc('get_session_details', { session_code_input: normalizedCode })
+    .rpc('get_session_details', { p_session_code: normalizedCode })
   
-  if (error || !session || session.length === 0) {
+  if (error || !session) {
     console.error('[game-session] Join failed:', error)
     return createErrorResponse('Session not found', 404)
   }
 
-  const result = session[0]
+  const result = session
   const validStatuses = ['setup', 'voting']
   if (!validStatuses.includes(result.status)) {
     return createErrorResponse(`Cannot join session in ${result.status} status`, 400)
@@ -246,8 +246,8 @@ async function handleJoinSession(supabase: any, body: JoinSessionRequest): Promi
     status: result.status,
     current_round: result.current_round,
     total_rounds: result.total_rounds,
-    current_player_id: player[0]?.id,
-    is_admin: player[0]?.is_admin,
+    current_player_id: player?.id,
+    is_admin: player?.is_admin,
     players: result.players
   }, 200)
 }
@@ -259,13 +259,13 @@ async function handleUpdateSession(supabase: any, body: UpdateSessionRequest): P
   console.log('[game-session] Updating session:', normalizedCode)
 
   const { data: session, error } = await supabase
-    .rpc('get_session_details', { session_code_input: normalizedCode })
+    .rpc('get_session_details', { p_session_code: normalizedCode })
   
-  if (error || !session || session.length === 0) {
+  if (error || !session) {
     return createErrorResponse('Session not found', 404)
   }
 
-  const currentSession = session[0]
+  const currentSession = session
   if (currentSession.admin_code !== admin_code) {
     return createErrorResponse('Invalid admin code', 401)
   }
@@ -279,21 +279,20 @@ async function handleUpdateSession(supabase: any, body: UpdateSessionRequest): P
   }
 
   const { data: updatedSession, error: updateError } = await supabase
-    .rpc('update_session', { 
+    .rpc('update_session', {
       session_code_input: normalizedCode,
       status_input: status,
       current_round_input: current_round
     })
   
-  if (updateError || !updatedSession || updatedSession.length === 0) {
+  if (updateError || !updatedSession) {
     console.error('[game-session] Update failed:', updateError)
     return createErrorResponse('Database operation failed', 500, updateError)
   }
 
-  const result = updatedSession[0]
   return createSuccessResponse({
     message: 'Session updated successfully',
-    ...result
+    ...updatedSession
   }, 200)
 }
 
@@ -304,25 +303,19 @@ async function handleAdminLogin(supabase: any, body: AdminLoginRequest): Promise
   console.log('[game-session] Admin login for:', normalizedCode)
 
   const { data: session, error } = await supabase
-    .rpc('get_session_details', { session_code_input: normalizedCode })
+    .rpc('get_session_details', { p_session_code: normalizedCode })
   
-  if (error || !session || session.length === 0) {
+  if (error || !session) {
     return createErrorResponse('Session not found', 404)
   }
 
-  const result = session[0]
-  if (result.admin_code !== admin_code) {
+  if (session.admin_code !== admin_code) {
     return createErrorResponse('Invalid admin code', 401)
   }
 
   return createSuccessResponse({
     message: 'Admin login successful',
-    session_id: result.id,
-    session_code: result.session_code,
-    mom_name: result.mom_name,
-    dad_name: result.dad_name,
-    status: result.status,
-    current_round: result.current_round,
-    total_rounds: result.total_rounds
+    session_code: session.session_code,
+    status: session.status
   }, 200)
 }
