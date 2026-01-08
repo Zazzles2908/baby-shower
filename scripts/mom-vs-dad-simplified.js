@@ -287,29 +287,25 @@
              
 
 
-    /**
-      * Start game - uses session_code and admin_code (matches backend API)
-      */
     async function startGame(lobbyKey, settings = {}) {
         setLoading(true);
         try {
-            const url = getEdgeFunctionUrl('game-start');
+            const url = getEdgeFunctionUrl('game-session');
             const response = await apiFetch(url, {
                 method: 'POST',
                 body: JSON.stringify({
+                    action: 'start_game',
                     session_code: lobbyKey,
-                    admin_code: GameState.adminCode,
+                    player_id: GameState.currentPlayerId,
                     total_rounds: settings.totalRounds || 5,
                     intensity: settings.intensity || 0.5
                 }),
             });
             
             if (response && response.data) {
-                // Store game data
                 GameState.totalRounds = response.data.total_rounds || 5;
-                GameState.gameStatus = 'active';
-                GameState.currentScenario = response.data.scenarios?.[0] || null;
-                GameState.scenarios = response.data.scenarios || [];
+                GameState.gameStatus = 'voting';
+                GameState.currentRound = 1;
             }
             
             return response;

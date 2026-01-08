@@ -1,34 +1,6 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-
-const CORS_HEADERS = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, Authorization, apikey',
-  'Access-Control-Max-Age': '86400'
-}
-
-const SECURITY_HEADERS = {
-  'X-Content-Type-Options': 'nosniff',
-  'X-Frame-Options': 'DENY',
-  'X-XSS-Protection': '1; mode=block',
-  'Referrer-Policy': 'strict-origin-when-cross-origin',
-  'Content-Security-Policy': "default-src 'self'"
-}
-
-function createErrorResponse(message: string, status: number = 500, details?: unknown): Response {
-  const headers = new Headers({ ...CORS_HEADERS, ...SECURITY_HEADERS, 'Content-Type': 'application/json' })
-  const body: Record<string, unknown> = { success: false, error: message, timestamp: new Date().toISOString() }
-  if (details) {
-    body.details = typeof details === 'string' ? details : JSON.stringify(details)
-  }
-  return new Response(JSON.stringify(body), { status, headers })
-}
-
-function createSuccessResponse(data: unknown, status: number = 200): Response {
-  const headers = new Headers({ ...CORS_HEADERS, ...SECURITY_HEADERS, 'Content-Type': 'application/json' })
-  return new Response(JSON.stringify({ success: true, data, timestamp: new Date().toISOString() }), { status, headers })
-}
+import { CORS_HEADERS, SECURITY_HEADERS, createErrorResponse, createSuccessResponse } from '../_shared/security.ts'
 
 function generateSessionCode(): string {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
@@ -70,7 +42,15 @@ interface AdminLoginRequest {
   admin_code: string
 }
 
-type GameSessionRequest = CreateSessionRequest | JoinSessionRequest | UpdateSessionRequest | AdminLoginRequest
+interface StartGameRequest {
+  action: 'start_game'
+  session_code: string
+  player_id: string
+  total_rounds?: number
+  intensity?: number
+}
+
+type GameSessionRequest = CreateSessionRequest | JoinSessionRequest | UpdateSessionRequest | AdminLoginRequest | StartGameRequest
 
 serve(async (req: Request) => {
   const headers = new Headers({ ...CORS_HEADERS, ...SECURITY_HEADERS, 'Content-Type': 'application/json' })
@@ -142,6 +122,8 @@ serve(async (req: Request) => {
         return await handleAdminLogin(supabase, body as AdminLoginRequest)
       case 'get_status':
         return await handleGetStatus(supabase, body)
+      case 'start_game':
+        return await handleStartGame(supabase, body as StartGameRequest)
       default:
         return createErrorResponse('Invalid action', 400)
     }
@@ -227,7 +209,6 @@ async function handleJoinSession(supabase: any, body: JoinSessionRequest): Promi
     return createErrorResponse(`Cannot join session in ${result.status} status`, 400)
   }
 
-  // Add player to session using RPC
   const { data: player, error: playerError } = await supabase
     .rpc('add_game_player', { 
       p_session_id: result.id, 
@@ -336,7 +317,6 @@ async function handleGetStatus(supabase: any, body: { session_code: string }): P
     return createErrorResponse('Session not found', 404)
   }
 
-  // Get players from game_players table
   const { data: players, error: playersError } = await supabase
     .from('baby_shower.game_players')
     .select('id, player_name, is_admin, is_ready, joined_at')
@@ -360,5 +340,60 @@ async function handleGetStatus(supabase: any, body: { session_code: string }): P
     started_at: session.started_at,
     completed_at: session.completed_at,
     players: players || []
+  }, 200)
+}
+
+async function handleStartGame(supabase: any, body: StartGameRequest): Promise<Response> {
+  const { session_code, player_id, total_rounds, intensity } = body
+  const normalizedCode = session_code.toUpperCase()
+
+  console.log('[game-session] Starting game:', normalizedCode, 'by player:', player_id)
+
+  const { data: session, error } = await supabase
+    .rpc('get_session_details', { p_session_code: normalizedCode })
+  
+  if (error || !session) {
+    return createErrorResponse('Session not found', 404)
+  }
+
+  const { data: player, error: playerError } = await supabase
+    .from('baby_shower.game_players')
+    .select('id, player_name, is_admin')
+    .eq('id', player_id)
+    .single()
+
+  if (playerError || !player) {
+    console.error('[game-session] Player not found:', player_id)
+    return createErrorResponse('Player not found', 404)
+  }
+
+  if (!player.is_admin) {
+    console.warn('[game-session] Non-admin tried to start game:', player_id)
+    return createErrorResponse('Only admin can start the game', 403)
+  }
+
+  if (session.status !== 'setup' && session.status !== 'voting') {
+    return createErrorResponse(`Cannot start game in ${session.status} status`, 400)
+  }
+
+  const { data: updatedSession, error: updateError } = await supabase
+    .rpc('update_session', {
+      session_code_input: normalizedCode,
+      status_input: 'voting',
+      current_round_input: 1
+    })
+
+  if (updateError || !updatedSession) {
+    console.error('[game-session] Failed to update session:', updateError)
+    return createErrorResponse('Failed to start game', 500, updateError)
+  }
+
+  return createSuccessResponse({
+    message: 'Game started successfully',
+    session_code: normalizedCode,
+    status: 'voting',
+    current_round: 1,
+    total_rounds: total_rounds || session.total_rounds,
+    started_at: new Date().toISOString()
   }, 200)
 }
