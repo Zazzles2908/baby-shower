@@ -895,7 +895,7 @@
         const connectionStatus = getConnectionStatusIcon();
         
         container.innerHTML = `
-            <div id="mom-vs-dad-waiting" class="mvd-section">
+            <div id="mom-vs-dad-waiting" class="mvd-section active">
                 <div class="mvd-header">
                     <h1>${lobbyName}</h1>
                     <p>Waiting for players...</p>
@@ -1148,7 +1148,7 @@
         const progressPercent = ((GameState.currentRound - 1) / GameState.totalRounds) * 100;
 
         container.innerHTML = `
-            <div id="mom-vs-dad-game-screen" class="mvd-section">
+            <div id="mom-vs-dad-game-screen" class="mvd-section active">
                 <!-- Progress Header with Round Timer (FIXES ISSUE #17) -->
                 <div class="game-header">
                     <div class="round-info">
@@ -1336,7 +1336,7 @@
         const dadPercent = totalVotes > 0 ? Math.round((dadVotes / totalVotes) * 100) : 0;
 
         container.innerHTML = `
-            <div id="mom-vs-dad-results" class="mvd-section">
+            <div id="mom-vs-dad-results" class="mvd-section active">
                 <div class="results-header">
                     <div class="result-icon">${momWins ? '👩' : '👨'}</div>
                     <h1>${momWins ? `${escapeHtml(momName)} Wins!` : `${escapeHtml(dadName)} Wins!`}</h1>
@@ -1444,7 +1444,7 @@
         const dadScore = finalResults.dad_score || 0;
 
         container.innerHTML = `
-            <div id="mom-vs-dad-results" class="mvd-section">
+            <div id="mom-vs-dad-results" class="mvd-section active">
                 <div class="results-header">
                     <div class="trophy-icon">🏆</div>
                     <h1>Game Complete!</h1>
