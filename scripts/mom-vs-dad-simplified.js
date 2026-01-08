@@ -165,30 +165,41 @@
         }
     }
 
-    /**
-     * Fetch full game status including scenarios and votes
-     */
+      /**
+       * Fetch full game status including scenarios and votes
+       * Uses game-session Edge Function (has proper CORS headers)
+       */
     async function fetchGameStatus(lobbyKey) {
         try {
-            const url = getEdgeFunctionUrl('lobby-status');
+            // Use game-session Edge Function with GET method
+            const supabaseUrl = root.CONFIG?.SUPABASE?.URL || '';
+            const url = `${supabaseUrl}/functions/v1/game-session?code=${encodeURIComponent(lobbyKey)}`;
+            
             const response = await apiFetch(url, {
-                method: 'POST',
-                body: JSON.stringify({
-                    session_code: lobbyKey
-                }),
+                method: 'GET',
             });
 
             if (response && response.data) {
                 // Update game state with fetched data
-                GameState.gameStatus = response.data.session?.status || 'setup';
-                GameState.totalRounds = response.data.session?.total_rounds || 5;
-                GameState.currentRound = response.data.session?.current_round || 0;
-                GameState.adminCode = response.data.session?.admin_code || GameState.adminCode;
+                GameState.gameStatus = response.data.status || 'setup';
+                GameState.totalRounds = response.data.total_rounds || 5;
+                GameState.currentRound = response.data.current_round || 0;
+                GameState.adminCode = response.data.admin_code || GameState.adminCode;
                 
-                // Store scenarios if game has started
-                if (response.data.scenarios && response.data.scenarios.length > 0) {
+                // Store session data for display
+                GameState.lobbyData = {
+                    mom_name: response.data.mom_name,
+                    dad_name: response.data.dad_name
+                };
+                
+                // Store players from the response
+                if (response.data.players && Array.isArray(response.data.players)) {
+                    GameState.players = response.data.players;
+                }
+                
+                // Check if game has scenarios (game already started)
+                if (response.data.scenarios && Array.isArray(response.data.scenarios) && response.data.scenarios.length > 0) {
                     GameState.scenarios = response.data.scenarios;
-                    // Set current scenario based on current round
                     const currentScenario = response.data.scenarios.find(s => s.round_number === GameState.currentRound);
                     if (currentScenario) {
                         GameState.currentScenario = currentScenario;
@@ -198,13 +209,15 @@
                 console.log('[MomVsDadSimplified] Game status updated:', {
                     status: GameState.gameStatus,
                     rounds: GameState.totalRounds,
-                    scenarios: GameState.scenarios.length
+                    scenarios: GameState.scenarios.length,
+                    players: GameState.players.length
                 });
             }
 
             return response;
         } catch (error) {
             console.warn('[MomVsDadSimplified] Failed to fetch game status:', error.message);
+            // Return null but don't throw - allow game to continue
             return null;
         }
     }
