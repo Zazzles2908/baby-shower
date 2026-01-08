@@ -246,8 +246,11 @@
 
               console.log(`[MomVsDadSimplified] Joining lobby: ${lobbyKey} as ${safeName}`);
 
-              // Use lobby-join Edge Function (works with anon key)
-              const response = await window.API.gameJoin(lobbyKey, safeName);
+               // Use lobby-join Edge Function (works with anon key)
+              const response = await window.API.gameJoin({
+                  sessionCode: lobbyKey,
+                  guestName: safeName
+              });
 
               if (!response.success) {
                   throw new Error(response.error || 'Failed to join lobby');

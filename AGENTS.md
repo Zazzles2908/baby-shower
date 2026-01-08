@@ -594,6 +594,63 @@ Before deploying any Edge Function, verify:
 
 ---
 
+## 🗄️ RPC Functions Reference
+
+### Game Session RPC Functions
+
+The Mom vs Dad game uses the following RPC functions for reliable database operations:
+
+#### `add_game_player`
+```sql
+CREATE OR REPLACE FUNCTION baby_shower.add_game_player(
+    p_session_id UUID,
+    p_player_name VARCHAR(100),
+    p_is_admin BOOLEAN DEFAULT FALSE
+) RETURNS JSONB
+```
+**Purpose:** Add a player to a game session with race condition protection  
+**Features:** Uses `FOR UPDATE` lock on session, first player becomes admin automatically  
+**Returns:** `{ player_id, is_admin, players: [...] }` or error
+
+#### `get_session_players`
+```sql
+CREATE OR REPLACE FUNCTION baby_shower.get_session_players(p_session_id UUID)
+RETURNS JSONB
+```
+**Purpose:** Fetch all players for a game session  
+**Returns:** JSONB array of player objects from `game_players` table
+
+#### `get_session_details`
+```sql
+CREATE OR REPLACE FUNCTION baby_shower.get_session_details(p_session_code VARCHAR(8))
+RETURNS baby_shower.game_sessions
+```
+**Purpose:** Fetch session by code, returns single session object (not array)  
+**Used by:** All game Edge Functions for session validation
+
+#### `calculate_vote_stats`
+```sql
+CREATE OR REPLACE FUNCTION baby_shower.calculate_vote_stats(p_scenario_id UUID)
+RETURNS JSONB
+```
+**Purpose:** Calculate vote statistics for a game scenario  
+**Returns:** `{ scenario_id, mom_count, dad_count, total_votes, mom_percentage, dad_percentage }`  
+**Used by:** `game-reveal` Edge Function
+
+---
+
+### Security for RPC Functions
+
+```sql
+-- Grant execute permission to authenticated and anonymous users
+GRANT EXECUTE ON FUNCTION baby_shower.add_game_player(UUID, VARCHAR, BOOLEAN) TO authenticated, anon;
+GRANT EXECUTE ON FUNCTION baby_shower.get_session_players(UUID) TO authenticated, anon;
+GRANT EXECUTE ON FUNCTION baby_shower.get_session_details(VARCHAR) TO authenticated, anon;
+GRANT EXECUTE ON FUNCTION baby_shower.calculate_vote_stats(UUID) TO authenticated, anon;
+```
+
+---
+
 ## 📚 Reference Documentation
 
 - **Design Vision**: See original AGENTS.md for detailed character system and design philosophy

@@ -348,8 +348,8 @@
             method: 'POST',
             body: JSON.stringify({
                 action: 'join',
-                sessionCode: data.sessionCode?.trim().toUpperCase() || '',
-                guestName: data.guestName?.trim() || '',
+                session_code: data.sessionCode?.trim().toUpperCase() || data.session_code?.trim().toUpperCase() || '',
+                guest_name: data.guestName?.trim() || data.guest_name?.trim() || '',
             }),
         });
     }

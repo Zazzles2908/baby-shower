@@ -384,6 +384,170 @@ WHERE tablename = 'submissions' AND schemaname = 'public';
 
 ---
 
-**Document Version**: 1.0  
-**Last Updated**: 2026-01-02  
-**Maintained By**: Development Team
+## 📊 Mom vs Dad Game Schema (2026-01-08)
+
+### Game Sessions Table
+
+```sql
+CREATE TABLE baby_shower.game_sessions (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    session_code VARCHAR(8) UNIQUE NOT NULL,
+    status VARCHAR(20) DEFAULT 'setup' CHECK (status IN ('setup', 'voting', 'revealed', 'complete')),
+    mom_name VARCHAR(100) NOT NULL,
+    dad_name VARCHAR(100) NOT NULL,
+    admin_code VARCHAR(10) NOT NULL,
+    total_rounds INTEGER DEFAULT 5,
+    current_round INTEGER DEFAULT 0,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    started_at TIMESTAMPTZ,
+    completed_at TIMESTAMPTZ,
+    created_by VARCHAR,
+    players JSONB DEFAULT '[]'::JSONB
+);
+```
+
+**Columns:**
+
+| Column | Type | Description |
+|--------|------|-------------|
+| `id` | UUID | Primary key |
+| `session_code` | VARCHAR(8) | 6-8 character code for guests to join |
+| `status` | VARCHAR(20) | setup/voting/revealed/complete |
+| `mom_name` | VARCHAR(100) | Mom's name for personalized scenarios |
+| `dad_name` | VARCHAR(100) | Dad's name for personalized scenarios |
+| `admin_code` | VARCHAR(10) | 4-digit PIN for game admin |
+| `total_rounds` | INTEGER | Number of rounds (default: 5) |
+| `current_round` | INTEGER | Current round number |
+| `players` | JSONB | Array of player objects |
+
+---
+
+### Game Players Table
+
+```sql
+CREATE TABLE baby_shower.game_players (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    session_id UUID REFERENCES baby_shower.game_sessions(id),
+    player_name VARCHAR(100) NOT NULL,
+    is_admin BOOLEAN DEFAULT FALSE,
+    is_ready BOOLEAN DEFAULT FALSE,
+    current_vote VARCHAR,
+    joined_at TIMESTAMPTZ DEFAULT NOW()
+);
+```
+
+---
+
+### Game Scenarios Table
+
+```sql
+CREATE TABLE baby_shower.game_scenarios (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    session_id UUID REFERENCES baby_shower.game_sessions(id),
+    round_number INTEGER NOT NULL,
+    scenario_text TEXT NOT NULL,
+    mom_option TEXT NOT NULL,
+    dad_option TEXT NOT NULL,
+    ai_provider VARCHAR DEFAULT 'z_ai',
+    intensity NUMERIC DEFAULT 0.5,
+    theme_tags TEXT[] DEFAULT '{}',
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    used_at TIMESTAMPTZ
+);
+```
+
+---
+
+### Game Votes Table
+
+```sql
+CREATE TABLE baby_shower.game_votes (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    scenario_id UUID REFERENCES baby_shower.game_scenarios(id),
+    guest_name VARCHAR(100) NOT NULL,
+    guest_id UUID,
+    vote_choice VARCHAR CHECK (vote_choice IN ('mom', 'dad')),
+    voted_at TIMESTAMPTZ DEFAULT NOW()
+);
+```
+
+---
+
+### Game Results Table
+
+```sql
+CREATE TABLE baby_shower.game_results (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    scenario_id UUID REFERENCES baby_shower.game_scenarios(id),
+    mom_votes INTEGER DEFAULT 0,
+    dad_votes INTEGER DEFAULT 0,
+    crowd_choice VARCHAR,
+    actual_choice VARCHAR,
+    perception_gap NUMERIC,
+    roast_commentary TEXT,
+    roast_provider VARCHAR DEFAULT 'moonshot',
+    revealed_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+```
+
+---
+
+## 🔧 RPC Functions (2026-01-08)
+
+### calculate_vote_stats
+
+```sql
+CREATE OR REPLACE FUNCTION baby_shower.calculate_vote_stats(p_scenario_id UUID)
+RETURNS JSONB
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+  v_result JSONB;
+  v_mom_count INTEGER;
+  v_dad_count INTEGER;
+  v_total_votes INTEGER;
+  v_mom_percentage NUMERIC;
+  v_dad_percentage NUMERIC;
+BEGIN
+  SELECT COUNT(*) INTO v_mom_count
+  FROM baby_shower.game_votes
+  WHERE scenario_id = p_scenario_id AND vote_choice = 'mom';
+  
+  SELECT COUNT(*) INTO v_dad_count
+  FROM baby_shower.game_votes
+  WHERE scenario_id = p_scenario_id AND vote_choice = 'dad';
+  
+  v_total_votes := v_mom_count + v_dad_count;
+  
+  IF v_total_votes > 0 THEN
+    v_mom_percentage := ROUND((v_mom_count::NUMERIC / v_total_votes::NUMERIC) * 100, 2);
+    v_dad_percentage := ROUND((v_dad_count::NUMERIC / v_total_votes::NUMERIC) * 100, 2);
+  ELSE
+    v_mom_percentage := 0;
+    v_dad_percentage := 0;
+  END IF;
+  
+  v_result := jsonb_build_object(
+    'scenario_id', p_scenario_id,
+    'mom_count', v_mom_count,
+    'dad_count', v_dad_count,
+    'total_votes', v_total_votes,
+    'mom_percentage', v_mom_percentage,
+    'dad_percentage', v_dad_percentage
+  );
+  
+  RETURN v_result;
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION baby_shower.calculate_vote_stats(UUID) TO authenticated, anon;
+```
+
+---
+
+**Document Version**: 1.1  
+**Last Updated**: 2026-01-08  
+**Changes:** Added Mom vs Dad game schema and RPC functions
