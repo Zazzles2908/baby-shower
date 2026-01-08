@@ -174,8 +174,8 @@ serve(async (req: Request) => {
       name: { type: 'string', required: true, minLength: 1, maxLength: 100 },
       prediction: { type: 'string', required: true, minLength: 1, maxLength: 500 },
       dueDate: { type: 'string', required: true, pattern: /^\d{4}-\d{2}-\d{2}$/ },
-      weight: { type: 'number', required: true, min: 2.0, max: 6.0 },
-      length: { type: 'number', required: true, min: 40, max: 60 },
+      weight: { type: 'number', required: true, min: 1.0, max: 10.0 },
+      length: { type: 'number', required: true, min: 35, max: 65 },
       gender: { type: 'string', required: false, enum: ['boy', 'girl', 'surprise'] },
       hairColor: { type: 'string', required: false, maxLength: 50 },
       eyeColor: { type: 'string', required: false, maxLength: 50 },
@@ -187,15 +187,13 @@ serve(async (req: Request) => {
     }
 
     // Additional date validation for 2026 baby shower
-    // Today is January 5, 2026, so valid dates are Jan 6 - Dec 31, 2026
+    // Valid dates are January 1 - December 31, 2026
     const selectedDate = new Date(body.dueDate)
-    const today = new Date('2026-01-05')
-    const minDate = new Date(today)
-    minDate.setDate(today.getDate() + 1) // Tomorrow (Jan 6, 2026)
+    const minDate = new Date('2026-01-01')
     const maxDate = new Date('2026-12-31')
     
     if (selectedDate < minDate || selectedDate > maxDate) {
-      return createErrorResponse(`Birth date must be between ${minDate.toISOString().split('T')[0]} and ${maxDate.toISOString().split('T')[0]}`, 400)
+      return createErrorResponse(`Birth date must be in 2026`, 400)
     }
 
     // Use sanitized data from validation
