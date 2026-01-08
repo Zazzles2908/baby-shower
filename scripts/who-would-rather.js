@@ -208,13 +208,27 @@
             if (choice === 'michelle') {
                 btnMichelle.classList.add('voted');
                 btnJazeel.classList.add('disabled');
+                addRippleEffect(btnMichelle);
             } else {
                 btnJazeel.classList.add('voted');
                 btnMichelle.classList.add('disabled');
+                addRippleEffect(btnJazeel);
             }
         }
         
         render();
+    }
+
+    function addRippleEffect(button) {
+        const ripple = document.createElement('span');
+        ripple.className = 'vote-ripple';
+        ripple.style.left = '50%';
+        ripple.style.top = '50%';
+        button.appendChild(ripple);
+        
+        setTimeout(() => {
+            ripple.remove();
+        }, 600);
     }
 
     function nextQuestion() {
