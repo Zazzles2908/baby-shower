@@ -63,13 +63,21 @@ function updateQuizScore(score) {
  * @returns {Object} Form data
  */
 function getQuizFormData(form) {
+    const puzzles = CONFIG.QUIZ_PUZZLES;
+    const answers = {};
+    
+    Object.keys(puzzles).forEach(key => {
+        answers[key] = form.querySelector(`[name="${key}"]`)?.value.trim() || '';
+    });
+    
     return {
         name: form.querySelector('#quiz-name')?.value.trim() || '',
-        puzzle1: form.querySelector('[name="puzzle1"]').value.trim(),
-        puzzle2: form.querySelector('[name="puzzle2"]').value.trim(),
-        puzzle3: form.querySelector('[name="puzzle3"]').value.trim(),
-        puzzle4: form.querySelector('[name="puzzle4"]').value.trim(),
-        puzzle5: form.querySelector('[name="puzzle5"]').value.trim()
+        answers: answers,
+        puzzle1: answers.puzzle1 || '',
+        puzzle2: answers.puzzle2 || '',
+        puzzle3: answers.puzzle3 || '',
+        puzzle4: answers.puzzle4 || '',
+        puzzle5: answers.puzzle5 || ''
     };
 }
 
@@ -79,22 +87,18 @@ function getQuizFormData(form) {
  * @returns {number} Score (0-5)
  */
 function calculateQuizScore(answers) {
+    const puzzles = CONFIG.QUIZ_PUZZLES;
     let score = 0;
-
-    if (answers.puzzle1.toLowerCase() === CONFIG.QUIZ_ANSWERS.puzzle1.toLowerCase()) {
-        score++;
-    }
-    if (answers.puzzle2.toLowerCase() === CONFIG.QUIZ_ANSWERS.puzzle2.toLowerCase()) {
-        score++;
-    }
-    if (answers.puzzle3.toLowerCase() === CONFIG.QUIZ_ANSWERS.puzzle3.toLowerCase()) {
-        score++;
-    }
-    if (answers.puzzle4.toLowerCase() === CONFIG.QUIZ_ANSWERS.puzzle4.toLowerCase()) {
-        score++;
-    }
-    if (answers.puzzle5.toLowerCase() === CONFIG.QUIZ_ANSWERS.puzzle5.toLowerCase()) {
-        score++;
+    
+    // Check first 5 puzzles only (matching form fields)
+    for (let i = 1; i <= 5; i++) {
+        const puzzleKey = `puzzle${i}`;
+        const userAnswer = answers[puzzleKey]?.toLowerCase().trim() || '';
+        const correctAnswer = puzzles[puzzleKey]?.answer.toLowerCase().trim() || '';
+        
+        if (userAnswer === correctAnswer) {
+            score++;
+        }
     }
 
     return score;

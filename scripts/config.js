@@ -260,12 +260,17 @@
             'Emma', 'Olivia', 'Sophia', 'Charlotte', 'Amelia',
             'Ava', 'Mia', 'Isabella', 'Lily', 'Harper'
         ],
-        QUIZ_ANSWERS: {
-            puzzle1: 'Baby Shower',
-            puzzle2: 'Three Little Pigs',
-            puzzle3: 'Rock a Bye Baby',
-            puzzle4: 'Baby Bottle',
-            puzzle5: 'Diaper Change'
+        QUIZ_PUZZLES: {
+            puzzle1: { emojis: '👶🎂🕯️', answer: 'Birthday Cake', hint: 'Baby celebration food' },
+            puzzle2: { emojis: '🍼👶', answer: 'Baby Bottle', hint: 'What baby drinks from' },
+            puzzle3: { emojis: '👶🐘', answer: 'Baby Elephant', hint: 'Baby + Large animal' },
+            puzzle4: { emojis: '👶🧸', answer: 'Teddy Bear', hint: 'Baby favorite toy' },
+            puzzle5: { emojis: '👶🩲', answer: 'Diaper', hint: 'Baby clothing item' },
+            puzzle6: { emojis: '👶🎈', answer: 'Balloon', hint: 'Party decoration' },
+            puzzle7: { emojis: '🌙⭐👶🛏️', answer: 'Rock a Bye Baby', hint: 'Famous lullaby' },
+            puzzle8: { emojis: '🐷🐷🐺', answer: 'Three Little Pigs', hint: 'Fairy tale with pigs' },
+            puzzle9: { emojis: '⭐🌙👶', answer: 'Star Light Star Bright', hint: 'Nursery rhyme' },
+            puzzle10: { emojis: '👶🚿🧼', answer: 'Baby Bath', hint: 'Baby cleaning time' }
         },
         STORAGE: {
             BUCKET: 'guestbook-photos',
