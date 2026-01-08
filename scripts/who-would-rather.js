@@ -1,8 +1,7 @@
 /**
- * Baby Shower App - The Shoe Game (Who Would Rather)
+ * Baby Shower App - The Shoe Game
  * Traditional wedding shoe game adapted for baby shower!
- * Guests predict: "Who would do this?" - Michelle or Jazeel?
- * Tap the avatar you think is correct, then auto-advance to next question
+ * Simple face-tapping game - no lobby, no auto-advance
  */
 
 (function() {
@@ -39,14 +38,10 @@
     ];
 
     let state = {
-        view: 'start',
-        sessionCode: null,
-        sessionId: null,
         currentQuestion: 0,
         totalQuestions: QUESTIONS.length,
         votes: [],
-        userName: '',
-        currentQuestionData: null
+        hasVoted: false
     };
 
     let container = null;
@@ -57,131 +52,22 @@
             console.warn('[ShoeGame] Container not found');
             return;
         }
-        
-        const savedName = localStorage.getItem('shoe_game_name');
-        if (savedName) {
-            state.userName = savedName;
-            createOrJoinSession();
-        } else {
-            showStartScreen();
-        }
-    }
-
-    function showStartScreen() {
-        state.view = 'start';
         render();
-    }
-
-    async function createOrJoinSession() {
-        try {
-            const response = await fetch(`${window.CONFIG?.SUPABASE?.URL}/functions/v1/who-would-rather/create-session`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'apikey': window.CONFIG?.SUPABASE?.ANON_KEY || ''
-                },
-                body: JSON.stringify({
-                    guest_name: state.userName
-                })
-            });
-
-            if (!response.ok) {
-                throw new Error('Failed to create session');
-            }
-
-            const data = await response.json();
-            if (data.success) {
-                state.sessionCode = data.data.session_code;
-                state.sessionId = data.data.session_id;
-                state.currentQuestion = data.data.current_question;
-                state.totalQuestions = data.data.total_questions;
-                
-                console.log('[ShoeGame] Session created:', state.sessionCode);
-                await loadCurrentQuestion();
-            } else {
-                throw new Error(data.error || 'Failed to create session');
-            }
-        } catch (error) {
-            console.error('[ShoeGame] Session creation error:', error);
-            showError('Failed to start game. Please refresh and try again.');
-        }
-    }
-
-    async function loadCurrentQuestion() {
-        try {
-            const response = await fetch(`${window.CONFIG?.SUPABASE?.URL}/functions/v1/who-would-rather/current-question?session_code=${state.sessionCode}&guest_name=${state.userName}`, {
-                method: 'GET',
-                headers: {
-                    'apikey': window.CONFIG?.SUPABASE?.ANON_KEY || ''
-                }
-            });
-
-            if (!response.ok) {
-                throw new Error('Failed to load question');
-            }
-
-            const data = await response.json();
-            if (data.success) {
-                state.currentQuestionData = data.data;
-                state.view = 'playing';
-                render();
-            } else {
-                throw new Error(data.error || 'Failed to load question');
-            }
-        } catch (error) {
-            console.error('[ShoeGame] Question loading error:', error);
-            showError('Failed to load question. Please refresh and try again.');
-        }
     }
 
     function render() {
         if (!container) return;
-
-        switch (state.view) {
-            case 'start':
-                renderStartScreen();
-                break;
-            case 'playing':
-                renderQuestionScreen();
-                break;
-            case 'results':
-                renderResultsScreen();
-                break;
-            case 'error':
-                renderErrorScreen();
-                break;
-        }
+        renderQuestion();
     }
 
-    function renderStartScreen() {
-        container.innerHTML = `
-            <div class="shoe-game-start">
-                <h2>🤔 Who Would Rather?</h2>
-                <p>Answer fun questions about the parents-to-be!</p>
-                <div class="start-form">
-                    <input type="text" id="guest-name-input" placeholder="Enter your name" maxlength="50">
-                    <button class="shoe-btn" onclick="window.ShoeGame.startGame()">Start Game</button>
-                </div>
-                <div class="game-instructions">
-                    <p>Tap Michelle or Jazeel's avatar to vote on who would do each thing!</p>
-                </div>
-            </div>
-        `;
-        
-        setTimeout(() => {
-            const input = document.getElementById('guest-name-input');
-            if (input) input.focus();
-        }, 100);
-    }
-
-    function renderQuestionScreen() {
-        if (!state.currentQuestionData) {
-            showError('No question data available');
+    function renderQuestion() {
+        if (state.currentQuestion >= state.totalQuestions) {
+            renderResults();
             return;
         }
 
-        const question = state.currentQuestionData;
-        const progress = ((question.question_number - 1) / state.totalQuestions) * 100;
+        const question = QUESTIONS[state.currentQuestion];
+        const progress = ((state.currentQuestion) / state.totalQuestions) * 100;
 
         container.innerHTML = `
             <div class="shoe-game-question">
@@ -189,24 +75,24 @@
                     <div class="progress-bar">
                         <div class="progress-fill" style="width: ${progress}%"></div>
                     </div>
-                    <div class="question-counter">Question ${question.question_number} of ${state.totalQuestions}</div>
+                    <div class="question-counter">Question ${state.currentQuestion + 1} of ${state.totalQuestions}</div>
                 </div>
 
                 <div class="question-section">
                     <div class="question-label">Who would do this?</div>
-                    <h2 class="question-text">${question.question_text}</h2>
+                    <h2 class="question-text">${question}</h2>
                 </div>
 
                 <div class="shoe-game-avatars">
                     <button 
                         type="button"
                         id="btn-michelle"
-                        class="shoe-avatar-btn shoe-avatar-left"
+                        class="shoe-avatar-btn shoe-avatar-left ${state.hasVoted ? 'disabled' : ''}"
+                        ${state.hasVoted ? 'disabled' : ''}
                         onclick="window.ShoeGame.vote('michelle')"
                     >
                         <img src="${AVATAR_URLS.michelle}" alt="Michelle" class="shoe-avatar-img">
                         <span class="shoe-avatar-name">Michelle</span>
-                        <span class="shoe-tap-hint">Tap to vote!</span>
                     </button>
 
                     <div class="shoe-vs-badge">VS</div>
@@ -214,63 +100,43 @@
                     <button 
                         type="button"
                         id="btn-jazeel"
-                        class="shoe-avatar-btn shoe-avatar-right"
+                        class="shoe-avatar-btn shoe-avatar-right ${state.hasVoted ? 'disabled' : ''}"
+                        ${state.hasVoted ? 'disabled' : ''}
                         onclick="window.ShoeGame.vote('jazeel')"
                     >
                         <img src="${AVATAR_URLS.jazeel}" alt="Jazeel" class="shoe-avatar-img">
                         <span class="shoe-avatar-name">Jazeel</span>
-                        <span class="shoe-tap-hint">Tap to vote!</span>
                     </button>
                 </div>
 
-                <div id="shoe-feedback" class="shoe-feedback hidden">
-                    <div class="feedback-text">Vote recorded!</div>
-                    <div class="feedback-subtitle">Moving to next question...</div>
+                ${state.hasVoted ? `
+                <div class="vote-recorded">
+                    <p>✓ Vote recorded!</p>
+                    <button class="shoe-btn next-btn" onclick="window.ShoeGame.nextQuestion()">Next Question →</button>
                 </div>
-
-                <div class="session-info">
-                    <span>Session: ${state.sessionCode}</span>
-                    <span>Player: ${state.userName}</span>
-                </div>
+                ` : ''}
             </div>
         `;
     }
 
-    function renderResultsScreen(apiResults = null) {
-        const michelleVotes = state.votes.filter(v => v.choice === 'michelle').length;
-        const jazeelVotes = state.votes.filter(v => v.choice === 'jazeel').length;
+    function renderResults() {
+        const michelleVotes = state.votes.filter(v => v === 'michelle').length;
+        const jazeelVotes = state.votes.filter(v => v === 'jazeel').length;
         const totalVotes = state.votes.length;
         
-        let michellePercent = 0;
-        let jazeelPercent = 0;
-        let winner = 'Tie';
+        const michellePercent = totalVotes > 0 ? Math.round((michelleVotes / totalVotes) * 100) : 0;
+        const jazeelPercent = totalVotes > 0 ? Math.round((jazeelVotes / totalVotes) * 100) : 0;
         
-        if (totalVotes > 0) {
-            michellePercent = Math.round((michelleVotes / totalVotes) * 100);
-            jazeelPercent = Math.round((jazeelVotes / totalVotes) * 100);
-            
-            if (michellePercent > jazeelPercent) {
-                winner = 'Michelle';
-            } else if (jazeelPercent > michellePercent) {
-                winner = 'Jazeel';
-            }
-        }
-
-        if (apiResults && apiResults.results) {
-            const results = apiResults.results;
-            michellePercent = Math.round(results.mom_percentage || 0);
-            jazeelPercent = Math.round(results.dad_percentage || 0);
-            winner = results.winning_choice === 'mom' ? 'Michelle' : 
-                    results.winning_choice === 'dad' ? 'Jazeel' : 'Tie';
-        }
+        let winner = 'Tie';
+        if (michellePercent > jazeelPercent) winner = 'Michelle';
+        else if (jazeelPercent > michellePercent) winner = 'Jazeel';
 
         container.innerHTML = `
             <div class="shoe-game-results">
                 <h2>🎉 Game Complete!</h2>
                 
                 <div class="results-summary">
-                    <p>Thanks for playing, ${state.userName}!</p>
-                    <p>You answered ${state.votes.length} questions about Michelle & Jazeel.</p>
+                    <p>You answered ${totalVotes} questions about Michelle & Jazeel!</p>
                 </div>
 
                 ${winner !== 'Tie' ? `
@@ -287,7 +153,7 @@
                 ` : `
                 <div class="tie-result">
                     <h3>It's a Tie! 🤝</h3>
-                    <p>The crowd couldn't decide between Michelle and Jazeel!</p>
+                    <p>The crowd couldn't decide!</p>
                 </div>
                 `}
 
@@ -316,202 +182,58 @@
         `;
     }
 
-    function renderErrorScreen() {
-        container.innerHTML = `
-            <div class="shoe-game-error">
-                <h2>😅 Oops!</h2>
-                <p>Something went wrong with the game.</p>
-                <p>Please refresh the page and try again.</p>
-                <button class="shoe-btn" onclick="location.reload()">Refresh Page</button>
-            </div>
-        `;
-    }
-
-    function showError(message) {
-        state.view = 'error';
-        container.innerHTML = `
-            <div class="shoe-game-error">
-                <h2>😅 Oops!</h2>
-                <p>${message}</p>
-                <button class="shoe-btn" onclick="window.ShoeGame.backToActivities()">Back to Activities</button>
-            </div>
-        `;
-    }
-
-    function startGame() {
-        const nameInput = document.getElementById('guest-name-input');
-        if (!nameInput) return;
+    function vote(choice) {
+        if (state.hasVoted) return;
         
-        const name = nameInput.value.trim();
-        if (!name) {
-            alert('Please enter your name!');
-            return;
-        }
-        
-        if (name.length > 50) {
-            alert('Name is too long! Please use 50 characters or less.');
-            return;
-        }
-        
-        state.userName = name;
-        localStorage.setItem('shoe_game_name', name);
-        
-        createOrJoinSession();
-    }
-
-    async function vote(choice) {
         console.log('[ShoeGame] Vote:', choice);
+        
+        state.votes.push(choice);
+        state.hasVoted = true;
         
         const btnMichelle = document.getElementById('btn-michelle');
         const btnJazeel = document.getElementById('btn-jazeel');
-        const feedback = document.getElementById('shoe-feedback');
         
-        if (!btnMichelle || !btnJazeel || !feedback) return;
-        
-        btnMichelle.disabled = true;
-        btnJazeel.disabled = true;
-        
-        if (choice === 'michelle') {
-            btnMichelle.classList.add('voted');
-            btnJazeel.classList.add('disabled');
-        } else {
-            btnJazeel.classList.add('voted');
-            btnMichelle.classList.add('disabled');
-        }
-        
-        feedback.classList.remove('hidden');
-        
-        try {
-            const response = await fetch(`${window.CONFIG?.SUPABASE?.URL}/functions/v1/who-would-rather/vote`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'apikey': window.CONFIG?.SUPABASE?.ANON_KEY || ''
-                },
-                body: JSON.stringify({
-                    session_code: state.sessionCode,
-                    guest_name: state.userName,
-                    question_number: state.currentQuestionData.question_number,
-                    vote_choice: choice === 'michelle' ? 'mom' : 'dad'
-                })
-            });
-
-            if (!response.ok) {
-                throw new Error('Failed to submit vote');
-            }
-
-            const data = await response.json();
-            if (data.success) {
-                state.votes.push({
-                    question_number: state.currentQuestionData.question_number,
-                    choice: choice,
-                    question_text: state.currentQuestionData.question_text
-                });
-                
-                setTimeout(() => {
-                    advanceToNextQuestion();
-                }, 1500);
-            } else {
-                throw new Error(data.error || 'Failed to submit vote');
-            }
-        } catch (error) {
-            console.error('[ShoeGame] Vote submission error:', error);
-            btnMichelle.disabled = false;
-            btnJazeel.disabled = false;
-            btnMichelle.classList.remove('voted', 'disabled');
-            btnJazeel.classList.remove('voted', 'disabled');
-            feedback.classList.add('hidden');
+        if (btnMichelle && btnJazeel) {
+            btnMichelle.disabled = true;
+            btnJazeel.disabled = true;
             
-            showError('Failed to record vote. Please try again.');
+            if (choice === 'michelle') {
+                btnMichelle.classList.add('voted');
+                btnJazeel.classList.add('disabled');
+            } else {
+                btnJazeel.classList.add('voted');
+                btnMichelle.classList.add('disabled');
+            }
         }
+        
+        render();
     }
 
-    async function advanceToNextQuestion() {
-        try {
-            if (state.currentQuestionData.question_number >= state.totalQuestions) {
-                showResults();
-                return;
-            }
-            
-            const response = await fetch(`${window.CONFIG?.SUPABASE?.URL}/functions/v1/who-would-rather/next-question`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'apikey': window.CONFIG?.SUPABASE?.ANON_KEY || ''
-                },
-                body: JSON.stringify({
-                    session_code: state.sessionCode
-                })
-            });
-
-            if (!response.ok) {
-                throw new Error('Failed to advance to next question');
-            }
-
-            const data = await response.json();
-            if (data.success) {
-                if (data.data.is_complete) {
-                    showResults();
-                } else {
-                    await loadCurrentQuestion();
-                }
-            } else {
-                throw new Error(data.error || 'Failed to advance to next question');
-            }
-        } catch (error) {
-            console.error('[ShoeGame] Next question error:', error);
-            showError('Failed to load next question. Please refresh and try again.');
-        }
-    }
-
-    async function showResults() {
-        state.view = 'results';
-        
-        try {
-            const response = await fetch(`${window.CONFIG?.SUPABASE?.URL}/functions/v1/who-would-rather/results?session_code=${state.sessionCode}`, {
-                method: 'GET',
-                headers: {
-                    'apikey': window.CONFIG?.SUPABASE?.ANON_KEY || ''
-                }
-            });
-
-            if (!response.ok) {
-                throw new Error('Failed to load results');
-            }
-
-            const data = await response.json();
-            if (data.success) {
-                renderResultsScreen(data.data);
-            } else {
-                throw new Error(data.error || 'Failed to load results');
-            }
-        } catch (error) {
-            console.error('[ShoeGame] Results loading error:', error);
-            renderResultsScreen(null);
-        }
+    function nextQuestion() {
+        state.currentQuestion++;
+        state.hasVoted = false;
+        render();
     }
 
     function restart() {
-        state.votes = [];
         state.currentQuestion = 0;
-        state.currentQuestionData = null;
-        
-        createOrJoinSession();
+        state.votes = [];
+        state.hasVoted = false;
+        render();
     }
 
     function backToActivities() {
         if (window.Navigation && window.Navigation.showSection) {
             window.Navigation.showSection('welcome');
         } else {
-            window.location.hash = '';
             location.reload();
         }
     }
 
     window.ShoeGame = {
         init: init,
-        startGame: startGame,
         vote: vote,
+        nextQuestion: nextQuestion,
         restart: restart,
         backToActivities: backToActivities
     };
