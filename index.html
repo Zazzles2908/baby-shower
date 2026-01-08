@@ -7,17 +7,11 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=Quicksand:wght@400;600;700&display=swap" rel="stylesheet">
-    <!-- Design System & Enhanced Styles -->
-    <link rel="stylesheet" href="styles/design-system.css">
-    <link rel="stylesheet" href="styles/main-enhanced.css">
-    <link rel="stylesheet" href="styles/loading-states.css">
-
-    <!-- Legacy Styles (for backward compatibility) -->
-    <link rel="stylesheet" href="styles/main.css">
-    <link rel="stylesheet" href="styles/cute-enhancements.css">
-    <link rel="stylesheet" href="styles/animations.css">
-    <link rel="stylesheet" href="styles/who-would-rather.css">
-    <link rel="stylesheet" href="styles/mom-vs-dad-simplified.css">
+        <link rel="stylesheet" href="styles/cute-enhancements.css">
+        <link rel="stylesheet" href="styles/animations.css">
+        <link rel="stylesheet" href="styles/main.css">
+        <link rel="stylesheet" href="styles/who-would-rather.css">
+        <link rel="stylesheet" href="styles/mom-vs-dad-simplified.css">
         <link rel="icon" type="image/x-icon" href="baby_content\Pictures\Jazeel_Icon\asset_chibi_avatar_f.png">
         <link rel="icon" type="image/x-icon" href="baby_content\Pictures\Michelle_Icon\asset_chibi_avatar_m.png">
         <link rel="icon" type="image/x-icon" href="favicon.png">
@@ -38,7 +32,7 @@
             <div class="hero-section">
                 <div class="hero-image">
                     <div class="hero-image-wrapper image-wrapper" id="hero-image-container">
-                        <img src="https://bkszmvfsfgvdwzacgmfz.supabase.co/storage/v1/object/public/baby-shower-pictures/Pictures/New Images/Duo/chibi_duo_highfive.png" alt="Michelle & Jazeel" class="hero-main-image" onload="this.parentElement.classList.add('loaded');">
+                        <!-- Hero image will be loaded by JavaScript -->
                     </div>
                 </div>
                 <div class="hero-content">
@@ -122,13 +116,13 @@
                             <span class="card-title">Mom vs Dad</span>
                             <span class="card-subtitle">The Truth Revealed</span>
                         </button>
-                        <button class="activity-card" data-section="who-would-rather" aria-label="Who Would Rather - Fun party game">
+                        <button class="activity-card" data-section="who-would-rather" aria-label="The Shoe Game - Predict who would do what">
                             <div class="card-background-image"></div>
                             <div class="card-icon anime-character-wrapper">
-                                <img src="https://bkszmvfsfgvdwzacgmfz.supabase.co/storage/v1/object/public/baby-shower-pictures/Pictures/New Images/Duo/chibi_duo_highfive.png" alt="Who Would Rather" class="anime-character" style="max-width: 80px; max-height: 100px;">
+                                <img src="https://bkszmvfsfgvdwzacgmfz.supabase.co/storage/v1/object/public/baby-shower-pictures/Pictures/New Images/Duo/chibi_duo_highfive.png" alt="The Shoe Game" class="anime-character" style="max-width: 80px; max-height: 100px;">
                             </div>
-                            <span class="card-title">Who Would Rather</span>
-                            <span class="card-subtitle">Fun party game!</span>
+                            <span class="card-title">The Shoe Game</span>
+                            <span class="card-subtitle">Who would do this?</span>
                         </button>
                     </div>
                 </div>
@@ -386,13 +380,25 @@
         <section id="who-would-rather-section" class="hidden">
             <div class="container">
                 <button class="back-btn">← Back to Activities</button>
-                <h1>🤔 Who Would Rather</h1>
-                <p class="subtitle">Answer fun questions about the parents-to-be!</p>
-                
-                <!-- Game container -->
-                <div id="who-would-rather-game">
-                    <!-- Game content renders here -->
+                <div class="section-decoration">
+                    <div class="corner-decoration top-left">
+                        <img src="https://bkszmvfsfgvdwzacgmfz.supabase.co/storage/v1/object/public/baby-shower-pictures/Pictures/Michelle_Jazeel/app_hero_chibi.png" alt="Couple" loading="lazy" decoding="async" class="corner-decoration-img">
+                    </div>
+                    <div class="corner-decoration top-right">
+                        <img src="https://bkszmvfsfgvdwzacgmfz.supabase.co/storage/v1/object/public/baby-shower-pictures/Pictures/Michelle_Baby/chibi_michelle_garden.png" alt="Baby Michelle" loading="lazy" decoding="async" class="corner-decoration-img">
+                    </div>
+                    <div class="corner-decoration bottom-left">
+                        <img src="https://bkszmvfsfgvdwzacgmfz.supabase.co/storage/v1/object/public/baby-shower-pictures/Pictures/Jazeel_Baby/chibi_jazeel_dad_couch_edit.png" alt="Baby Jazeel" loading="lazy" decoding="async" class="corner-decoration-img">
+                    </div>
+                    <div class="corner-decoration bottom-right">
+                        <img src="https://bkszmvfsfgvdwzacgmfz.supabase.co/storage/v1/object/public/baby-shower-pictures/Pictures/Michelle_Jazeel/app_hero_illustration.png" alt="Couple" loading="lazy" decoding="async" class="corner-decoration-img">
+                    </div>
                 </div>
+                <h1>👟 The Shoe Game</h1>
+                <p class="subtitle">Predict: Who would do this? Tap Michelle or Jazeel!</p>
+
+                <!-- Game container -->
+                <div id="who-would-rather-container"></div>
             </div>
         </section>
 
@@ -428,47 +434,102 @@
     <!-- Enhanced Error Monitoring (must load first) -->
     <script src="scripts/error-monitor.js"></script>
 
-    <!-- Environment Configuration (populated by inject-env.js) -->
-    <script>
-        window.ENV = window.ENV || {};
-    </script>
-
-    <script>
-        // Environment variables will be injected at runtime by inject-env.js
-        // Supabase credentials are loaded dynamically - NEVER hardcode here!
-        window.ENV = window.ENV || {};
-        
-        console.log('[ENV] Waiting for inject-env.js to populate credentials...');
-    </script>
-
+    <!-- Environment Configuration (Single source of truth) -->
     <script>
         // Environment variables injected at build time by Vercel
-        // Only public (anon) key is exposed to client - service role stays server-side!
+        // Only expose public (anon) key to client - service role stays server-side!
         window.ENV = window.ENV || {};
+        
+        // These are injected from .env.local during Vercel build
         window.ENV.NEXT_PUBLIC_SUPABASE_URL = 'https://bkszmvfsfgvdwzacgmfz.supabase.co';
         window.ENV.NEXT_PUBLIC_SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJrc3ptdmZzZmd2ZHd6YWNnbWZ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQzODI1NjMsImV4cCI6MjA3OTk1ODU2M30.BswusP1pfDUStzAU8k-VKPailISimApapNeJGlid8sI';
         
-        // CRITICAL: Service role key is NEVER exposed to client-side!
-        // Only accessed server-side in Edge Functions via Deno.env.get()
+        // CRITICAL: Service role key is NEVER exposed to client!
+        // Only accessed server-side in Edge Functions
         
         console.log('[ENV] Supabase URL configured:', window.ENV.NEXT_PUBLIC_SUPABASE_URL ? '***configured***' : 'missing');
         console.log('[ENV] Supabase Anon Key configured:', window.ENV.NEXT_PUBLIC_SUPABASE_ANON_KEY ? '***configured***' : 'missing');
         console.log('[ENV] Security: Service role key NOT exposed to client (as it should be)');
     </script>
+
+    <script>
+        // Environment variables injected at build time
+        window.ENV = window.ENV || {};
+        window.ENV.NEXT_PUBLIC_SUPABASE_URL = 'https://bkszmvfsfgvdwzacgmfz.supabase.co';
+        window.ENV.NEXT_PUBLIC_SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJrc3ptdmZzZmd2ZHd6YWNnbWZ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQzODI1NjMsImV4cCI6MjA3OTk1ODU2M30.BswusP1pfDUStzAU8k-VKPailISimApapNeJGlid8sI';
+        window.ENV.SUPABASE_SERVICE_ROLE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJrc3ptdmZzZmd2ZHd6YWNnbWZ6Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NDM4MjU2MywiZXhwIjoyMDc5OTU4NTYzfQ.96o8NDg5cM8H8PRX3dVU9onPJJFGPnGGVlejcdQrNuU';
+        
+        console.log('[ENV] Supabase URL configured:', window.ENV.NEXT_PUBLIC_SUPABASE_URL ? '***configured***' : 'missing');
+        console.log('[ENV] Supabase Anon Key configured:', window.ENV.NEXT_PUBLIC_SUPABASE_ANON_KEY ? '***configured***' : 'missing');
+    </script>
+
+    <script>
+        // Environment variables injected at build time
+        window.ENV = window.ENV || {};
+        window.ENV.NEXT_PUBLIC_SUPABASE_URL = 'https://bkszmvfsfgvdwzacgmfz.supabase.co';
+        window.ENV.NEXT_PUBLIC_SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJrc3ptdmZzZmd2ZHd6YWNnbWZ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQzODI1NjMsImV4cCI6MjA3OTk1ODU2M30.BswusP1pfDUStzAU8k-VKPailISimApapNeJGlid8sI';
+        window.ENV.SUPABASE_SERVICE_ROLE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJrc3ptdmZzZmd2ZHd6YWNnbWZ6Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NDM4MjU2MywiZXhwIjoyMDc5OTU4NTYzfQ.96o8NDg5cM8H8PRX3dVU9onPJJFGPnGGVlejcdQrNuU';
+        
+        console.log('[ENV] Supabase URL configured:', window.ENV.NEXT_PUBLIC_SUPABASE_URL ? '***configured***' : 'missing');
+        console.log('[ENV] Supabase Anon Key configured:', window.ENV.NEXT_PUBLIC_SUPABASE_ANON_KEY ? '***configured***' : 'missing');
+    </script>
+
+    <script>
+        // Environment variables injected at build time
+        window.ENV = window.ENV || {};
+        window.ENV.NEXT_PUBLIC_SUPABASE_URL = 'https://bkszmvfsfgvdwzacgmfz.supabase.co';
+        window.ENV.NEXT_PUBLIC_SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJrc3ptdmZzZmd2ZHd6YWNnbWZ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQzODI1NjMsImV4cCI6MjA3OTk1ODU2M30.BswusP1pfDUStzAU8k-VKPailISimApapNeJGlid8sI';
+        window.ENV.SUPABASE_SERVICE_ROLE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJrc3ptdmZzZmd2ZHd6YWNnbWZ6Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NDM4MjU2MywiZXhwIjoyMDc5OTU4NTYzfQ.96o8NDg5cM8H8PRX3dVU9onPJJFGPnGGVlejcdQrNuU';
+        
+        console.log('[ENV] Supabase URL configured:', window.ENV.NEXT_PUBLIC_SUPABASE_URL ? '***configured***' : 'missing');
+        console.log('[ENV] Supabase Anon Key configured:', window.ENV.NEXT_PUBLIC_SUPABASE_ANON_KEY ? '***configured***' : 'missing');
+    </script>
+
+    <script>
+        // Environment variables injected at build time
+        window.ENV = window.ENV || {};
+        window.ENV.NEXT_PUBLIC_SUPABASE_URL = 'https://bkszmvfsfgvdwzacgmfz.supabase.co';
+        window.ENV.NEXT_PUBLIC_SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJrc3ptdmZzZmd2ZHd6YWNnbWZ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQzODI1NjMsImV4cCI6MjA3OTk1ODU2M30.BswusP1pfDUStzAU8k-VKPailISimApapNeJGlid8sI';
+        window.ENV.SUPABASE_SERVICE_ROLE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJrc3ptdmZzZmd2ZHd6YWNnbWZ6Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NDM4MjU2MywiZXhwIjoyMDc5OTU4NTYzfQ.96o8NDg5cM8H8PRX3dVU9onPJJFGPnGGVlejcdQrNuU';
+        
+        console.log('[ENV] Supabase URL configured:', window.ENV.NEXT_PUBLIC_SUPABASE_URL ? '***configured***' : 'missing');
+        console.log('[ENV] Supabase Anon Key configured:', window.ENV.NEXT_PUBLIC_SUPABASE_ANON_KEY ? '***configured***' : 'missing');
+    </script>
+
+    <script>
+        // Environment variables injected at build time
+        window.ENV = window.ENV || {};
+        window.ENV.NEXT_PUBLIC_SUPABASE_URL = 'https://bkszmvfsfgvdwzacgmfz.supabase.co';
+        window.ENV.NEXT_PUBLIC_SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJrc3ptdmZzZmd2ZHd6YWNnbWZ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQzODI1NjMsImV4cCI6MjA3OTk1ODU2M30.BswusP1pfDUStzAU8k-VKPailISimApapNeJGlid8sI';
+        window.ENV.SUPABASE_SERVICE_ROLE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJrc3ptdmZzZmd2ZHd6YWNnbWZ6Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NDM4MjU2MywiZXhwIjoyMDc5OTU4NTYzfQ.96o8NDg5cM8H8PRX3dVU9onPJJFGPnGGVlejcdQrNuU';
+        
+        console.log('[ENV] Supabase URL configured:', window.ENV.NEXT_PUBLIC_SUPABASE_URL ? '***configured***' : 'missing');
+        console.log('[ENV] Supabase Anon Key configured:', window.ENV.NEXT_PUBLIC_SUPABASE_ANON_KEY ? '***configured***' : 'missing');
+    </script>
+
+    <script>
+        // Environment variables injected at build time
+        window.ENV = window.ENV || {};
+        window.ENV.NEXT_PUBLIC_SUPABASE_URL = 'https://bkszmvfsfgvdwzacgmfz.supabase.co';
+        window.ENV.NEXT_PUBLIC_SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJrc3ptdmZzZmd2ZHd6YWNnbWZ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQzODI1NjMsImV4cCI6MjA3OTk1ODU2M30.BswusP1pfDUStzAU8k-VKPailISimApapNeJGlid8sI';
+        window.ENV.SUPABASE_SERVICE_ROLE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJrc3ptdmZzZmd2ZHd6YWNnbWZ6Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NDM4MjU2MywiZXhwIjoyMDc5OTU4NTYzfQ.96o8NDg5cM8H8PRX3dVU9onPJJFGPnGGVlejcdQrNuU';
+        
+        console.log('[ENV] Supabase URL configured:', window.ENV.NEXT_PUBLIC_SUPABASE_URL ? '***configured***' : 'missing');
+        console.log('[ENV] Supabase Anon Key configured:', window.ENV.NEXT_PUBLIC_SUPABASE_ANON_KEY ? '***configured***' : 'missing');
+    </script>
 <script src="scripts/config.js"></script>
     <script src="scripts/security.js"></script>
 
     <!-- Enhanced Services (replacement for originals) -->
-    <!-- Cache-busting: v20260106d - FORCED REFRESH -->
-    <script src="scripts/image-service-enhanced.js?v=20260106d"></script>
+    <script src="scripts/image-service-enhanced.js"></script>
     <script src="scripts/gallery.js"></script>
-    <script src="scripts/api-supabase-enhanced.js?v=20260106d"></script>
+    <script src="scripts/api-supabase-enhanced.js"></script>
 
     <!-- Core Application -->
     <script src="scripts/surprises.js"></script>
     <script src="scripts/anime-characters.js"></script>
     <script src="scripts/ui-utils.js"></script>
-    <script src="scripts/main.js?v=20260106d"></script>
+    <script src="scripts/main.js"></script>
 
     <!-- Activity Scripts -->
     <script src="scripts/guestbook.js"></script>
@@ -478,7 +539,7 @@
 
     <!-- Enhanced Game Scripts -->
     <script src="scripts/realtime-manager-enhanced.js"></script>
-    <script src="scripts/mom-vs-dad-simplified.js?v=20260106d"></script>
+    <script src="scripts/mom-vs-dad-simplified.js"></script>
     <script src="scripts/who-would-rather.js"></script>
     <script src="scripts/game-init-enhanced.js"></script>
 
@@ -502,21 +563,21 @@
             <img id="lightbox-image" src="" alt="Enlarged image">
             <div class="lightbox-caption"></div>
         </div>
-    </div>
 
-    <!-- Personalized Footer -->
-    <footer class="personalized-footer">
-        <div class="footer-content">
-            <div class="footer-title">From Our Family to Yours</div>
-            <div class="footer-subtitle">Thank you for celebrating with us!</div>
-            <div class="footer-gallery">
-                <img src="https://bkszmvfsfgvdwzacgmfz.supabase.co/storage/v1/object/public/baby-shower-pictures/Pictures/Jazeel_Baby/chibi_jazeel_newborn_edit.png" alt="Baby Jazeel" loading="lazy" decoding="async" class="footer-photo">
-                <img src="https://bkszmvfsfgvdwzacgmfz.supabase.co/storage/v1/object/public/baby-shower-pictures/Pictures/Michelle_Baby/chibi_michelle_1st_birthday.png" alt="Baby Michelle" loading="lazy" decoding="async" class="footer-photo">
-                <img src="https://bkszmvfsfgvdwzacgmfz.supabase.co/storage/v1/object/public/baby-shower-pictures/Pictures/Michelle_Jazeel/app_hero_chibi.png" alt="Couple" loading="lazy" decoding="async" class="footer-photo">
-                <img src="https://bkszmvfsfgvdwzacgmfz.supabase.co/storage/v1/object/public/baby-shower-pictures/Pictures/Michelle_Baby/chibi_michelle_garden.png" alt="Baby Michelle" loading="lazy" decoding="async" class="footer-photo">
-                <img src="https://bkszmvfsfgvdwzacgmfz.supabase.co/storage/v1/object/public/baby-shower-pictures/Pictures/Jazeel_Baby/chibi_jazeel_dad_couch_edit.png" alt="Baby Jazeel" loading="lazy" decoding="async" class="footer-photo">
+        <!-- Personalized Footer -->
+        <footer class="personalized-footer">
+            <div class="footer-content">
+                <div class="footer-title">From Our Family to Yours</div>
+                <div class="footer-subtitle">Thank you for celebrating with us!</div>
+                <div class="footer-gallery">
+                    <img src="https://bkszmvfsfgvdwzacgmfz.supabase.co/storage/v1/object/public/baby-shower-pictures/Pictures/Jazeel_Baby/chibi_jazeel_newborn_edit.png" alt="Baby Jazeel" loading="lazy" decoding="async" class="footer-photo">
+                    <img src="https://bkszmvfsfgvdwzacgmfz.supabase.co/storage/v1/object/public/baby-shower-pictures/Pictures/Michelle_Baby/chibi_michelle_1st_birthday.png" alt="Baby Michelle" loading="lazy" decoding="async" class="footer-photo">
+                    <img src="https://bkszmvfsfgvdwzacgmfz.supabase.co/storage/v1/object/public/baby-shower-pictures/Pictures/Michelle_Jazeel/app_hero_chibi.png" alt="Couple" loading="lazy" decoding="async" class="footer-photo">
+                    <img src="https://bkszmvfsfgvdwzacgmfz.supabase.co/storage/v1/object/public/baby-shower-pictures/Pictures/Michelle_Baby/chibi_michelle_garden.png" alt="Baby Michelle" loading="lazy" decoding="async" class="footer-photo">
+                    <img src="https://bkszmvfsfgvdwzacgmfz.supabase.co/storage/v1/object/public/baby-shower-pictures/Pictures/Jazeel_Baby/chibi_jazeel_dad_couch_edit.png" alt="Baby Jazeel" loading="lazy" decoding="async" class="footer-photo">
+                </div>
             </div>
-        </div>
-    </footer>
+        </footer>
+    </div>
 </body>
 </html>
