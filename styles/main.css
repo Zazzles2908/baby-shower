@@ -4075,10 +4075,18 @@ picture img {
 .lightbox-content img {
     width: 100%;
     height: auto;
-    max-height: 85vh;
+    max-height: min(85vh, 800px);
+    max-width: min(90vw, 1200px);
     object-fit: contain;
     border-radius: 12px;
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+    transition: transform 0.3s ease;
+}
+
+/* Prevent images from overwhelming the UI */
+.lightbox-content img {
+    max-width: min(90vw, 1200px);
+    max-height: min(85vh, 800px);
 }
 
 .lightbox-caption {
