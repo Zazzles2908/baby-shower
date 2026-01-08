@@ -113,39 +113,44 @@
     }
 
     /**
-        * Fetch lobby status - using game-session Edge Function
+        * Fetch lobby status - using Supabase client RPC call
         */
     async function fetchLobbyStatus(lobbyKey) {
         try {
-            const url = getEdgeFunctionUrl('game-session');
-            const response = await apiFetch(url, {
-                method: 'POST',
-                body: JSON.stringify({
-                    action: 'get_status',
-                    session_code: lobbyKey
-                }),
-            });
-
-            if (response && response.data) {
-                const session = response.data;
-                console.log('[MomVsDadSimplified] Found session:', session.mom_name, 'vs', session.dad_name, session.status);
-
-                return {
-                    id: session.id,
-                    lobby_key: session.session_code,
-                    lobby_name: `${session.mom_name} vs ${session.dad_name}`,
-                    status: session.status,
-                    mom_name: session.mom_name,
-                    dad_name: session.dad_name,
-                    total_rounds: session.total_rounds,
-                    current_round: session.current_round,
-                    admin_code: session.admin_code,
-                    players: session.players || []
-                };
+            let supabase;
+            if (typeof window.API !== 'undefined' && typeof window.API.getSupabaseClient === 'function') {
+                supabase = await window.API.getSupabaseClient();
+            } else {
+                supabase = getSupabase();
             }
 
-            console.warn('[MomVsDadSimplified] Session not found:', lobbyKey);
-            return null;
+            if (!supabase) {
+                console.warn('[MomVsDadSimplified] Supabase client not available');
+                return null;
+            }
+
+            const { data: session, error } = await supabase
+                .rpc('get_session_details', { p_session_code: lobbyKey.toUpperCase() });
+
+            if (error || !session) {
+                console.warn('[MomVsDadSimplified] Session not found:', lobbyKey, error);
+                return null;
+            }
+
+            console.log('[MomVsDadSimplified] Found session:', session.mom_name, 'vs', session.dad_name, session.status);
+
+            return {
+                id: session.id,
+                lobby_key: session.session_code,
+                lobby_name: `${session.mom_name} vs ${session.dad_name}`,
+                status: session.status,
+                mom_name: session.mom_name,
+                dad_name: session.dad_name,
+                total_rounds: session.total_rounds,
+                current_round: session.current_round,
+                admin_code: session.admin_code,
+                players: []
+            };
         } catch (error) {
             console.warn('[MomVsDadSimplified] Failed to fetch lobby status:', error.message);
             return null;
