@@ -423,3 +423,26 @@ if (typeof module !== 'undefined' && module.exports) {
         getPoolMilestoneMessage
     };
 }
+
+// Create global Pool object for programmatic access
+window.Pool = {
+    init: initializePool,
+    initColorPickers: initializeColorPickers,
+    initColourGrid: initializeFavouriteColourGrid,
+    selectColour: selectFavouriteColour,
+    loadStats: loadPoolStats,
+    validate: validatePoolForm,
+    getData: getPoolFormData,
+    reset: resetPoolForm
+};
+
+// Auto-initialize when DOM is ready
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+        console.log('[Pool] Auto-initializing pool module...');
+        initializePool();
+    });
+} else {
+    console.log('[Pool] Auto-initializing pool module (DOM ready)...');
+    initializePool();
+}
