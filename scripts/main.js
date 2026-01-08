@@ -796,9 +796,14 @@ async function handleGuestbookSubmit(event) {
             }
         }
 
-        // Show inline error message
+        // Show inline error message - check for detailed validation errors
+        let errorMessage = error.message || 'Failed to save your message. Please try again.';
+        if (error.details && Array.isArray(error.details) && error.details.length > 0) {
+            errorMessage = error.details.join('. ');
+        }
+
         if (window.UIUtils) {
-            window.UIUtils.showInlineError(form, error.message || 'Failed to save your message. Please try again.');
+            window.UIUtils.showInlineError(form, errorMessage);
         } else {
             showError(error);
         }
@@ -1064,9 +1069,17 @@ async function handleAdviceSubmit(event) {
             window.UIUtils.clearButtonLoading(submitBtn);
         }
 
-        // Show inline error message
+        // Show inline error message - check for detailed validation errors
+        let errorMessage = error.message || 'Failed to save your advice. Please try again.';
+        
+        // Check if error has details (validation errors from backend)
+        if (error.details && Array.isArray(error.details) && error.details.length > 0) {
+            // Join the validation error messages
+            errorMessage = error.details.join('. ');
+        }
+        
         if (window.UIUtils) {
-            window.UIUtils.showInlineError(form, error.message || 'Failed to save your advice. Please try again.');
+            window.UIUtils.showInlineError(form, errorMessage);
         } else {
             showError(error);
         }
