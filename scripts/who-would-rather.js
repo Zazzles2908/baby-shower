@@ -111,12 +111,20 @@
 
                 ${state.hasVoted ? `
                 <div class="vote-recorded">
-                    <p>✓ Vote recorded!</p>
-                    <button class="shoe-btn next-btn" onclick="window.ShoeGame.nextQuestion()">Next Question →</button>
+                    <p>Vote recorded!</p>
                 </div>
                 ` : ''}
             </div>
         `;
+        
+        // Auto-advance to next question after short delay
+        if (state.hasVoted) {
+            setTimeout(() => {
+                state.currentQuestion++;
+                state.hasVoted = false;
+                render();
+            }, 800);
+        }
     }
 
     function renderResults() {
