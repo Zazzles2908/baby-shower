@@ -18,7 +18,7 @@
             title: 'Welcome to the World',
             date: 'Newborn',
             caption: 'Your very first hello to the world',
-            image: 'Pictures/Jazeel_Baby/chibi_jazeel_newborn_edit.png',
+            image: 'https://bkszmvfsfgvdwzacgmfz.supabase.co/storage/v1/object/public/baby-shower-pictures/Pictures/Jazeel_Baby/chibi_jazeel_newborn_edit.png',
             alt: 'Baby Jazeel as newborn'
         },
         {
@@ -26,7 +26,7 @@
             title: 'First Birthday!',
             date: '1st Birthday',
             caption: 'Celebrating your very first milestone',
-            image: 'Pictures/Jazeel_Baby/chibi_jazeel_birthday_edit.png',
+            image: 'https://bkszmvfsfgvdwzacgmfz.supabase.co/storage/v1/object/public/baby-shower-pictures/Pictures/Jazeel_Baby/chibi_jazeel_birthday_edit.png',
             alt: 'Baby Jazeel first birthday'
         },
         {
@@ -34,7 +34,7 @@
             title: 'Cake Time',
             date: 'Cake Smash',
             caption: 'Sweet memories of your cake adventure',
-            image: 'Pictures/Jazeel_Baby/chibi_jazeel_cake.png',
+            image: 'https://bkszmvfsfgvdwzacgmfz.supabase.co/storage/v1/object/public/baby-shower-pictures/Pictures/Jazeel_Baby/chibi_jazeel_cake.png',
             alt: 'Baby Jazeel with birthday cake'
         },
         {
@@ -42,7 +42,7 @@
             title: 'Daddy\'s Little Helper',
             date: 'Quality Time',
             caption: 'Helping Daddy on the couch',
-            image: 'Pictures/Jazeel_Baby/chibi_jazeel_dad_couch_edit.png',
+            image: 'https://bkszmvfsfgvdwzacgmfz.supabase.co/storage/v1/object/public/baby-shower-pictures/Pictures/Jazeel_Baby/chibi_jazeel_dad_couch_edit.png',
             alt: 'Baby Jazeel with dad'
         },
         {
@@ -50,7 +50,7 @@
             title: 'Big Girl\'s Day',
             date: '1st Birthday',
             caption: 'A beautiful day filled with love and joy',
-            image: 'Pictures/Michelle_Baby/chibi_michelle_1st_birthday.png',
+            image: 'https://bkszmvfsfgvdwzacgmfz.supabase.co/storage/v1/object/public/baby-shower-pictures/Pictures/Michelle_Baby/chibi_michelle_1st_birthday.png',
             alt: 'Baby Michelle first birthday'
         },
         {
@@ -58,7 +58,7 @@
             title: 'Garden Adventures',
             date: 'Outdoors',
             caption: 'Exploring the beautiful garden together',
-            image: 'Pictures/Michelle_Baby/chibi_michelle_garden.png',
+            image: 'https://bkszmvfsfgvdwzacgmfz.supabase.co/storage/v1/object/public/baby-shower-pictures/Pictures/Michelle_Baby/chibi_michelle_garden.png',
             alt: 'Baby Michelle in garden'
         },
         {
@@ -66,7 +66,7 @@
             title: 'Sisterly Love',
             date: 'Family Time',
             caption: 'Bonds that last a lifetime',
-            image: 'Pictures/Michelle_Baby/chibi_michelle_sisters.png',
+            image: 'https://bkszmvfsfgvdwzacgmfz.supabase.co/storage/v1/object/public/baby-shower-pictures/Pictures/Michelle_Baby/chibi_michelle_sisters.png',
             alt: 'Baby Michelle with sisters'
         },
         {
@@ -74,7 +74,7 @@
             title: 'Our Love Story',
             date: 'Together',
             caption: 'Jazeel and Michelle expecting our little girl',
-            image: 'Pictures/Michelle_Jazeel/asset_anime_portrait.png',
+            image: 'https://bkszmvfsfgvdwzacgmfz.supabase.co/storage/v1/object/public/baby-shower-pictures/Pictures/Michelle_Jazeel/asset_anime_portrait.png',
             alt: 'Jazeel and Michelle portrait'
         }
     ];
@@ -85,13 +85,13 @@
      * Using new high-quality images from New Images folder
      */
     const ACTIVITY_BACKGROUNDS = {
-        guestbook: 'Pictures/New Images/Michelle/chibi_michelle_excited_red.png',
-        pool: 'Pictures/New Images/Jazeel/chibi_jazeel_eating.png',
-        quiz: 'Pictures/New Images/Jazeel/chibi_jazeel_confused.png',
-        advice: 'Pictures/New Images/Michelle/chibi_michelle_sweet_smile.png',
-        voting: 'Pictures/New Images/Duo/chibi_duo_highfive.png',
-        'mom-vs-dad': 'Pictures/New Images/Duo/chibi_duo_highfive.png',
-        'who-would-rather': 'Pictures/New Images/Duo/chibi_duo_highfive.png'
+        guestbook: 'https://bkszmvfsfgvdwzacgmfz.supabase.co/storage/v1/object/public/baby-shower-pictures/Pictures/New Images/Michelle/chibi_michelle_excited_red.png',
+        pool: 'https://bkszmvfsfgvdwzacgmfz.supabase.co/storage/v1/object/public/baby-shower-pictures/Pictures/New Images/Jazeel/chibi_jazeel_eating.png',
+        quiz: 'https://bkszmvfsfgvdwzacgmfz.supabase.co/storage/v1/object/public/baby-shower-pictures/Pictures/New Images/Jazeel/chibi_jazeel_confused.png',
+        advice: 'https://bkszmvfsfgvdwzacgmfz.supabase.co/storage/v1/object/public/baby-shower-pictures/Pictures/New Images/Michelle/chibi_michelle_sweet_smile.png',
+        voting: 'https://bkszmvfsfgvdwzacgmfz.supabase.co/storage/v1/object/public/baby-shower-pictures/Pictures/New Images/Duo/chibi_duo_highfive.png',
+        'mom-vs-dad': 'https://bkszmvfsfgvdwzacgmfz.supabase.co/storage/v1/object/public/baby-shower-pictures/Pictures/New Images/Duo/chibi_duo_highfive.png',
+        'who-would-rather': 'https://bkszmvfsfgvdwzacgmfz.supabase.co/storage/v1/object/public/baby-shower-pictures/Pictures/New Images/Duo/chibi_duo_highfive.png'
     };
 
     /**
