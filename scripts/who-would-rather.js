@@ -47,7 +47,7 @@
     let container = null;
 
     function init() {
-        container = document.getElementById('who-would-rather-game');
+        container = document.getElementById('who-would-rather-container');
         if (!container) {
             console.warn('[ShoeGame] Container not found');
             return;
