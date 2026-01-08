@@ -135,7 +135,7 @@
 
         // Use the Michelle & Jazeel chibi portrait for better presentation
         // Use 'original' size since we don't have sized variants
-        const heroImageUrl = ImageService.getImageUrl('Pictures/Michelle_Jazeel/app_hero_chibi.png', 'original');
+        const heroImageUrl = ImageService.getImageUrl('Pictures/New Images/Duo/chibi_duo_highfive.png', 'original');
         
         if (heroImageUrl) {
             // Set loading state immediately

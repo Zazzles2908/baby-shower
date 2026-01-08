@@ -3894,6 +3894,7 @@ picture img {
 
 .gallery-item-image {
     width: 100%;
+    height: auto;
     border-radius: 16px;
     box-shadow: var(--shadow-card);
     transition: transform 0.3s ease, box-shadow 0.3s ease;
@@ -4081,12 +4082,6 @@ picture img {
     border-radius: 12px;
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
     transition: transform 0.3s ease;
-}
-
-/* Prevent images from overwhelming the UI */
-.lightbox-content img {
-    max-width: min(90vw, 1200px);
-    max-height: min(85vh, 800px);
 }
 
 .lightbox-caption {

@@ -90,6 +90,7 @@ serve(async (req: Request) => {
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey, {
       auth: { autoRefreshToken: false, persistSession: false },
+      db: { schema: 'baby_shower' }
     })
 
     if (req.method === 'GET') {
