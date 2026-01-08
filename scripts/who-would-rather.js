@@ -186,14 +186,14 @@
                     <div class="breakdown-item">
                         <div class="breakdown-name">${CONFIG.parentA.name}</div>
                         <div class="breakdown-bar">
-                            <div class="breakdown-fill" style="width: ${percentA}%"></div>
+                            <div class="breakdown-fill mom-bar" style="width: ${percentA}%"></div>
                         </div>
                         <div class="breakdown-percent">${percentA}%</div>
                     </div>
                     <div class="breakdown-item">
                         <div class="breakdown-name">${CONFIG.parentB.name}</div>
                         <div class="breakdown-bar">
-                            <div class="breakdown-fill" style="width: ${percentB}%"></div>
+                            <div class="breakdown-fill dad-bar" style="width: ${percentB}%"></div>
                         </div>
                         <div class="breakdown-percent">${percentB}%</div>
                     </div>

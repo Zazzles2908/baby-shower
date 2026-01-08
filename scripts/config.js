@@ -260,6 +260,44 @@
             'Emma', 'Olivia', 'Sophia', 'Charlotte', 'Amelia',
             'Ava', 'Mia', 'Isabella', 'Lily', 'Harper'
         ],
+        PERSONALITY_OPTIONS: [
+            {
+                id: 'happy',
+                label: 'Happy',
+                emoji: '😊',
+                icon: 'Michelle/chibi_michelle_excited_red.png'
+            },
+            {
+                id: 'energetic',
+                label: 'Energetic',
+                emoji: '⚡',
+                icon: 'Jazeel/chibi_jazeel_eating.png'
+            },
+            {
+                id: 'calm',
+                label: 'Calm',
+                emoji: '😌',
+                icon: 'Michelle/chibi_michelle_sweet_smile.png'
+            },
+            {
+                id: 'curious',
+                label: 'Curious',
+                emoji: '👀',
+                icon: 'Jazeel/chibi_jazeel_confused.png'
+            },
+            {
+                id: 'playful',
+                label: 'Playful',
+                emoji: '🎈',
+                icon: 'Michelle/chibi_china_031.png'
+            },
+            {
+                id: 'loving',
+                label: 'Loving',
+                emoji: '💕',
+                icon: 'Jazeel/chibi_boy_mix_icon_3.png'
+            }
+        ],
         QUIZ_PUZZLES: {
             puzzle1: { emojis: '👶🎂🕯️', answer: 'Birthday Cake', hint: 'Baby celebration food' },
             puzzle2: { emojis: '🍼👶', answer: 'Baby Bottle', hint: 'What baby drinks from' },

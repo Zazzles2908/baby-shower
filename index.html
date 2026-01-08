@@ -230,6 +230,91 @@
                         <label for="pool-length">Predicted Length (cm) *</label>
                         <input type="number" id="pool-length" name="lengthGuess" step="1" min="40" max="60" required>
                     </div>
+                    
+                    <div class="form-group">
+                        <label>Predicted Hair Color *</label>
+                        <div class="color-picker" id="hair-color-picker">
+                            <input type="radio" name="hairColor" id="hair-black" value="black" required class="color-radio">
+                            <label for="hair-black" class="color-option" data-color="black">
+                                <span class="color-circle" style="background: #1a1a1a;"></span>
+                                <span class="color-label">Black</span>
+                            </label>
+                            
+                            <input type="radio" name="hairColor" id="hair-brown" value="brown" required class="color-radio">
+                            <label for="hair-brown" class="color-option" data-color="brown">
+                                <span class="color-circle" style="background: #8B4513;"></span>
+                                <span class="color-label">Brown</span>
+                            </label>
+                            
+                            <input type="radio" name="hairColor" id="hair-blonde" value="blonde" required class="color-radio">
+                            <label for="hair-blonde" class="color-option" data-color="blonde">
+                                <span class="color-circle" style="background: #FFD700;"></span>
+                                <span class="color-label">Blonde</span>
+                            </label>
+                            
+                            <input type="radio" name="hairColor" id="hair-red" value="red" required class="color-radio">
+                            <label for="hair-red" class="color-option" data-color="red">
+                                <span class="color-circle" style="background: #DC143C;"></span>
+                                <span class="color-label">Red</span>
+                            </label>
+                            
+                            <input type="radio" name="hairColor" id="hair-light-brown" value="light-brown" required class="color-radio">
+                            <label for="hair-light-brown" class="color-option" data-color="light-brown">
+                                <span class="color-circle" style="background: #D2691E;"></span>
+                                <span class="color-label">Light Brown</span>
+                            </label>
+                            
+                            <input type="radio" name="hairColor" id="hair-grey" value="grey" required class="color-radio">
+                            <label for="hair-grey" class="color-option" data-color="grey">
+                                <span class="color-circle" style="background: #808080;"></span>
+                                <span class="color-label">Grey</span>
+                            </label>
+                        </div>
+                        <input type="hidden" id="pool-hair-color" name="hair_color">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Predicted Eye Color *</label>
+                        <div class="color-picker" id="eye-color-picker">
+                            <input type="radio" name="eyeColor" id="eye-brown" value="brown" required class="color-radio">
+                            <label for="eye-brown" class="color-option" data-color="brown">
+                                <span class="color-circle" style="background: #8B4513;"></span>
+                                <span class="color-label">Brown</span>
+                            </label>
+                            
+                            <input type="radio" name="eyeColor" id="eye-blue" value="blue" required class="color-radio">
+                            <label for="eye-blue" class="color-option" data-color="blue">
+                                <span class="color-circle" style="background: #4169E1;"></span>
+                                <span class="color-label">Blue</span>
+                            </label>
+                            
+                            <input type="radio" name="eyeColor" id="eye-green" value="green" required class="color-radio">
+                            <label for="eye-green" class="color-option" data-color="green">
+                                <span class="color-circle" style="background: #228B22;"></span>
+                                <span class="color-label">Green</span>
+                            </label>
+                            
+                            <input type="radio" name="eyeColor" id="eye-hazel" value="hazel" required class="color-radio">
+                            <label for="eye-hazel" class="color-option" data-color="hazel">
+                                <span class="color-circle" style="background: #C4A574;"></span>
+                                <span class="color-label">Hazel</span>
+                            </label>
+                            
+                            <input type="radio" name="eyeColor" id="eye-grey" value="grey" required class="color-radio">
+                            <label for="eye-grey" class="color-option" data-color="grey">
+                                <span class="color-circle" style="background: #A9A9A9;"></span>
+                                <span class="color-label">Grey</span>
+                            </label>
+                        </div>
+                        <input type="hidden" id="pool-eye-color" name="eye_color">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Baby's Personality *</label>
+                        <div class="personality-grid" id="personality-grid"></div>
+                        <input type="hidden" id="pool-personality" name="personality">
+                    </div>
+                    
                     <button type="submit" class="submit-btn">Submit Prediction 🎲</button>
                 </form>
                 <!-- AI Roast Container -->

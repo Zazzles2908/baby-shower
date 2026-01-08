@@ -918,6 +918,179 @@ form {
 }
 
 /* ========================================
+   COLOR PICKER
+   ======================================== */
+
+.color-picker {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 8px;
+}
+
+.color-radio {
+    position: absolute;
+    opacity: 0;
+    cursor: pointer;
+}
+
+.color-option {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    padding: 10px 16px;
+    background: var(--color-white);
+    border: 2px solid var(--color-beige);
+    border-radius: 15px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.color-option:hover {
+    border-color: var(--color-primary);
+    box-shadow: 0 4px 12px rgba(156, 175, 136, 0.15);
+    transform: translateY(-2px);
+}
+
+.color-option.selected {
+    border-color: var(--color-primary);
+    background: linear-gradient(135deg, rgba(156, 175, 136, 0.1) 0%, rgba(156, 175, 136, 0.05) 100%);
+    box-shadow: 0 0 0 3px rgba(156, 175, 136, 0.2);
+}
+
+.color-circle {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: 3px solid var(--color-white);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    transition: all 0.3s ease;
+}
+
+.color-option:hover .color-circle {
+    transform: scale(1.1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.color-option.selected .color-circle {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 4px rgba(156, 175, 136, 0.3);
+}
+
+.color-label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--color-text);
+    text-transform: capitalize;
+}
+
+/* ========================================
+   PERSONALITY GRID
+   ======================================== */
+
+.personality-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+    gap: 12px;
+    margin-top: 8px;
+}
+
+.personality-option {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 16px 12px;
+    background: var(--color-white);
+    border: 3px solid var(--color-beige);
+    border-radius: 18px;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    text-align: center;
+}
+
+.personality-option:hover {
+    border-color: var(--color-primary);
+    box-shadow: 0 6px 20px rgba(156, 175, 136, 0.2);
+    transform: translateY(-4px);
+}
+
+.personality-option.selected {
+    border-color: var(--color-primary);
+    background: linear-gradient(135deg, rgba(156, 175, 136, 0.15) 0%, rgba(156, 175, 136, 0.08) 100%);
+    box-shadow: 0 0 0 4px rgba(156, 175, 136, 0.25);
+}
+
+.personality-option .check-mark {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 20px;
+    height: 20px;
+    background: var(--color-primary);
+    border-radius: 50%;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.personality-option.selected .check-mark {
+    opacity: 1;
+}
+
+.personality-emoji {
+    font-size: 1.5rem;
+    line-height: 1;
+}
+
+.personality-icon {
+    width: 64px;
+    height: 64px;
+    object-fit: contain;
+    border-radius: 12px;
+    transition: transform 0.3s ease;
+}
+
+.personality-option:hover .personality-icon {
+    transform: scale(1.05);
+}
+
+.personality-label {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--color-text);
+    margin-top: 4px;
+}
+
+/* Responsive personality grid */
+@media (max-width: 640px) {
+    .personality-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+    }
+    
+    .color-picker {
+        gap: 8px;
+    }
+    
+    .color-option {
+        padding: 8px 12px;
+    }
+    
+    .color-circle {
+        width: 36px;
+        height: 36px;
+    }
+    
+    .personality-icon {
+        width: 56px;
+        height: 56px;
+    }
+}
+
+/* ========================================
    TOOLTIP SYSTEM
    ======================================== */
 
@@ -1567,6 +1740,62 @@ form {
 
 #roast-container.roast-visible {
     display: block;
+}
+
+/* Shoe Game - Who Would Rather Results */
+.shoe-game-results .results-breakdown {
+    margin-top: 30px;
+    padding: 25px;
+    background: linear-gradient(135deg, var(--color-cream) 0%, var(--color-secondary) 100%);
+    border-radius: 18px;
+    border: 2px solid var(--color-beige);
+}
+
+.shoe-game-results .breakdown-item {
+    margin-bottom: 20px;
+}
+
+.shoe-game-results .breakdown-item:last-child {
+    margin-bottom: 0;
+}
+
+.shoe-game-results .breakdown-name {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--color-text);
+    margin-bottom: 8px;
+}
+
+.shoe-game-results .breakdown-bar {
+    width: 100%;
+    height: 24px;
+    background: var(--color-beige);
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 6px;
+    box-shadow: inset 0 2px 4px rgba(90, 82, 71, 0.1);
+}
+
+.shoe-game-results .breakdown-fill {
+    height: 100%;
+    border-radius: 12px;
+    transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 2px 8px rgba(90, 82, 71, 0.2);
+}
+
+.shoe-game-results .breakdown-fill.mom-bar {
+    background: linear-gradient(90deg, #FFB6C1 0%, #FF69B4 100%);
+}
+
+.shoe-game-results .breakdown-fill.dad-bar {
+    background: linear-gradient(90deg, #87CEEB 0%, #4169E1 100%);
+}
+
+.shoe-game-results .breakdown-percent {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--color-primary);
+    text-align: right;
 }
 
 #roast-container::before {

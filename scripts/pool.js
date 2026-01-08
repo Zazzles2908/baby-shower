@@ -6,6 +6,8 @@
 function initializePool() {
     // Set date picker to show dates from January 6, 2026 (today) to December 31, 2026
     setPoolDateRange();
+    initializeColorPickers();
+    initializePersonalityGrid();
     loadPoolStats();
 }
 
@@ -31,6 +33,116 @@ function setPoolDateRange() {
         
         console.log('[Pool] Date range set:', minDateStr, 'to', maxDateStr);
     }
+}
+
+/**
+ * Initialize color picker functionality
+ * Syncs radio button selections with hidden input fields
+ */
+function initializeColorPickers() {
+    // Hair color picker
+    const hairRadios = document.querySelectorAll('input[name="hairColor"]');
+    const hairHidden = document.getElementById('pool-hair-color');
+    
+    if (hairRadios && hairHidden) {
+        hairRadios.forEach(radio => {
+            radio.addEventListener('change', function() {
+                if (this.checked) {
+                    hairHidden.value = this.value;
+                    console.log('[Pool] Hair color selected:', this.value);
+                }
+            });
+        });
+    }
+    
+    // Eye color picker
+    const eyeRadios = document.querySelectorAll('input[name="eyeColor"]');
+    const eyeHidden = document.getElementById('pool-eye-color');
+    
+    if (eyeRadios && eyeHidden) {
+        eyeRadios.forEach(radio => {
+            radio.addEventListener('change', function() {
+                if (this.checked) {
+                    eyeHidden.value = this.value;
+                    console.log('[Pool] Eye color selected:', this.value);
+                }
+            });
+        });
+    }
+    
+    console.log('[Pool] Color pickers initialized');
+}
+
+/**
+ * Initialize personality grid with options from CONFIG
+ */
+function initializePersonalityGrid() {
+    const grid = document.getElementById('personality-grid');
+    if (!grid) {
+        console.warn('[Pool] Personality grid element not found');
+        return;
+    }
+    
+    const options = window.CONFIG.PERSONALITY_OPTIONS;
+    if (!options || options.length === 0) {
+        console.warn('[Pool] No personality options configured');
+        return;
+    }
+    
+    const baseImageUrl = 'https://bkszmvfsfgvdwzacgmfz.supabase.co/storage/v1/object/public/baby-shower-pictures/Pictures/New Images/';
+    
+    grid.innerHTML = options.map(option => `
+        <div class="personality-option" data-personality="${option.id}" role="button" tabindex="0" aria-label="${option.label} personality">
+            <div class="check-mark"></div>
+            <div class="personality-emoji">${option.emoji}</div>
+            <img src="${baseImageUrl}${option.icon}" alt="${option.label}" class="personality-icon" loading="lazy" onerror="this.style.display='none'">
+            <span class="personality-label">${option.label}</span>
+        </div>
+    `).join('');
+    
+    // Add click handlers
+    grid.querySelectorAll('.personality-option').forEach(option => {
+        option.addEventListener('click', function() {
+            selectPersonality(this);
+        });
+        
+        option.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                selectPersonality(this);
+            }
+        });
+    });
+    
+    console.log('[Pool] Personality grid initialized with', options.length, 'options');
+}
+
+/**
+ * Select a personality option
+ * @param {HTMLElement} selectedOption - The selected personality option element
+ */
+function selectPersonality(selectedOption) {
+    const grid = document.getElementById('personality-grid');
+    const hiddenInput = document.getElementById('pool-personality');
+    
+    if (!grid || !hiddenInput) {
+        console.warn('[Pool] Required elements not found');
+        return;
+    }
+    
+    // Deselect all options
+    grid.querySelectorAll('.personality-option').forEach(opt => {
+        opt.classList.remove('selected');
+    });
+    
+    // Select the clicked option
+    selectedOption.classList.add('selected');
+    
+    // Update hidden input value
+    const personalityId = selectedOption.dataset.personality;
+    hiddenInput.value = personalityId;
+    
+    console.log('[Pool] Personality selected:', personalityId);
 }
 
 /**
@@ -108,6 +220,9 @@ function validatePoolForm(form) {
     const timeGuess = form.querySelector('#pool-time').value;
     const weightGuess = form.querySelector('#pool-weight').value;
     const lengthGuess = form.querySelector('#pool-length').value;
+    const hairColor = form.querySelector('#pool-hair-color').value;
+    const eyeColor = form.querySelector('#pool-eye-color').value;
+    const personality = form.querySelector('#pool-personality').value;
 
     if (!name) {
         alert('Please enter your name');
@@ -144,6 +259,21 @@ function validatePoolForm(form) {
         return false;
     }
 
+    if (!hairColor) {
+        alert('Please select a predicted hair color');
+        return false;
+    }
+
+    if (!eyeColor) {
+        alert('Please select a predicted eye color');
+        return false;
+    }
+
+    if (!personality) {
+        alert('Please select a personality for baby');
+        return false;
+    }
+
     return true;
 }
 
@@ -158,6 +288,9 @@ function getPoolFormData(form) {
     const timeGuess = form.querySelector('#pool-time').value;
     const weightGuess = form.querySelector('#pool-weight').value;
     const lengthGuess = form.querySelector('#pool-length').value;
+    const hairColor = form.querySelector('#pool-hair-color').value;
+    const eyeColor = form.querySelector('#pool-eye-color').value;
+    const personality = form.querySelector('#pool-personality').value;
     
     // Create prediction string combining date and time
     const prediction = dateGuess && timeGuess ? `${dateGuess} at ${timeGuess}` : dateGuess || '';
@@ -168,6 +301,9 @@ function getPoolFormData(form) {
         due_date: dateGuess,
         weight: weightGuess,
         length: lengthGuess,
+        hair_color: hairColor,
+        eye_color: eyeColor,
+        personality: personality,
     };
 }
 
@@ -177,6 +313,17 @@ function getPoolFormData(form) {
  */
 function resetPoolForm(form) {
     form.reset();
+    // Clear personality selection
+    const personalityGrid = document.getElementById('personality-grid');
+    if (personalityGrid) {
+        personalityGrid.querySelectorAll('.personality-option').forEach(opt => {
+            opt.classList.remove('selected');
+        });
+    }
+    const personalityInput = document.getElementById('pool-personality');
+    if (personalityInput) {
+        personalityInput.value = '';
+    }
 }
 
 /**
@@ -264,6 +411,9 @@ function getPoolMilestoneMessage(count) {
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = {
         initializePool,
+        initializeColorPickers,
+        initializePersonalityGrid,
+        selectPersonality,
         loadPoolStats,
         displayPoolStats,
         validatePoolForm,
