@@ -210,9 +210,10 @@ async function handleJoinSession(supabase: any, body: JoinSessionRequest): Promi
   }
 
   const { data: player, error: playerError } = await supabase
-    .rpc('add_game_player', { 
-      p_session_id: result.id, 
-      p_player_name: guest_name 
+    .rpc('add_game_player', {
+      p_session_id: result.id,
+      p_player_name: guest_name,
+      p_submitted_by: guest_name  // Track who added this player (self-join for accountability)
     })
 
   if (playerError) {

@@ -145,13 +145,14 @@ serve(async (req: Request) => {
       return createErrorResponse('You have already voted on this scenario', 400)
     }
 
-    // Insert vote into game_votes table
+    // Insert vote into game_votes table with submitted_by tracking
     const { error: insertVoteError } = await supabase
       .from('baby_shower.game_votes')
       .insert({
         scenario_id: scenario_id,
         guest_name: guest_name,
-        vote_choice: vote_choice
+        vote_choice: vote_choice,
+        submitted_by: guest_name  // Track who submitted this vote for accountability
       })
 
     if (insertVoteError) {
