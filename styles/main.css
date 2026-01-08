@@ -585,24 +585,61 @@ h2 {
 }
 
 /* Specific adjustments for each activity card */
+
+/* Guestbook - Warm wishes theme with hearts */
 .activity-card[data-section="guestbook"] .card-background-image {
     opacity: 0.25;
     background-size: cover;
     background-position: center 20%;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Cpath fill='%23E8C4A0' d='M50 85c-2-8-8-15-8-15s-6 7-8 15c-2-8-8-15-8-15s-6 7-8 15c-2-8-8-15-8-15s-6 7-8 15c12 10 25 15 40 15s28-5 40-15c-2 0-6 7-8 15c-2-8-8-15-8-15s-6 7-8 15c-2-8-8-15-8-15s-6 7-8 15c-2-8-8-15-8-15s-6 7-8 15z'/%3E%3C/svg%3E");
 }
 
+/* Mom vs Dad - Dynamic game theme */
 .activity-card[data-section="mom-vs-dad"] .card-background-image {
     opacity: 0.35;
     background-size: contain;
     background-position: center;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120' viewBox='0 0 120 120'%3E%3Ccircle fill='%239CAF88' cx='30' cy='30' r='8'/%3E%3Ccircle fill='%23E8C4A0' cx='90' cy='30' r='8'/%3E%3Ccircle fill='%239CAF88' cx='20' cy='60' r='5'/%3E%3Ccircle fill='%23E8C4A0' cx='100' cy='60' r='5'/%3E%3Ccircle fill='%239CAF88' cx='40' cy='90' r='6'/%3E%3Ccircle fill='%23E8C4A0' cx='80' cy='90' r='6'/%3E%3C/svg%3E");
 }
 
+/* Baby Quiz - Playful puzzle theme */
 .activity-card[data-section="quiz"] .card-background-image {
     opacity: 0.32;
+    background-size: cover;
+    background-position: center;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80' viewBox='0 0 80 80'%3E%3Ctext x='40' y='50' font-family='Arial' font-size='35' fill='%23F4E4BC' text-anchor='middle' font-weight='bold'%3E%3F%3C/text%3E%3C/svg%3E");
 }
 
+/* Voting - Hearts theme */
 .activity-card[data-section="voting"] .card-background-image {
     opacity: 0.32;
+    background-size: cover;
+    background-position: center;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='60' viewBox='0 0 60 60'%3E%3Cpath fill='%23E8C4A0' d='M30 50s-20-15-20-30c0-10 10-15 20-15s20 5 20 15c0 15-20 30-20 30z'/%3E%3C/svg%3E");
+}
+
+/* Baby Pool - Stars and predictions */
+.activity-card[data-section="pool"] .card-background-image {
+    opacity: 0.28;
+    background-size: cover;
+    background-position: center;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Cpolygon fill='%23F4E4BC' points='50,5 61,35 95,35 68,55 79,90 50,70 21,90 32,55 5,35 39,35'/%3E%3Cpolygon fill='%239CAF88' points='20,10 25,22 38,22 27,30 31,42 20,34 9,42 13,30 2,22 15,22' transform='translate(55,50)'/%3E%3C/svg%3E");
+}
+
+/* Advice - Gentle stars */
+.activity-card[data-section="advice"] .card-background-image {
+    opacity: 0.28;
+    background-size: cover;
+    background-position: center;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='70' height='70' viewBox='0 0 70 70'%3E%3Cpolygon fill='%23E8C4A0' points='35,5 43,25 65,25 47,40 54,62 35,48 16,62 23,40 5,25 27,25'/%3E%3Cpolygon fill='%239CAF88' points='10,60 14,67 22,67 15,72 18,80 10,75 2,80 5,72 0,67 8,67' transform='translate(40,-15)'/%3E%3C/svg%3E");
+}
+
+/* Who Would Rather / Shoe Game */
+.activity-card[data-section="who-would-rather"] .card-background-image {
+    opacity: 0.28;
+    background-size: cover;
+    background-position: center;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80' viewBox='0 0 80 80'%3E%3Cellipse fill='%23F4E4BC' cx='25' cy='50' rx='12' ry='18'/%3E%3Cellipse fill='%239CAF88' cx='55' cy='50' rx='12' ry='18'/%3E%3C/svg%3E");
 }
 
 .anime-character-image {
@@ -3661,26 +3698,7 @@ form {
     padding: 20px 0;
 }
 
-.gallery-item {
-    position: relative;
-    aspect-ratio: 1;
-    border-radius: 12px;
-    overflow: hidden;
-    cursor: pointer;
-    box-shadow: var(--shadow-card);
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
-}
 
-.gallery-item:hover {
-    transform: translateY(-4px);
-    box-shadow: var(--shadow-hover);
-}
-
-.gallery-item img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-}
 
 /* Decorative background images */
 .section-decoration {
