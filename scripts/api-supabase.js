@@ -399,14 +399,14 @@
      * @returns {Promise<Object>} Join response with player data
      */
     async function gameJoin(sessionCode, playerName) {
-        const url = getSupabaseFunctionUrl('lobby-join');
+        const url = getSupabaseFunctionUrl('game-session');
 
         return apiFetch(url, {
             method: 'POST',
             body: JSON.stringify({
-                lobby_key: sessionCode,
-                player_name: playerName?.trim() || '',
-                player_type: 'human'
+                action: 'join',
+                session_code: sessionCode,
+                guest_name: playerName?.trim() || ''
             }),
         });
     }

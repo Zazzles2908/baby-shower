@@ -158,60 +158,61 @@
     }
 
       /**
-       * Fetch full game status including scenarios and votes
-       * Uses game-session Edge Function via POST (bypasses JWT requirement)
-       */
+        * Fetch full game status using Supabase RPC
+        */
     async function fetchGameStatus(lobbyKey) {
         try {
-            // Use game-session Edge Function with POST (verify_jwt=false for POST)
-            const url = getEdgeFunctionUrl('game-session');
-            const response = await apiFetch(url, {
-                method: 'POST',
-                body: JSON.stringify({
-                    action: 'get_status',
-                    session_code: lobbyKey
-                }),
-            });
-
-            if (response && response.data) {
-                // Update game state with fetched data
-                GameState.gameStatus = response.data.status || 'setup';
-                GameState.totalRounds = response.data.total_rounds || 5;
-                GameState.currentRound = response.data.current_round || 0;
-                GameState.adminCode = response.data.admin_code || GameState.adminCode;
-                
-                // Store session data for display
-                GameState.lobbyData = {
-                    mom_name: response.data.mom_name,
-                    dad_name: response.data.dad_name
-                };
-                
-                // Store players from the response
-                if (response.data.players && Array.isArray(response.data.players)) {
-                    GameState.players = response.data.players;
-                }
-                
-                // Check if game has scenarios (game already started)
-                if (response.data.scenarios && Array.isArray(response.data.scenarios) && response.data.scenarios.length > 0) {
-                    GameState.scenarios = response.data.scenarios;
-                    const currentScenario = response.data.scenarios.find(s => s.round_number === GameState.currentRound);
-                    if (currentScenario) {
-                        GameState.currentScenario = currentScenario;
-                    }
-                }
-
-                console.log('[MomVsDadSimplified] Game status updated:', {
-                    status: GameState.gameStatus,
-                    rounds: GameState.totalRounds,
-                    scenarios: GameState.scenarios.length,
-                    players: GameState.players.length
-                });
+            let supabase;
+            if (typeof window.API !== 'undefined' && typeof window.API.getSupabaseClient === 'function') {
+                supabase = await window.API.getSupabaseClient();
+            } else {
+                supabase = getSupabase();
             }
 
-            return response;
+            if (!supabase) {
+                console.warn('[MomVsDadSimplified] Supabase client not available');
+                return null;
+            }
+
+            // Get session details via RPC
+            const { data: session, error } = await supabase
+                .rpc('get_session_details', { p_session_code: lobbyKey.toUpperCase() });
+
+            if (error || !session) {
+                console.warn('[MomVsDadSimplified] Failed to fetch game status:', error);
+                return null;
+            }
+
+            // Get players from game_players table
+            const { data: players, error: playersError } = await supabase
+                .from('baby_shower.game_players')
+                .select('id, player_name, is_admin, is_ready, joined_at')
+                .eq('session_id', session.id)
+                .order('joined_at', { ascending: true });
+
+            // Update game state
+            GameState.gameStatus = session.status || 'setup';
+            GameState.totalRounds = session.total_rounds || 5;
+            GameState.currentRound = session.current_round || 0;
+            GameState.adminCode = session.admin_code || GameState.adminCode;
+
+            GameState.lobbyData = {
+                mom_name: session.mom_name,
+                dad_name: session.dad_name
+            };
+
+            GameState.players = players || [];
+
+            console.log('[MomVsDadSimplified] Game status updated:', {
+                status: GameState.gameStatus,
+                rounds: GameState.totalRounds,
+                scenarios: GameState.scenarios.length,
+                players: GameState.players.length
+            });
+
+            return { data: { ...session, players: GameState.players } };
         } catch (error) {
             console.warn('[MomVsDadSimplified] Failed to fetch game status:', error.message);
-            // Return null but don't throw - allow game to continue
             return null;
         }
     }
@@ -231,9 +232,9 @@
               }
 
               // Check if gameJoin method exists
-              if (typeof window.API.gameJoin !== 'function') {
-                  throw new Error('gameJoin method not available in API. Please check that lobby-join Edge Function is deployed.');
-              }
+               if (typeof window.API.gameJoin !== 'function') {
+                   throw new Error('gameJoin method not available in API.');
+               }
 
               // ===== VALIDATION =====
               const cleanName = playerName ? playerName.trim().substring(0, 50) : '';
@@ -834,19 +835,17 @@
 
             console.log(`[MomVsDadSimplified] Joining lobby: ${fullLobbyKey}`);
 
-            // Join lobby via API using LOBBY-A/B/C/D format
+            // Join lobby via game-session edge function
             const result = await joinLobby(fullLobbyKey, playerName);
 
             if (result) {
-                // Store real player data (FIXES ISSUES #7, #8)
                 GameState.lobbyKey = fullLobbyKey;
-                GameState.sessionCode = fullLobbyKey; // Use lobby key as session code
+                GameState.sessionCode = fullLobbyKey;
                 GameState.playerName = playerName;
                 GameState.currentPlayerId = result.current_player_id;
                 
-                // First player to join becomes admin automatically
-                const playerCount = result.players?.length || 0;
-                GameState.isAdmin = playerCount === 0;
+                // Use is_admin from response (first player gets admin automatically via RPC)
+                GameState.isAdmin = result.is_admin || false;
                 GameState.adminCode = null;
                 
                 GameState.players = result.players || [];
@@ -854,10 +853,8 @@
                 GameState.totalRounds = result.total_rounds || 5;
                 GameState.gameStatus = result.status || 'setup';
 
-                // Set connection status
                 GameState.connectionStatus = 'connecting';
 
-                // Fetch full lobby status to get scenarios if game already started
                 await fetchGameStatus(fullLobbyKey);
 
                 renderWaitingRoom();

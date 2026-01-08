@@ -376,6 +376,7 @@ async function handleStartGame(supabase: any, body: StartGameRequest): Promise<R
     return createErrorResponse(`Cannot start game in ${session.status} status`, 400)
   }
 
+  // Update session status to 'voting'
   const { data: updatedSession, error: updateError } = await supabase
     .rpc('update_session', {
       session_code_input: normalizedCode,
@@ -388,12 +389,221 @@ async function handleStartGame(supabase: any, body: StartGameRequest): Promise<R
     return createErrorResponse('Failed to start game', 500, updateError)
   }
 
+  // Generate scenarios for each round
+  const roundsToGenerate = total_rounds || session.total_rounds || 5
+  const gameIntensity = intensity || 0.5
+  const scenarios: any[] = []
+  const themes = ['general', 'funny', 'sleep', 'feeding', 'messy', 'emotional', 'farm']
+
+  for (let round = 1; round <= roundsToGenerate; round++) {
+    const theme = themes[(round - 1) % themes.length]
+    const fallbackScenario = generateFallbackScenario(session.mom_name, session.dad_name)
+    
+    // Try to generate AI scenario
+    let scenarioData = null
+    const zaiApiKey = Deno.env.get('Z_AI_API_KEY')
+    const openrouterApiKey = Deno.env.get('OPENROUTER_API_KEY')
+    
+    if (zaiApiKey || openrouterApiKey) {
+      try {
+        const aiResult = await generateScenarioWithAI(session.mom_name, session.dad_name, theme, zaiApiKey || openrouterApiKey, !!openrouterApiKey)
+        if (aiResult) {
+          scenarioData = aiResult
+        }
+      } catch (e) {
+        console.warn('[game-session] AI generation failed for round', round, e)
+      }
+    }
+    
+    if (!scenarioData) {
+      scenarioData = {
+        scenario_text: fallbackScenario.scenario,
+        mom_option: fallbackScenario.momOption,
+        dad_option: fallbackScenario.dadOption,
+        intensity: fallbackScenario.intensity
+      }
+    }
+
+    // Insert scenario into database
+    const { data: insertedScenario, error: insertError } = await supabase
+      .from('baby_shower.game_scenarios')
+      .insert({
+        session_id: session.id,
+        round_number: round,
+        scenario_text: scenarioData.scenario_text,
+        mom_option: scenarioData.mom_option,
+        dad_option: scenarioData.dad_option,
+        intensity: scenarioData.intensity
+      })
+      .select('id, scenario_text, mom_option, dad_option, intensity')
+      .single()
+
+    if (!insertError && insertedScenario) {
+      scenarios.push({
+        scenario_id: insertedScenario.id,
+        round: round,
+        scenario_text: insertedScenario.scenario_text,
+        mom_option: insertedScenario.mom_option,
+        dad_option: insertedScenario.dad_option,
+        intensity: insertedScenario.intensity
+      })
+    } else {
+      // Fallback if insert fails
+      scenarios.push({
+        scenario_id: `round-${round}`,
+        round: round,
+        scenario_text: scenarioData.scenario_text,
+        mom_option: scenarioData.mom_option,
+        dad_option: scenarioData.dad_option,
+        intensity: scenarioData.intensity
+      })
+    }
+  }
+
+  console.log('[game-session] Generated', scenarios.length, 'scenarios for game')
+
   return createSuccessResponse({
     message: 'Game started successfully',
     session_code: normalizedCode,
     status: 'voting',
     current_round: 1,
-    total_rounds: total_rounds || session.total_rounds,
-    started_at: new Date().toISOString()
+    total_rounds: roundsToGenerate,
+    started_at: new Date().toISOString(),
+    scenarios: scenarios
   }, 200)
+}
+
+/**
+ * Generate a scenario using AI (reused from game-scenario)
+ */
+async function generateScenarioWithAI(
+  momName: string,
+  dadName: string,
+  theme: string,
+  apiKey: string,
+  useOpenRouter: boolean
+): Promise<{ scenario_text: string; mom_option: string; dad_option: string; intensity: number } | null> {
+  const themes: Record<string, string> = {
+    general: 'general parenting situations',
+    farm: 'farm and barnyard themed scenarios',
+    funny: 'hilarious and absurd situations',
+    sleep: 'sleep deprivation and middle-of-the-night scenarios',
+    feeding: 'feeding and eating situations',
+    messy: 'messy diaper situations',
+    emotional: 'emotional parenting moments'
+  }
+
+  const themeContext = themes[theme] || themes.general
+
+  const prompt = `Generate a funny "who would rather" scenario for a baby shower game about ${momName} (mom) vs ${dadName} (dad).
+
+Theme: ${themeContext}
+
+Requirements:
+1. Write a realistic, relatable scenario that could happen with a new baby
+2. Make it funny but not offensive - keep it family-friendly
+3. The scenario should highlight personality differences between them
+4. Generate two options - one that ${momName} would do, one that ${dadName} would do
+5. Include an intensity score from 0.1 (mildly funny) to 1.0 (hilarious)
+
+Return ONLY a JSON object with this exact format:
+{
+  "scenario": "The scenario description",
+  "mom_option": "What ${momName} would do",
+  "dad_option": "What ${dadName} would do",
+  "intensity": 0.7
+}
+
+Do not include any other text or formatting.`
+
+  try {
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 10000)
+
+    let response: Response
+    
+    if (useOpenRouter) {
+      response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`,
+          'HTTP-Referer': 'https://baby-shower.app',
+          'X-Title': 'Baby Shower Game',
+        },
+        body: JSON.stringify({
+          model: 'thudoglm/glm-4:free',
+          messages: [{ role: 'user', content: prompt }],
+          max_tokens: 500,
+          temperature: 0.8,
+        }),
+        signal: controller.signal,
+      })
+    } else {
+      response = await fetch('https://open.bigmodel.cn/api/paas/v3/modelapi/chatglm_pro/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify({
+          prompt: prompt,
+          temperature: 0.8,
+          max_tokens: 500,
+        }),
+        signal: controller.signal,
+      })
+    }
+
+    clearTimeout(timeoutId)
+
+    if (!response.ok) {
+      console.error('[game-session] AI API error:', response.status)
+      return null
+    }
+
+    const data = await response.json()
+    let content = useOpenRouter 
+      ? data.choices?.[0]?.message?.content?.trim() || ''
+      : data.data?.choices?.[0]?.message?.content || data.choices?.[0]?.message?.content || ''
+
+    if (!content) {
+      return null
+    }
+
+    // Parse JSON from response
+    try {
+      const cleanContent = content.replace(/```json\n?|\n?```/g, '').trim()
+      const parsed = JSON.parse(cleanContent)
+      return {
+        scenario_text: parsed.scenario || 'Baby needs immediate attention!',
+        mom_option: parsed.mom_option || `${momName} would handle it with grace`,
+        dad_option: parsed.dad_option || `${dadName} would figure it out`,
+        intensity: Math.max(0.1, Math.min(1.0, parsed.intensity || 0.5))
+      }
+    } catch (parseError) {
+      console.error('[game-session] Failed to parse AI response:', content)
+      return null
+    }
+  } catch (error) {
+    console.error('[game-session] AI generation failed:', error instanceof Error ? error.message : 'Unknown error')
+    return null
+  }
+}
+
+/**
+ * Generate a fallback scenario if AI fails (reused from game-scenario)
+ */
+function generateFallbackScenario(momName: string, dadName: string): {
+  scenario: string
+  momOption: string
+  dadOption: string
+  intensity: number
+} {
+  return {
+    scenario: "It's 3 AM and the baby has a dirty diaper that requires immediate attention.",
+    momOption: `${momName} would gently clean it up while singing a lullaby`,
+    dadOption: `${dadName} would make a dramatic production of it while holding their breath`,
+    intensity: 0.6
+  }
 }
