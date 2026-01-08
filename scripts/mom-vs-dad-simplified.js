@@ -132,11 +132,10 @@
                 return null;
             }
 
-            console.log('[MomVsDadSimplified] Fetching lobby status for:', lobbyKey);
-
-            // Use Supabase client to fetch session data from baby_shower.game_sessions
+            // Use Supabase client to fetch session data from baby_shower schema
+            // Note: Supabase client is configured with schema: 'baby_shower', so use table name only
             const { data: session, error } = await supabase
-                .from('baby_shower.game_sessions')
+                .from('game_sessions')
                 .select('id, session_code, status, mom_name, dad_name, total_rounds, current_round, admin_code')
                 .eq('session_code', lobbyKey.toUpperCase())
                 .single();
