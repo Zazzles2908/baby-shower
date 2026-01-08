@@ -34,24 +34,22 @@ function setPoolDateRange() {
     }
 }
 
-/**
- * Initialize favourite colour grid with options from CONFIG
- */
 function initializeFavouriteColourGrid() {
     const grid = document.getElementById('colour-grid');
     if (!grid) {
         console.warn('[Pool] Colour grid element not found');
         return;
     }
-    
+
     const options = window.CONFIG.FAVOURITE_COLOUR_OPTIONS;
     if (!options || options.length === 0) {
         console.warn('[Pool] No colour options configured');
         return;
     }
-    
+
     grid.innerHTML = options.map(option => `
         <div class="colour-option" data-colour="${option.id}" role="button" tabindex="0" aria-label="${option.label} colour" style="--colour-color: ${option.color}">
+            <div class="check-mark">✓</div>
             <div class="colour-preview" style="background-color: ${option.color};"></div>
             <div class="colour-emoji">${option.emoji}</div>
             <span class="colour-label">${option.label}</span>
