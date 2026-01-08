@@ -108,14 +108,7 @@
                             <span class="card-title">Advice</span>
                             <span class="card-subtitle">Share your wisdom</span>
                         </button>
-                        <button class="activity-card" data-section="mom-vs-dad" aria-label="Mom vs Dad - The Truth Revealed" >
-                            <div class="card-background-image"></div>
-                            <div class="card-icon anime-character-wrapper">
-                                <img src="https://bkszmvfsfgvdwzacgmfz.supabase.co/storage/v1/object/public/baby-shower-pictures/Pictures/New Images/Duo/chibi_duo_highfive.png" alt="Mom vs Dad" class="anime-character" style="max-width: 80px; max-height: 100px;">
-                            </div>
-                            <span class="card-title">Mom vs Dad</span>
-                            <span class="card-subtitle">The Truth Revealed</span>
-                        </button>
+
                         <button class="activity-card" data-section="who-would-rather" aria-label="The Shoe Game - Predict who would do what" >
                             <div class="card-background-image"></div>
                             <div class="card-icon anime-character-wrapper">
@@ -234,9 +227,15 @@
                     <div class="form-group">
                         <label>Predicted Hair Color *</label>
                         <div class="color-picker" id="hair-color-picker">
+                            <input type="radio" name="hairColor" id="hair-jet-black" value="jet-black" required class="color-radio">
+                            <label for="hair-jet-black" class="color-option" data-color="jet-black">
+                                <span class="color-circle" style="background: #2C2C2C;"></span>
+                                <span class="color-label">Jet Black</span>
+                            </label>
+                            
                             <input type="radio" name="hairColor" id="hair-black" value="black" required class="color-radio">
                             <label for="hair-black" class="color-option" data-color="black">
-                                <span class="color-circle" style="background: #2C2C2C;"></span>
+                                <span class="color-circle" style="background: #000000;"></span>
                                 <span class="color-label">Black</span>
                             </label>
                             

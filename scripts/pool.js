@@ -92,7 +92,7 @@ function initializePersonalityGrid() {
     const baseImageUrl = 'https://bkszmvfsfgvdwzacgmfz.supabase.co/storage/v1/object/public/baby-shower-pictures/Pictures/New Images/';
     
     grid.innerHTML = options.map(option => `
-        <div class="personality-option" data-personality="${option.id}" role="button" tabindex="0" aria-label="${option.label} personality">
+        <div class="personality-option" data-personality="${option.id}" role="button" tabindex="0" aria-label="${option.label} personality" style="--personality-color: ${option.color || 'var(--color-primary)'}">
             <div class="check-mark"></div>
             <div class="personality-emoji">${option.emoji}</div>
             <img src="${baseImageUrl}${option.icon}" alt="${option.label}" class="personality-icon" loading="lazy" onerror="this.style.display='none'">
