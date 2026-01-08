@@ -94,8 +94,8 @@ serve(async (req: Request) => {
     // Advice text validation
     if (!adviceText || adviceText.trim().length === 0) {
       errors.push('Please enter your advice or message')
-    } else if (adviceText.length < 5) {
-      errors.push('Message must be at least 5 characters long')
+    } else if (adviceText.length < 2) {
+      errors.push('Message must be at least 2 characters long')
     }
     
     // Category validation

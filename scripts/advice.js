@@ -177,8 +177,8 @@
             return false;
         }
 
-        if (message.length < 10) {
-            alert('Please enter a longer message (at least 10 characters)');
+        if (message.length < 2) {
+            alert('Please enter a longer message (at least 2 characters)');
             return false;
         }
 
