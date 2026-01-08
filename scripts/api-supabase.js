@@ -285,6 +285,8 @@
         const timeGuess = data.timeGuess || '';
         const weightGuess = Number(data.weightGuess) || 3.5;
         const lengthGuess = Number(data.lengthGuess) || 50;
+        const hairColor = data.hairColor || data.hair_color || '';
+        const eyeColor = data.eyeColor || data.eye_color || '';
         
         // Create prediction string: "Date: YYYY-MM-DD, Time: HH:mm, Weight: X.Xkg, Length: XXcm"
         const prediction = `Date: ${dateGuess}, Time: ${timeGuess}, Weight: ${weightGuess}kg, Length: ${lengthGuess}cm`;
@@ -297,6 +299,8 @@
                 dueDate: dateGuess,
                 weight: weightGuess,
                 length: lengthGuess,
+                hair_color: hairColor,
+                eye_color: eyeColor,
             }),
         });
     }
