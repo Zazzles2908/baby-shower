@@ -167,16 +167,18 @@
 
       /**
        * Fetch full game status including scenarios and votes
-       * Uses game-session Edge Function (has proper CORS headers)
+       * Uses game-session Edge Function via POST (bypasses JWT requirement)
        */
     async function fetchGameStatus(lobbyKey) {
         try {
-            // Use game-session Edge Function with GET method
-            const supabaseUrl = root.CONFIG?.SUPABASE?.URL || '';
-            const url = `${supabaseUrl}/functions/v1/game-session?code=${encodeURIComponent(lobbyKey)}`;
-            
+            // Use game-session Edge Function with POST (verify_jwt=false for POST)
+            const url = getEdgeFunctionUrl('game-session');
             const response = await apiFetch(url, {
-                method: 'GET',
+                method: 'POST',
+                body: JSON.stringify({
+                    action: 'get_status',
+                    session_code: lobbyKey
+                }),
             });
 
             if (response && response.data) {

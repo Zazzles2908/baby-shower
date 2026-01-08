@@ -139,6 +139,8 @@ serve(async (req: Request) => {
         return await handleUpdateSession(supabase, body as UpdateSessionRequest)
       case 'admin_login':
         return await handleAdminLogin(supabase, body as AdminLoginRequest)
+      case 'get_status':
+        return await handleGetStatus(supabase, body)
       default:
         return createErrorResponse('Invalid action', 400)
     }
@@ -317,5 +319,45 @@ async function handleAdminLogin(supabase: any, body: AdminLoginRequest): Promise
     message: 'Admin login successful',
     session_code: session.session_code,
     status: session.status
+  }, 200)
+}
+
+async function handleGetStatus(supabase: any, body: { session_code: string }): Promise<Response> {
+  const { session_code } = body
+  const normalizedCode = session_code.toUpperCase()
+
+  console.log('[game-session] Get status for:', normalizedCode)
+
+  const { data: session, error } = await supabase
+    .rpc('get_session_details', { p_session_code: normalizedCode })
+  
+  if (error || !session) {
+    return createErrorResponse('Session not found', 404)
+  }
+
+  // Get players from game_players table
+  const { data: players, error: playersError } = await supabase
+    .from('baby_shower.game_players')
+    .select('id, player_name, is_admin, is_ready, joined_at')
+    .eq('session_id', session.id)
+    .order('joined_at', { ascending: true })
+
+  if (playersError) {
+    console.warn('[game-session] Failed to fetch players:', playersError)
+  }
+
+  return createSuccessResponse({
+    id: session.id,
+    session_code: session.session_code,
+    mom_name: session.mom_name,
+    dad_name: session.dad_name,
+    status: session.status,
+    total_rounds: session.total_rounds,
+    current_round: session.current_round,
+    admin_code: session.admin_code,
+    created_at: session.created_at,
+    started_at: session.started_at,
+    completed_at: session.completed_at,
+    players: players || []
   }, 200)
 }
