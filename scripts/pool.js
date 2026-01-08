@@ -6,7 +6,6 @@
 function initializePool() {
     // Set date picker to show dates from January 6, 2026 (today) to December 31, 2026
     setPoolDateRange();
-    initializeColorPickers();
     initializeFavouriteColourGrid();
     loadPoolStats();
 }
@@ -33,44 +32,6 @@ function setPoolDateRange() {
         
         console.log('[Pool] Date range set:', minDateStr, 'to', maxDateStr);
     }
-}
-
-/**
- * Initialize color picker functionality
- * Syncs radio button selections with hidden input fields
- */
-function initializeColorPickers() {
-    // Hair color picker
-    const hairRadios = document.querySelectorAll('input[name="hairColor"]');
-    const hairHidden = document.getElementById('pool-hair-color');
-    
-    if (hairRadios && hairHidden) {
-        hairRadios.forEach(radio => {
-            radio.addEventListener('change', function() {
-                if (this.checked) {
-                    hairHidden.value = this.value;
-                    console.log('[Pool] Hair color selected:', this.value);
-                }
-            });
-        });
-    }
-    
-    // Eye color picker
-    const eyeRadios = document.querySelectorAll('input[name="eyeColor"]');
-    const eyeHidden = document.getElementById('pool-eye-color');
-    
-    if (eyeRadios && eyeHidden) {
-        eyeRadios.forEach(radio => {
-            radio.addEventListener('change', function() {
-                if (this.checked) {
-                    eyeHidden.value = this.value;
-                    console.log('[Pool] Eye color selected:', this.value);
-                }
-            });
-        });
-    }
-    
-    console.log('[Pool] Color pickers initialized');
 }
 
 /**
@@ -217,8 +178,6 @@ function validatePoolForm(form) {
     const timeGuess = form.querySelector('#pool-time').value;
     const weightGuess = form.querySelector('#pool-weight').value;
     const lengthGuess = form.querySelector('#pool-length').value;
-    const hairColor = form.querySelector('#pool-hair-color').value;
-    const eyeColor = form.querySelector('#pool-eye-color').value;
     const favouriteColour = form.querySelector('#pool-favourite-colour').value;
 
     if (!name) {
@@ -256,16 +215,6 @@ function validatePoolForm(form) {
         return false;
     }
 
-    if (!hairColor) {
-        alert('Please select a predicted hair color');
-        return false;
-    }
-
-    if (!eyeColor) {
-        alert('Please select a predicted eye color');
-        return false;
-    }
-
     if (!favouriteColour) {
         alert('Please select a favourite colour for baby');
         return false;
@@ -285,8 +234,6 @@ function getPoolFormData(form) {
     const timeGuess = form.querySelector('#pool-time').value;
     const weightGuess = form.querySelector('#pool-weight').value;
     const lengthGuess = form.querySelector('#pool-length').value;
-    const hairColor = form.querySelector('#pool-hair-color').value;
-    const eyeColor = form.querySelector('#pool-eye-color').value;
     const favouriteColour = form.querySelector('#pool-favourite-colour').value;
     
     // Create prediction string combining date and time
@@ -298,8 +245,6 @@ function getPoolFormData(form) {
         due_date: dateGuess,
         weight: weightGuess,
         length: lengthGuess,
-        hairColor: hairColor,
-        eyeColor: eyeColor,
         favourite_colour: favouriteColour,
     };
 }
@@ -408,7 +353,6 @@ function getPoolMilestoneMessage(count) {
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = {
         initializePool,
-        initializeColorPickers,
         initializeFavouriteColourGrid,
         selectFavouriteColour,
         loadPoolStats,
