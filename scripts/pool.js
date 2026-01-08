@@ -298,8 +298,8 @@ function getPoolFormData(form) {
         due_date: dateGuess,
         weight: weightGuess,
         length: lengthGuess,
-        hair_color: hairColor,
-        eye_color: eyeColor,
+        hairColor: hairColor,
+        eyeColor: eyeColor,
         favourite_colour: favouriteColour,
     };
 }
