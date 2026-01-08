@@ -113,52 +113,39 @@
     }
 
     /**
-       * Fetch lobby status - using window.API client
-       * Updated to specify baby_shower schema explicitly
-       */
+        * Fetch lobby status - using game-session Edge Function
+        */
     async function fetchLobbyStatus(lobbyKey) {
         try {
-            // Use window.API.getSupabaseClient() instead of local initialization
-            let supabase;
-            if (typeof window.API !== 'undefined' && typeof window.API.getSupabaseClient === 'function') {
-                supabase = await window.API.getSupabaseClient();
-            } else {
-                // Fallback to synchronous client if available
-                supabase = getSupabase();
+            const url = getEdgeFunctionUrl('game-session');
+            const response = await apiFetch(url, {
+                method: 'POST',
+                body: JSON.stringify({
+                    action: 'get_status',
+                    session_code: lobbyKey
+                }),
+            });
+
+            if (response && response.data) {
+                const session = response.data;
+                console.log('[MomVsDadSimplified] Found session:', session.mom_name, 'vs', session.dad_name, session.status);
+
+                return {
+                    id: session.id,
+                    lobby_key: session.session_code,
+                    lobby_name: `${session.mom_name} vs ${session.dad_name}`,
+                    status: session.status,
+                    mom_name: session.mom_name,
+                    dad_name: session.dad_name,
+                    total_rounds: session.total_rounds,
+                    current_round: session.current_round,
+                    admin_code: session.admin_code,
+                    players: session.players || []
+                };
             }
 
-            if (!supabase) {
-                console.warn('[MomVsDadSimplified] Supabase client not available');
-                return null;
-            }
-
-            // Use Supabase client to fetch session data from baby_shower schema
-            // Note: Supabase client is configured with schema: 'baby_shower', so use table name only
-            const { data: session, error } = await supabase
-                .from('game_sessions')
-                .select('id, session_code, status, mom_name, dad_name, total_rounds, current_round, admin_code')
-                .eq('session_code', lobbyKey.toUpperCase())
-                .single();
-
-            if (error || !session) {
-                console.warn('[MomVsDadSimplified] Session not found:', lobbyKey, error);
-                return null;
-            }
-
-            console.log('[MomVsDadSimplified] Found session:', session.mom_name, 'vs', session.dad_name, session.status);
-
-            return {
-                id: session.id,
-                lobby_key: session.session_code,
-                lobby_name: `${session.mom_name} vs ${session.dad_name}`,
-                status: session.status,
-                mom_name: session.mom_name,
-                dad_name: session.dad_name,
-                total_rounds: session.total_rounds,
-                current_round: session.current_round,
-                admin_code: session.admin_code,
-                players: [] // Would need separate player tracking for complete implementation
-            };
+            console.warn('[MomVsDadSimplified] Session not found:', lobbyKey);
+            return null;
         } catch (error) {
             console.warn('[MomVsDadSimplified] Failed to fetch lobby status:', error.message);
             return null;
