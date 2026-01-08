@@ -1037,5 +1037,130 @@ supabase_execute_sql({
 
 ---
 
-**Document Version: 3.4**  
-**Added: execute-sql function removal and MCP replacement documentation**
+## 🚨 DEPRECATED COMPONENTS (DO NOT USE)
+
+### Deleted Functions (2026-01-08)
+- ~~`who-would-rather`~~ - **DELETED** - Shoe Game is now frontend-only
+- ~~`setup-demo-sessions`~~ - **DELETED** - Duplicate of `create-demo-sessions`
+
+### Deprecated Database Tables
+- `public.submissions` → **RENAMED to `public.submissions_DEPRECATED`**
+- **DO NOT use** - Use `baby_shower.submissions` instead
+- This was an old schema that caused conflicts
+
+### Shoe Game (Who Would Rather)
+**Status:** ✅ FRONTEND-ONLY (as of 2026-01-08)
+
+The Shoe Game no longer uses any Edge Functions or database storage. It's a pure frontend experience:
+- Questions stored in JavaScript array (`who-would-rather.js`)
+- Votes tracked in local state (session only)
+- No backend required
+- Auto-advances to next question after tap
+- Results shown at end
+
+**Code Location:** `scripts/who-would-rather.js`
+
+**Why simplified:**
+- No network latency
+- Works offline
+- No database setup needed
+- Simpler user experience
+
+---
+
+## 🎮 MOM VS DAD GAME ARCHITECTURE
+
+### How Lobbies Work
+The Mom vs Dad game uses a **single Edge Function** (`game-session`) that handles all lobbies dynamically.
+
+**Common Misconception:**
+- ❌ NOT 4 different Edge Functions for 4 lobbies
+- ✅ YES 1 Edge Function + 4 database records (LOBBY-A, LOBBY-B, LOBBY-C, LOBBY-D)
+
+### Architecture Diagram:
+```
+Frontend (index.html)
+    ↓ Click "Mom vs Dad"
+    ↓
+mom-vs-dad-simplified.js
+    ↓
+    ├─→ GET /functions/v1/game-session?code=LOBBY-A  (get session)
+    │   └─→ baby_shower.game_sessions (database)
+    │
+    ├─→ POST /functions/v1/game-session (join/create)
+    │   └─→ add_game_player RPC function
+    │
+    ├─→ POST /functions/v1/game-scenario (get AI question)
+    │   └─→ Z.AI API for scenario generation
+    │
+    ├─→ POST /functions/v1/game-vote (submit vote)
+    │   └─→ baby_shower.game_votes table
+    │
+    └─→ POST /functions/v1/game-reveal (show results)
+        └─→ Moonshot AI for roast commentary
+```
+
+### LOBBY Sessions (4 Pre-created)
+| Code | Admin PIN | Status |
+|------|-----------|--------|
+| LOBBY-A | 1111 | setup |
+| LOBBY-B | 2222 | setup |
+| LOBBY-C | 3333 | setup |
+| LOBBY-D | 4444 | setup |
+
+**To create custom sessions:**
+- Use `create-demo-sessions` Edge Function
+- Or manually call `game-session` with `action: 'create'`
+
+### RPC Functions Used
+| Function | Purpose |
+|----------|---------|
+| `get_session_by_code` | Fetch session by code |
+| `get_session_details` | Full session info with players |
+| `create_game_session` | Create new session |
+| `add_game_player` | Add player to session |
+| `update_session` | Update session status/round |
+
+---
+
+## 📊 CURRENT DATABASE SCHEMA
+
+### baby_shower Schema (ACTIVE)
+| Table | Rows | Status |
+|-------|------|--------|
+| submissions | 95 | ✅ Active |
+| guestbook | 92 | ✅ Active |
+| pool_predictions | 39 | ✅ Active |
+| quiz_results | 34 | ✅ Active |
+| advice | 31 | ✅ Active |
+| votes | 45 | ✅ Active |
+| game_sessions | 30 | ✅ Active |
+| game_scenarios | 11 | ✅ Active |
+| game_votes | 13 | ✅ Active |
+| game_answers | 4 | ✅ Active |
+| game_results | 4 | ✅ Active |
+| who_would_rather_questions | 24 | ✅ Active (frontend ref) |
+| who_would_rather_sessions | 0 | 🟡 Unused |
+| who_would_rather_votes | 0 | 🟡 Unused |
+
+### public Schema (DEPRECATED)
+| Table | Status |
+|-------|--------|
+| submissions_DEPRECATED | ❌ Do not use |
+
+---
+
+## 🗑️ CLEANUP COMPLETED (2026-01-08)
+
+1. ✅ Renamed `public.submissions` → `public.submissions_DEPRECATED`
+2. ✅ Deleted `supabase/functions/setup-demo-sessions/`
+3. ✅ Deleted `supabase/functions/who-would-rather/`
+4. ✅ Consolidated Vercel projects (3 → 1: baby-shower-v2)
+5. ✅ Simplified Shoe Game (frontend-only, no backend)
+6. ✅ Updated all documentation URLs
+
+---
+
+**Document Version:** 3.5
+**Last Updated:** 2026-01-08
+**Changes:** Added deprecated components section, Mom vs Dad architecture, cleanup log
