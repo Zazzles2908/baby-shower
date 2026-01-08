@@ -67,7 +67,7 @@
         }
 
         const question = QUESTIONS[state.currentQuestion];
-        const progress = ((state.currentQuestion) / state.totalQuestions) * 100;
+        const progress = ((state.currentQuestion + 1) / state.totalQuestions) * 100;
 
         container.innerHTML = `
             <div class="shoe-game-question">
@@ -197,6 +197,8 @@
         
         state.votes.push(choice);
         state.hasVoted = true;
+        
+        console.log('[ShoeGame] Vote recorded. Total votes:', state.votes.length, 'Votes:', state.votes);
         
         const btnMichelle = document.getElementById('btn-michelle');
         const btnJazeel = document.getElementById('btn-jazeel');
