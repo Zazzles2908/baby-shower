@@ -43,7 +43,7 @@ serve(async (req: Request) => {
     const envValidation = validateEnvironmentVariables([
       'SUPABASE_URL',
       'SUPABASE_SERVICE_ROLE_KEY'
-    ], ['MINIMAX_API_KEY'])
+    ])
 
     if (!envValidation.isValid) {
       console.error('Environment validation failed:', envValidation.errors)
@@ -54,11 +54,18 @@ serve(async (req: Request) => {
       console.warn('Environment warnings:', envValidation.warnings)
     }
 
+    // Initialize Supabase client with service role for admin operations
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey, {
-      auth: { autoRefreshToken: false, persistSession: false },
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false,
+      },
+      db: {
+        schema: 'baby_shower'
+      }
     })
 
     // Parse and validate request body
@@ -132,16 +139,19 @@ serve(async (req: Request) => {
       return await handleAIRoast(supabase, name, sanitizedAdvice, headers)
     }
 
-    console.log(`[advice] Inserting advice via RPC`)
+    console.log(`[advice] Inserting advice via RPC with submitted_by: ${name}`)
 
-    // Use existing RPC function to insert (bypasses RLS)
+    // Insert into baby_shower.advice table (schema configured in Supabase client)
     const { data, error } = await supabase
-      .rpc('insert_advice_entry', {
-        p_name: name,
-        p_advice: sanitizedAdvice,
-        p_category: finalCategory,
-        p_submitted_by: name,
+      .from('advice')
+      .insert({
+        advice_giver: name,
+        advice_text: sanitizedAdvice,
+        delivery_option: finalCategory,
+        submitted_by: name,
       })
+      .select()
+      .single()
 
     if (error) {
       console.error('Supabase RPC error:', JSON.stringify(error, null, 2))
@@ -152,13 +162,13 @@ serve(async (req: Request) => {
       })
     }
 
-    console.log(`[advice] Successfully inserted advice with id: ${data[0]?.id}`)
+    console.log(`[advice] Successfully inserted advice with id: ${data?.id}`)
 
     return createSuccessResponse({
-      id: data[0]?.id,
+      id: data?.id,
       advice_text: sanitizedAdvice,
       delivery_option: finalCategory,
-      created_at: data[0]?.created_at,
+      created_at: data?.created_at,
       milestone: undefined
     }, 201)
 
@@ -187,7 +197,7 @@ async function handleAIRoast(supabase: any, name: string, topic: string, headers
     const controller = new AbortController()
     const timeoutId = setTimeout(() => controller.abort(), 10000) // 10 second timeout
 
-    const response = await fetch('https://api.minimax.chat/v1/chat/completions', {
+    const response = await fetch('https://api.minimax.io/v1/text/chatcompletion_v2', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -225,14 +235,17 @@ async function handleAIRoast(supabase: any, name: string, topic: string, headers
 
     console.log(`[advice] AI generated roast: ${generatedAdvice}`)
 
-    // Save to baby_shower.advice table via existing RPC (bypasses RLS)
+    // Save to baby_shower.advice table (schema configured in Supabase client)
     const { data, error } = await supabase
-      .rpc('insert_advice_entry', {
-        p_name: name,
-        p_advice: generatedAdvice,
-        p_category: 'ai_roast',
-        p_submitted_by: name,
+      .from('advice')
+      .insert({
+        advice_giver: name,
+        advice_text: generatedAdvice,
+        delivery_option: 'ai_roast',
+        submitted_by: name,
       })
+      .select()
+      .single()
 
     if (error) {
       console.error('Supabase RPC error:', JSON.stringify(error, null, 2))
@@ -243,13 +256,13 @@ async function handleAIRoast(supabase: any, name: string, topic: string, headers
       })
     }
 
-    console.log(`[advice] Successfully inserted AI roast with id: ${data[0]?.id}`)
+    console.log(`[advice] Successfully inserted AI roast with id: ${data?.id}`)
 
     return createSuccessResponse({
-      id: data[0]?.id,
+      id: data?.id,
       advice_text: generatedAdvice,
       delivery_option: 'ai_roast',
-      created_at: data[0]?.created_at,
+      created_at: data?.created_at,
       ai_generated: true,
     }, 201)
 

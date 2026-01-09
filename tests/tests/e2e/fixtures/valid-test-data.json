@@ -1,0 +1,145 @@
+{
+  "guestbook": {
+    "valid": {
+      "name": "Test Guest",
+      "relationship": "friend",
+      "message": "Test message for baby shower"
+    },
+    "invalid": {
+      "emptyName": {
+        "name": "",
+        "relationship": "friend",
+        "message": "Test message"
+      },
+      "emptyMessage": {
+        "name": "Test Guest",
+        "relationship": "friend",
+        "message": ""
+      },
+      "tooShortMessage": {
+        "name": "Test Guest",
+        "relationship": "friend",
+        "message": "Hi"
+      },
+      "invalidRelationship": {
+        "name": "Test Guest",
+        "relationship": "invalid",
+        "message": "Test"
+      }
+    }
+  },
+  "pool": {
+    "valid": {
+      "name": "Test Predictor",
+      "gender": "surprise",
+      "birth_date": "2026-06-15",
+      "weight_kg": 3.5,
+      "length_cm": 50,
+      "favourite_colour": "pink"
+    },
+    "invalid": {
+      "pastDate": {
+        "name": "Test",
+        "birth_date": "2020-01-01",
+        "weight_kg": 3.5,
+        "length_cm": 50
+      },
+      "invalidWeight": {
+        "name": "Test",
+        "birth_date": "2026-06-15",
+        "weight_kg": 1.5,
+        "length_cm": 50
+      },
+      "invalidLength": {
+        "name": "Test",
+        "birth_date": "2026-06-15",
+        "weight_kg": 3.5,
+        "length_cm": 35
+      }
+    }
+  },
+  "quiz": {
+    "valid": {
+      "participant_name": "Test Participant",
+      "answers": {
+        "puzzle1": "Baby Shower",
+        "puzzle2": "Little Wolf",
+        "puzzle3": "Good Night",
+        "puzzle4": "Baby Care",
+        "puzzle5": "Diapers"
+      },
+      "score": 5,
+      "total_questions": 5
+    },
+    "invalid": {
+      "emptyName": {
+        "answers": {
+          "puzzle1": "Test"
+        },
+        "score": 0,
+        "total_questions": 1
+      },
+      "invalidScore": {
+        "participant_name": "Test",
+        "answers": {
+          "puzzle1": "Test"
+        },
+        "score": 10,
+        "total_questions": 5
+      }
+    }
+  },
+  "advice": {
+    "valid": {
+      "name": "Test Advisor",
+      "advice": "Stay hydrated and get plenty of rest during your pregnancy journey.",
+      "category": "general"
+    },
+    "invalid": {
+      "emptyName": {
+        "name": "",
+        "advice": "Test advice",
+        "category": "general"
+      },
+      "emptyAdvice": {
+        "name": "Test",
+        "advice": "",
+        "category": "general"
+      },
+      "invalidCategory": {
+        "name": "Test",
+        "advice": "Test",
+        "category": "invalid"
+      }
+    }
+  },
+  "vote": {
+    "valid": {
+      "vote_choice": "mom",
+      "guest_name": "Test Voter"
+    },
+    "invalid": {
+      "emptyName": {
+        "vote_choice": "mom",
+        "guest_name": ""
+      },
+      "invalidChoice": {
+        "vote_choice": "invalid",
+        "guest_name": "Test"
+      }
+    }
+  },
+  "game": {
+    "valid": {
+      "session_code": "LOBBY-A",
+      "admin_code": "1111",
+      "player_name": "Test Player"
+    },
+    "invalid": {
+      "invalidSession": {
+        "session_code": "INVALID",
+        "admin_code": "1111"
+      }
+    }
+  }
+}

@@ -935,6 +935,11 @@ async function handleQuizSubmit(event) {
         };
         const score = calculateQuizScore(answers);
 
+        // Immediately update score display before API call
+        if (window.Quiz && typeof window.Quiz.updateScore === 'function') {
+            window.Quiz.updateScore(score);
+        }
+
         const data = {
             name: formData.get('name'),
             ...answers,
@@ -972,6 +977,11 @@ async function handleQuizSubmit(event) {
             showFormSuccessMessage(getQuizSuccessMessage(data.name, score), form);
         }
         triggerConfetti();
+
+        // Mark quiz as completed and save state
+        if (window.Quiz && typeof window.Quiz.markCompleted === 'function') {
+            window.Quiz.markCompleted(score);
+        }
 
         // Update personal progress
         updatePersonalProgress('quiz');

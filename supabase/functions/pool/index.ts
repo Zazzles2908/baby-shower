@@ -52,14 +52,14 @@ Be clever, funny, and family-friendly. Keep it under 100 characters. Return only
     const controller = new AbortController()
     const timeoutId = setTimeout(() => controller.abort(), 3000) // 3 second timeout
 
-    const response = await fetch('https://api.minimax.chat/v1/chat/completions', {  // UPDATED: OpenAI-compatible endpoint
+    const response = await fetch('https://api.minimax.io/v1/text/chatcompletion_v2', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
-        model: 'MiniMax-M2.1',  // UPDATED from abab6.5s-chat
+        model: 'MiniMax-M2.1',
         messages: [
           {
             role: 'user',
@@ -95,7 +95,7 @@ Be clever, funny, and family-friendly. Keep it under 100 characters. Return only
  */
 async function calculateAverages(supabase: ReturnType<typeof createClient>): Promise<{ avgWeight: number; avgLength: number }> {
   const { data: predictions, error } = await supabase
-    .from('baby_shower.pool_predictions')
+    .from('pool_predictions')
     .select('weight_kg, length_cm')
     .not('weight_kg', 'is', null)
     .not('length_cm', 'is', null)
@@ -159,6 +159,7 @@ serve(async (req: Request) => {
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey, {
       auth: { autoRefreshToken: false, persistSession: false },
+      db: { schema: 'baby_shower' }
     })
 
     // Parse and validate request body
@@ -204,7 +205,7 @@ serve(async (req: Request) => {
 
     // Count total submissions in baby_shower.pool_predictions BEFORE insert to check milestone
     const { count: totalCount } = await supabase
-      .from('baby_shower.pool_predictions')
+      .from('pool_predictions')
       .select('*', { count: 'exact', head: true })
     const currentCount = totalCount || 0
     const isMilestone = currentCount + 1 === 50
@@ -213,7 +214,7 @@ serve(async (req: Request) => {
 
     // Direct insert (bypasses RLS using service role)
     const { data, error } = await supabase
-      .from('baby_shower.pool_predictions')
+      .from('pool_predictions')
       .insert({
         predictor_name: sanitizedName,
         birth_date: body.dueDate,

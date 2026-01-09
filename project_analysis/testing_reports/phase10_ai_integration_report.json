@@ -1,0 +1,189 @@
+{
+  "timestamp": "2026-01-09T04:43:58.014Z",
+  "phase": "Phase 10: AI Integration Tests",
+  "environment": {
+    "supabaseUrl": "https://bkszmvfsfgvdwzacgmfz.supabase.co",
+    "hasAnonKey": true,
+    "hasMiniMaxKey": true,
+    "keyLength": {
+      "supabase": 208,
+      "minimax": 125
+    }
+  },
+  "summary": {
+    "totalTests": 2,
+    "passed": 0,
+    "failed": 2,
+    "warnings": 1,
+    "successRate": 0
+  },
+  "aiFeatures": {
+    "scenarioGeneration": {
+      "tested": false,
+      "status": "SESSION_ERROR",
+      "responseTime": 0,
+      "success": false,
+      "details": {
+        "error": "Database operation failed"
+      }
+    },
+    "roastCommentary": {
+      "tested": false,
+      "status": "UNKNOWN",
+      "responseTime": 0,
+      "success": false,
+      "details": {}
+    },
+    "poolPredictions": {
+      "tested": true,
+      "status": "SERVER_ERROR",
+      "responseTime": 1161,
+      "success": false,
+      "details": {
+        "error": "Database operation failed"
+      }
+    },
+    "adviceRoasts": {
+      "tested": true,
+      "status": "SERVER_ERROR",
+      "responseTime": 739,
+      "success": false,
+      "details": {
+        "error": "Database operation failed"
+      }
+    }
+  },
+  "apiConnectivity": {
+    "miniMax": {
+      "tested": true,
+      "status": "SERVER_ERROR",
+      "latency": 1352,
+      "error": "Database operation failed"
+    },
+    "supabase": {
+      "tested": true,
+      "status": "ERROR",
+      "latency": 643,
+      "error": "HTTP 400"
+    }
+  },
+  "performance": {
+    "responseTime": {
+      "min": 0,
+      "max": 0,
+      "avg": 0,
+      "samples": []
+    },
+    "concurrentCapacity": 3,
+    "concurrentSuccess": 0,
+    "concurrentDuration": 1041
+  },
+  "issues": [
+    {
+      "severity": "HIGH",
+      "component": "Supabase Connection",
+      "description": "Edge Functions not responding correctly",
+      "details": {
+        "status": 400,
+        "data": {
+          "success": false,
+          "error": "Validation failed",
+          "timestamp": "2026-01-09T04:43:58.401Z",
+          "details": [
+            "name is required",
+            "message is required",
+            "relationship is required"
+          ]
+        }
+      }
+    },
+    {
+      "severity": "HIGH",
+      "component": "MiniMax API Integration",
+      "description": "Edge Function returning 500 error - likely database or configuration issue",
+      "details": {
+        "success": false,
+        "error": "Database operation failed",
+        "timestamp": "2026-01-09T04:43:59.753Z",
+        "details": {
+          "message": "Could not find the table 'public.baby_shower.pool_predictions' in the schema cache",
+          "details": {
+            "code": "PGRST205",
+            "details": null,
+            "hint": "Perhaps you meant the table 'public.pool_predictions_v'",
+            "message": "Could not find the table 'public.baby_shower.pool_predictions' in the schema cache"
+          },
+          "hint": "Perhaps you meant the table 'public.pool_predictions_v'"
+        }
+      }
+    },
+    {
+      "severity": "MEDIUM",
+      "component": "Pool Predictions",
+      "description": "Pool Edge Function returning 500 - database or schema issue",
+      "details": {
+        "success": false,
+        "error": "Database operation failed",
+        "timestamp": "2026-01-09T04:44:00.910Z",
+        "details": {
+          "message": "Could not find the table 'public.baby_shower.pool_predictions' in the schema cache",
+          "details": {
+            "code": "PGRST205",
+            "details": null,
+            "hint": "Perhaps you meant the table 'public.pool_predictions_v'",
+            "message": "Could not find the table 'public.baby_shower.pool_predictions' in the schema cache"
+          },
+          "hint": "Perhaps you meant the table 'public.pool_predictions_v'"
+        }
+      }
+    },
+    {
+      "severity": "MEDIUM",
+      "component": "Advice Feature",
+      "description": "Advice Edge Function returning 500",
+      "details": {
+        "success": false,
+        "error": "Database operation failed",
+        "timestamp": "2026-01-09T04:44:01.656Z",
+        "details": {
+          "message": "permission denied for table advice",
+          "details": {
+            "code": "42501",
+            "details": null,
+            "hint": null,
+            "message": "permission denied for table advice"
+          },
+          "hint": "Check RPC function"
+        }
+      }
+    },
+    {
+      "severity": "HIGH",
+      "component": "Game Session",
+      "description": "Failed to create game session - database or RLS issue likely",
+      "details": {
+        "success": false,
+        "error": "Database operation failed",
+        "timestamp": "2026-01-09T04:44:02.497Z",
+        "details": {
+          "code": "42702",
+          "details": "It could refer to either a PL/pgSQL variable or a table column.",
+          "hint": null,
+          "message": "column reference \"id\" is ambiguous"
+        }
+      }
+    },
+    {
+      "severity": "LOW",
+      "component": "Performance",
+      "description": "Unable to collect performance metrics - all requests failed",
+      "recommendation": "Check Supabase connectivity and database schema"
+    }
+  ],
+  "recommendations": [
+    "Check database schema and RLS policies for affected tables",
+    "Verify RPC functions are properly created",
+    "Check Supabase project logs for detailed error information",
+    "MiniMax API key may not be configured in Edge Functions environment"
+  ]
+}

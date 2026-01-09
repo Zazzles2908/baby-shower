@@ -319,7 +319,7 @@ async function handleGetStatus(supabase: any, body: { session_code: string }): P
   }
 
   const { data: players, error: playersError } = await supabase
-    .from('baby_shower.game_players')
+    .from('game_players')
     .select('id, player_name, is_admin, is_ready, joined_at')
     .eq('session_id', session.id)
     .order('joined_at', { ascending: true })
@@ -358,7 +358,7 @@ async function handleStartGame(supabase: any, body: StartGameRequest): Promise<R
   }
 
   const { data: player, error: playerError } = await supabase
-    .from('baby_shower.game_players')
+    .from('game_players')
     .select('id, player_name, is_admin')
     .eq('id', player_id)
     .single()
@@ -427,7 +427,7 @@ async function handleStartGame(supabase: any, body: StartGameRequest): Promise<R
 
     // Insert scenario into database
     const { data: insertedScenario, error: insertError } = await supabase
-      .from('baby_shower.game_scenarios')
+      .from('game_scenarios')
       .insert({
         session_id: session.id,
         round_number: round,
@@ -541,7 +541,7 @@ Do not include any other text or formatting.`
         signal: controller.signal,
       })
     } else {
-      response = await fetch('https://open.bigmodel.cn/api/paas/v3/modelapi/chatglm_pro/completions', {
+      response = await fetch('https://open.bigmodel.cn/api/paas/v3/modelapi/GLM4.7/completions', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

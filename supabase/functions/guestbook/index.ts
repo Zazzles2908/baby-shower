@@ -32,10 +32,10 @@ serve(async (req: Request) => {
   }
 
   try {
-    // Validate environment variables
+    // Validate environment variables - USE ANON KEY FOR PUBLIC ENDPOINTS
     const envValidation = validateEnvironmentVariables([
       'SUPABASE_URL',
-      'SUPABASE_SERVICE_ROLE_KEY'
+      'SUPABASE_ANON_KEY'  // Changed from SUPABASE_SERVICE_ROLE_KEY for security
     ])
 
     if (!envValidation.isValid) {
@@ -47,11 +47,11 @@ serve(async (req: Request) => {
       console.warn('Environment warnings:', envValidation.warnings)
     }
 
-    // Initialize Supabase client with service role for admin operations
+    // Initialize Supabase client with ANON KEY for public operations
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!
 
-    const supabase = createClient(supabaseUrl, supabaseServiceKey, {
+    const supabase = createClient(supabaseUrl, supabaseAnonKey, {
       auth: {
         autoRefreshToken: false,
         persistSession: false,

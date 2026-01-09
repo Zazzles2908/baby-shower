@@ -739,7 +739,7 @@ CREATE TABLE baby_shower.game_results (
     crowd_choice VARCHAR(10),  -- Who majority picked
     actual_choice VARCHAR(10),  -- Real answer
     perception_gap DECIMAL(5,2),  -- How wrong crowd was
-    roast_commentary TEXT,  -- Moonshot AI generated
+    roast_commentary TEXT,  -- MiniMax AI generated
     particle_effect VARCHAR(20) DEFAULT 'confetti'
 );
 ```
@@ -751,53 +751,23 @@ CREATE TABLE baby_shower.game_results (
 | Function | Purpose | AI Provider |
 |----------|---------|-------------|
 | `game-session` | Create/manage sessions, generate codes | None |
-| `game-scenario` | Generate Z.AI scenarios | Z.AI (GLM-4.7) |
+| `game-scenario` | Generate AI scenarios | MiniMax (MiniMax-M2.1) |
 | `game-vote` | Submit votes, realtime sync | None |
-| `game-reveal` | Generate Moonshot roasts | Moonshot (Kimi-K2) |
+| `game-reveal` | Generate AI roast commentary | MiniMax (MiniMax-M2.1) |
 
 ### AI Integration
 
-**Existing (MiniMax):**
+**AI Integration (MiniMax Exclusive):**
 ```typescript
-// Already working in pool/advice functions
-const roastResponse = await fetch('https://api.minimax.chat/v1/text/chatcompletion_v2', {
+// All AI features now use MiniMax with MiniMax-M2.1 model
+const roastResponse = await fetch('https://api.minimax.io/v1/text/chatcompletion_v2', {
     method: 'POST',
     headers: { 'Authorization': `Bearer ${Deno.env.get('MINIMAX_API_KEY')}` },
-    body: JSON.stringify({ model: 'abab6.5s-chat', messages: [...] })
-});
-```
-
-**New for Game:**
-
-**Z.AI Scenario Generation:**
-```typescript
-// Generate funny "who would rather" scenarios
-const scenarioResponse = await fetch('https://open.bigmodel.cn/api/paas/v3/modelapi/chatglm_pro/completions', {
-    method: 'POST',
-    headers: { 'Authorization': `Bearer ${Deno.env.get('Z_AI_API_KEY')}` },
-    body: JSON.stringify({
-        prompt: `Generate a funny baby shower scenario about ${mom_name} vs ${dad_name}. 
-                 Theme: Farm/Cozy. Return JSON with scenario_text, mom_option, dad_option, intensity.`
-    })
-});
-```
-
-**Moonshot Roast Commentary:**
-```typescript
-// Generate sassy perception gap roasts
-const roastResponse = await fetch('https://api.moonshot.cn/v1/chat/completions', {
-    method: 'POST',
-    headers: { 'Authorization': `Bearer ${Deno.env.get('KIMI_API_KEY')}` },
-    body: JSON.stringify({
-        model: 'kimi-k2-thinking',
-        messages: [{
-            role: 'system',
-            content: 'You are a sassy barnyard host roasting wrong predictions...'
-        }, {
-            role: 'user',
-            content: `Crowd thought: ${mom_pct}% picked Mom. Reality: ${actual_answer}. 
-                      Roast this perception gap!`
-        }]
+    body: JSON.stringify({ 
+        model: 'MiniMax-M2.1',  // Correct model name
+        messages: [...],
+        temperature: 0.8,
+        max_tokens: 200 
     })
 });
 ```
@@ -922,9 +892,9 @@ if (perceptionGap > 50) {
 **Phase 1: Database & Backend (2-3 days)**
 - [ ] Apply migration: `supabase/migrations/20260103_mom_vs_dad_game_schema.sql`
 - [ ] Create `game-session` Edge Function
-- [ ] Create `game-scenario` Edge Function (Z.AI)
+- [ ] Create `game-scenario` Edge Function (MiniMax)
 - [ ] Create `game-vote` Edge Function
-- [ ] Create `game-reveal` Edge Function (Moonshot)
+- [ ] Create `game-reveal` Edge Function (MiniMax)
 
 **Phase 2: Frontend (3-4 days)**
 - [ ] Create `scripts/mom-vs-dad.js`
@@ -959,9 +929,7 @@ if (perceptionGap > 50) {
    - Realtime subscriptions via Supabase
 
 2. **AI Provider Keys:**
-   - Z.AI: `Z_AI_API_KEY` (scenario generation)
-   - Moonshot: `KIMI_API_KEY` (roast commentary)
-   - MiniMax: `MINIMAX_API_KEY` (already configured, pool/advice)
+   - MiniMax: `MINIMAX_API_KEY` (used for all AI features: scenarios, roasts, pool predictions, advice)
 
 3. **Database:**
    - Uses existing `baby_shower` namespace
@@ -1148,13 +1116,13 @@ mom-vs-dad-simplified.js
     │   └─→ add_game_player RPC function
     │
     ├─→ POST /functions/v1/game-scenario (get AI question)
-    │   └─→ Z.AI API for scenario generation
+    │   └─→ MiniMax API for scenario generation
     │
     ├─→ POST /functions/v1/game-vote (submit vote)
     │   └─→ baby_shower.game_votes table
     │
     └─→ POST /functions/v1/game-reveal (show results)
-        └─→ Moonshot AI for roast commentary
+        └─→ MiniMax API for roast commentary
 ```
 
 ### LOBBY Sessions (4 Pre-created)

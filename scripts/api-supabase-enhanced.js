@@ -363,8 +363,8 @@
             method: 'POST',
             body: JSON.stringify({
                 action: 'create',
-                momName: data.momName?.trim() || '',
-                dadName: data.dadName?.trim() || '',
+                mom_name: data.momName?.trim() || data.mom_name?.trim() || '',
+                dad_name: data.dadName?.trim() || data.dad_name?.trim() || '',
             }),
         });
     }

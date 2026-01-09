@@ -1,12 +1,160 @@
-// Baby Shower App - Emoji Pictionary Feature
-
 /**
- * Initialize quiz-specific functionality
+ * Baby Shower App - Quiz Module
  */
-function initializeQuiz() {
-    // Any quiz-specific initialization can go here
-    // Currently handled in main.js
-}
+
+(function() {
+    'use strict';
+
+    console.log('[Quiz] loading...');
+
+    let quizCompleted = false;
+
+    // Quiz state management key
+    const QUIZ_STATE_KEY = 'babyShowerQuizState';
+
+    /**
+     * Save quiz state to localStorage
+     * @param {Object} state - State to save
+     */
+    function saveQuizState(state) {
+        localStorage.setItem(QUIZ_STATE_KEY, JSON.stringify(state));
+    }
+
+    /**
+     * Load quiz state from localStorage
+     * @returns {Object|null} Quiz state or null
+     */
+    function loadQuizState() {
+        const state = localStorage.getItem(QUIZ_STATE_KEY);
+        return state ? JSON.parse(state) : null;
+    }
+
+    /**
+     * Clear quiz state
+     */
+    function clearQuizState() {
+        localStorage.removeItem(QUIZ_STATE_KEY);
+        quizCompleted = false;
+    }
+
+    /**
+     * Initialize quiz-specific functionality
+     */
+    function init() {
+        restoreQuizState();
+        console.log('[Quiz] initialized');
+    }
+
+    /**
+     * Restore quiz state when returning to quiz section
+     */
+    function restoreQuizState() {
+        const state = loadQuizState();
+        if (state && state.completed && state.score !== undefined) {
+            quizCompleted = true;
+            showScoreDisplay(state.score);
+            console.log('[Quiz] State restored - Score:', state.score);
+        }
+    }
+
+    /**
+     * Show score display element
+     * @param {number} score - Score to display
+     */
+    function showScoreDisplay(score) {
+        const scoreDisplay = document.getElementById('quiz-score-display');
+        const currentScoreEl = document.getElementById('current-score');
+        
+        if (scoreDisplay && currentScoreEl) {
+            scoreDisplay.classList.remove('hidden');
+            currentScoreEl.textContent = score;
+            addScoreAnimation(currentScoreEl);
+        }
+    }
+
+    /**
+     * Add animation to score element
+     * @param {HTMLElement} element - Score element
+     */
+    function addScoreAnimation(element) {
+        element.classList.add('score-updated');
+        setTimeout(() => {
+            element.classList.remove('score-updated');
+        }, 500);
+    }
+
+    /**
+     * Update quiz score display
+     * @param {number} score - Current score (0-5)
+     */
+    function updateScore(score) {
+        const scoreDisplay = document.getElementById('quiz-score-display');
+        const currentScoreEl = document.getElementById('current-score');
+        
+        if (scoreDisplay && currentScoreEl) {
+            scoreDisplay.classList.remove('hidden');
+            currentScoreEl.textContent = score;
+            addScoreAnimation(currentScoreEl);
+        }
+    }
+
+    /**
+     * Mark quiz as completed and save state
+     * @param {number} score - Final score
+     */
+    function markCompleted(score) {
+        quizCompleted = true;
+        const state = {
+            completed: true,
+            score: score,
+            timestamp: Date.now()
+        };
+        saveQuizState(state);
+        updateScore(score);
+    }
+
+    /**
+     * Check if quiz was already completed
+     * @returns {boolean} True if completed
+     */
+    function isCompleted() {
+        return quizCompleted;
+    }
+
+    /**
+     * Reset quiz completion state
+     */
+    function resetCompletion() {
+        clearQuizState();
+        const scoreDisplay = document.getElementById('quiz-score-display');
+        if (scoreDisplay) {
+            scoreDisplay.classList.add('hidden');
+        }
+    }
+
+    // Export public API
+    window.Quiz = {
+        init: init,
+        updateScore: updateScore,
+        markCompleted: markCompleted,
+        isCompleted: isCompleted,
+        resetCompletion: resetCompletion,
+        getCurrentScore: function() {
+            const currentScoreEl = document.getElementById('current-score');
+            if (currentScoreEl) {
+                return parseInt(currentScoreEl.textContent, 10) || 0;
+            }
+            return 0;
+        }
+    };
+
+    // Auto-initialize when DOM is ready
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+    } else {
+        init();
+    }
+})();
 
 /**
  * Validate quiz form
@@ -15,11 +163,11 @@ function initializeQuiz() {
  */
 function validateQuizForm(form) {
     const name = form.querySelector('#quiz-name')?.value.trim();
-    const puzzle1 = form.querySelector('[name="puzzle1"]').value.trim();
-    const puzzle2 = form.querySelector('[name="puzzle2"]').value.trim();
-    const puzzle3 = form.querySelector('[name="puzzle3"]').value.trim();
-    const puzzle4 = form.querySelector('[name="puzzle4"]').value.trim();
-    const puzzle5 = form.querySelector('[name="puzzle5"]').value.trim();
+    const puzzle1 = form.querySelector('[name="puzzle1"]')?.value.trim();
+    const puzzle2 = form.querySelector('[name="puzzle2"]')?.value.trim();
+    const puzzle3 = form.querySelector('[name="puzzle3"]')?.value.trim();
+    const puzzle4 = form.querySelector('[name="puzzle4"]')?.value.trim();
+    const puzzle5 = form.querySelector('[name="puzzle5"]')?.value.trim();
 
     if (!name) {
         alert('Please enter your name');
@@ -32,29 +180,6 @@ function validateQuizForm(form) {
     }
 
     return true;
-}
-
-/**
- * Update quiz score display in real-time
- * @param {number} score - Current score (0-5)
- */
-function updateQuizScore(score) {
-    const scoreDisplay = document.getElementById('quiz-score-display');
-    const currentScoreEl = document.getElementById('current-score');
-    
-    if (scoreDisplay && currentScoreEl) {
-        // Show score display if hidden
-        scoreDisplay.classList.remove('hidden');
-        
-        // Update score with animation
-        currentScoreEl.textContent = score;
-        
-        // Add pulse animation
-        currentScoreEl.classList.add('score-updated');
-        setTimeout(() => {
-            currentScoreEl.classList.remove('score-updated');
-        }, 500);
-    }
 }
 
 /**
@@ -90,7 +215,6 @@ function calculateQuizScore(answers) {
     const puzzles = CONFIG.QUIZ_PUZZLES;
     let score = 0;
     
-    // Check first 5 puzzles only (matching form fields)
     for (let i = 1; i <= 5; i++) {
         const puzzleKey = `puzzle${i}`;
         const userAnswer = answers[puzzleKey]?.toLowerCase().trim() || '';
@@ -194,7 +318,6 @@ function getQuizBadge(score) {
 // Export functions for use in other modules
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = {
-        initializeQuiz,
         validateQuizForm,
         getQuizFormData,
         calculateQuizScore,

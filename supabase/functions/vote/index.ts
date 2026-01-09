@@ -58,14 +58,14 @@ serve(async (req: Request) => {
     console.log(`[vote] POST: Writing vote with name: ${name}`)
 
     const { data, error } = await supabase
-      .from('votes')
+      .from('baby_shower.votes')
       .insert({ voter_name: name, selected_names, submitted_by: name })
       .select()
       .single()
 
     if (error) return createErrorResponse(`Database operation failed: ${error.message}`, 500)
 
-    const { data: allVotes } = await supabase.from('votes').select('selected_names')
+    const { data: allVotes } = await supabase.from('baby_shower.votes').select('selected_names')
     const nameCounts: Record<string, number> = {}
     let totalVotes = 0
 

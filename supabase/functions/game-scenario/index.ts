@@ -35,20 +35,18 @@ interface GenerateScenarioRequest {
 type ScenarioRequest = GetScenarioRequest | GenerateScenarioRequest
 
 /**
- * Call Z.AI (GLM-4.7) directly or via OpenRouter to generate a funny scenario
+ * Call MiniMax API to generate a funny scenario
  */
 async function generateScenario(
   momName: string,
   dadName: string,
   theme: string = 'general'
 ): Promise<{ scenario: string; momOption: string; dadOption: string; intensity: number } | null> {
-  // Check for Z.AI API key (using consistent naming)
-  const zaiApiKey = Deno.env.get('Z_AI_API_KEY')
-  // Fall back to OpenRouter API key
-  const openrouterApiKey = Deno.env.get('OPENROUTER_API_KEY')
+  // Check for MiniMax API key (primary AI provider)
+  const minimaxApiKey = Deno.env.get('MINIMAX_API_KEY')
   
-  if (!zaiApiKey && !openrouterApiKey) {
-    console.warn('No AI API keys configured (Z_AI_API_KEY or OPENROUTER_API_KEY)')
+  if (!minimaxApiKey) {
+    console.warn('No MiniMax API key configured (MINIMAX_API_KEY)')
     return null
   }
 
@@ -89,69 +87,39 @@ Do not include any other text or formatting.`
     const controller = new AbortController()
     const timeoutId = setTimeout(() => controller.abort(), 10000) // 10 second timeout
 
-    let response: Response
-    
-    // Try Z.AI direct API first if available
-    if (zaiApiKey) {
-      console.log('[game-scenario] Using Z.AI API directly')
-      response = await fetch('https://open.bigmodel.cn/api/paas/v3/modelapi/chatglm_pro/completions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${zaiApiKey}`,
-        },
-        body: JSON.stringify({
-          prompt: prompt,
-          temperature: 0.8,
-          max_tokens: 500,
-        }),
-        signal: controller.signal,
-      })
-    } else {
-      // Fall back to OpenRouter
-      console.log('[game-scenario] Using OpenRouter API')
-      response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${openrouterApiKey}`,
-          'HTTP-Referer': 'https://baby-shower.app',
-          'X-Title': 'Baby Shower Game',
-        },
-        body: JSON.stringify({
-          model: 'thudoglm/glm-4:free',
-          messages: [
-            {
-              role: 'user',
-              content: prompt,
-            },
-          ],
-          max_tokens: 500,
-          temperature: 0.8,
-        }),
-        signal: controller.signal,
-      })
-    }
+    // Use MiniMax API (primary AI provider)
+    console.log('[game-scenario] Using MiniMax API')
+    const response = await fetch('https://api.minimax.io/v1/text/chatcompletion_v2', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${minimaxApiKey}`,
+      },
+      body: JSON.stringify({
+        model: 'MiniMax-M2.1',
+        messages: [
+          {
+            role: 'user',
+            content: prompt,
+          },
+        ],
+        temperature: 0.8,
+        max_tokens: 500,
+      }),
+      signal: controller.signal,
+    })
 
     clearTimeout(timeoutId)
 
     if (!response.ok) {
       const errorText = await response.text()
-      console.error('AI API error:', response.status, errorText)
+      console.error('MiniMax API error:', response.status, errorText)
       return null
     }
 
     const data = await response.json()
-    let content: string
-
-    // Handle different response formats
-    if (zaiApiKey) {
-      // Z.AI direct response format
-      content = data.data?.choices?.[0]?.message?.content || data.choices?.[0]?.message?.content || ''
-    } else {
-      // OpenRouter response format
-      content = data.choices?.[0]?.message?.content?.trim() || ''
-    }
+    // MiniMax response format (OpenAI-compatible)
+    const content = data.choices?.[0]?.message?.content || ''
 
     if (!content) {
       console.error('Empty response from AI API')
@@ -214,7 +182,7 @@ serve(async (req: Request) => {
     const envValidation = validateEnvironmentVariables([
       'SUPABASE_URL',
       'SUPABASE_SERVICE_ROLE_KEY'
-    ], ['Z_AI_API_KEY', 'OPENROUTER_API_KEY']) // Optional AI keys
+    ], ['MINIMAX_API_KEY']) // Optional AI key
 
     if (!envValidation.isValid) {
       console.error('Game Scenario - Environment validation failed:', envValidation.errors)

@@ -40,4 +40,17 @@ PROJECT-SUMMARY.md
 QUICKSTART.md
 plans/
 
+# Bun package manager
+bun.lock
+bunfig.toml
+
+# Screenshot files
+Screenshot*.png
+
+# TODO directory (temporary)
+.todo/
+
+# Public dashboards (temporary)
+public/dashboards/
+
 .vercel

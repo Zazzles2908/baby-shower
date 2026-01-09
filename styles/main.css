@@ -1365,6 +1365,27 @@ form {
     text-align: center;
 }
 
+/* Mobile Quiz Score Display */
+@media (max-width: 480px) {
+    .quiz-score-display {
+        padding: 12px 16px;
+        gap: 10px;
+        flex-direction: column;
+    }
+
+    .score-icon {
+        font-size: 1.8rem;
+    }
+
+    .score-text {
+        font-size: 1rem;
+    }
+
+    #current-score {
+        font-size: 1.2rem;
+    }
+}
+
 /* Name List */
 .name-list {
     display: grid;

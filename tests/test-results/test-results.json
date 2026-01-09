@@ -9,25 +9,33 @@
     "globalTimeout": 0,
     "grep": {},
     "grepInvert": null,
-    "maxFailures": 0,
+    "maxFailures": 10,
     "metadata": {},
     "preserveOutput": "always",
     "reporter": [
       [
         "html",
         {
-          "outputFolder": "test-results/html-report"
+          "outputFolder": "test-results/html-report",
+          "open": "never"
         }
       ],
       [
         "json",
         {
-          "outputFile": "test-results/test-results.json"
+          "outputFile": "test-results/test-results.json",
+          "outputMode": "append"
         }
       ],
       [
         "list",
         null
+      ],
+      [
+        "junit",
+        {
+          "outputFile": "test-results/test-results.xml"
+        }
       ]
     ],
     "reportSlowTests": {
@@ -46,7 +54,8 @@
         "testDir": "C:/Project/Baby_Shower/tests/tests/e2e",
         "testIgnore": [
           "**/*.spec.js",
-          "**/*.ignore.js"
+          "**/*.ignore.js",
+          "**/archive/**"
         ],
         "testMatch": [
           "**/*.test.js"
@@ -63,7 +72,8 @@
         "testDir": "C:/Project/Baby_Shower/tests/tests/e2e",
         "testIgnore": [
           "**/*.spec.js",
-          "**/*.ignore.js"
+          "**/*.ignore.js",
+          "**/archive/**"
         ],
         "testMatch": [
           "**/*.test.js"
@@ -80,7 +90,8 @@
         "testDir": "C:/Project/Baby_Shower/tests/tests/e2e",
         "testIgnore": [
           "**/*.spec.js",
-          "**/*.ignore.js"
+          "**/*.ignore.js",
+          "**/archive/**"
         ],
         "testMatch": [
           "**/*.test.js"
@@ -97,7 +108,8 @@
         "testDir": "C:/Project/Baby_Shower/tests/tests/e2e",
         "testIgnore": [
           "**/*.spec.js",
-          "**/*.ignore.js"
+          "**/*.ignore.js",
+          "**/archive/**"
         ],
         "testMatch": [
           "**/*.test.js"
@@ -114,7 +126,26 @@
         "testDir": "C:/Project/Baby_Shower/tests/tests/e2e",
         "testIgnore": [
           "**/*.spec.js",
-          "**/*.ignore.js"
+          "**/*.ignore.js",
+          "**/archive/**"
+        ],
+        "testMatch": [
+          "**/*.test.js"
+        ],
+        "timeout": 30000
+      },
+      {
+        "outputDir": "C:/Project/Baby_Shower/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {},
+        "id": "tablet",
+        "name": "tablet",
+        "testDir": "C:/Project/Baby_Shower/tests/tests/e2e",
+        "testIgnore": [
+          "**/*.spec.js",
+          "**/*.ignore.js",
+          "**/archive/**"
         ],
         "testMatch": [
           "**/*.test.js"
@@ -138,13 +169,13 @@
   "suites": [],
   "errors": [
     {
-      "message": "Error: No tests found",
-      "stack": "Error: No tests found"
+      "message": "Error: No tests found.\nMake sure that arguments are regular expressions matching test files.\nYou may need to escape symbols like \"$\" or \"*\" and quote the arguments.",
+      "stack": "Error: No tests found.\nMake sure that arguments are regular expressions matching test files.\nYou may need to escape symbols like \"$\" or \"*\" and quote the arguments."
     }
   ],
   "stats": {
-    "startTime": "2026-01-07T02:05:42.948Z",
-    "duration": 637.758,
+    "startTime": "2026-01-09T05:01:52.311Z",
+    "duration": 435.16600000000005,
     "expected": 0,
     "skipped": 0,
     "unexpected": 0,

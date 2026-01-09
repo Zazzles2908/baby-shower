@@ -1,0 +1,344 @@
+name: Baby Shower Application Tests
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+  schedule:
+    # Run tests nightly at 2 AM
+    - cron: '0 2 * * *'
+
+env:
+  SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+  SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+  SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+  MINIMAX_API_KEY: ${{ secrets.MINIMAX_API_KEY }}
+  Z_AI_API_KEY: ${{ secrets.Z_AI_API_KEY }}
+  KIMI_API_KEY: ${{ secrets.KIMI_API_KEY }}
+
+jobs:
+  # ==========================================================================
+  # JOB 1: Install and Lint
+  # ==========================================================================
+  install-lint:
+    name: Install Dependencies & Lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run linter
+        run: npm run lint || echo "Lint not configured"
+
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+
+  # ==========================================================================
+  # JOB 2: Unit Tests
+  # ==========================================================================
+  unit-tests:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    needs: install-lint
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run unit tests
+        run: npm run test:frontend -- --project=chromium --reporter=list
+
+      - name: Upload unit test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: unit-test-results
+          path: test-results/
+
+  # ==========================================================================
+  # JOB 3: Integration Tests
+  # ==========================================================================
+  integration-tests:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    needs: install-lint
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Start local server
+        run: |
+          npm run dev &
+          sleep 10
+
+      - name: Run integration tests
+        run: npm run test:flow -- --project=chromium --reporter=list
+
+      - name: Upload integration test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: integration-test-results
+          path: test-results/
+
+  # ==========================================================================
+  # JOB 4: E2E Tests (All Browsers)
+  # ==========================================================================
+  e2e-tests:
+    name: E2E Tests (All Browsers)
+    runs-on: ubuntu-latest
+    needs: install-lint
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chromium, firefox, webkit]
+        include:
+          - browser: chromium
+            os: ubuntu-latest
+          - browser: firefox
+            os: ubuntu-latest
+          - browser: webkit
+            os: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install ${{ matrix.browser }}
+
+      - name: Start local server
+        run: |
+          npm run dev &
+          sleep 10
+
+      - name: Run E2E tests (${{ matrix.browser }})
+        run: npm run test:${{ matrix.browser }} -- --reporter=list
+
+      - name: Upload E2E test results (${{ matrix.browser }})
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: e2e-test-results-${{ matrix.browser }}
+          path: test-results/
+
+      - name: Upload screenshots on failure (${{ matrix.browser }})
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: e2e-screenshots-${{ matrix.browser }}
+          path: test-results/screenshots/
+
+  # ==========================================================================
+  # JOB 5: Mobile Tests
+  # ==========================================================================
+  mobile-tests:
+    name: Mobile Tests
+    runs-on: ubuntu-latest
+    needs: install-lint
+    steps:
+      - name: Checkout code
+        uses: actions/checkbook@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright
+        run: npx playwright install chromium
+
+      - name: Start local server
+        run: |
+          npm run dev &
+          sleep 10
+
+      - name: Run mobile tests
+        run: npm run test:mobile -- --reporter=list
+
+      - name: Upload mobile test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mobile-test-results
+          path: test-results/
+
+  # ==========================================================================
+  # JOB 6: API Tests
+  # ==========================================================================
+  api-tests:
+    name: API Tests
+    runs-on: ubuntu-latest
+    needs: install-lint
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run API tests
+        run: npm run test:api -- --project=chromium --reporter=list
+
+      - name: Upload API test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: api-test-results
+          path: test-results/
+
+  # ==========================================================================
+  # JOB 7: Database Tests
+  # ==========================================================================
+  db-tests:
+    name: Database Tests
+    runs-on: ubuntu-latest
+    needs: install-lint
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run database tests
+        run: npm run test:db -- --project=chromium --reporter=list
+
+      - name: Upload database test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: db-test-results
+          path: test-results/
+
+  # ==========================================================================
+  # JOB 8: Generate Test Report
+  # ==========================================================================
+  test-report:
+    name: Generate Test Report
+    runs-on: ubuntu-latest
+    needs: [unit-tests, integration-tests, e2e-tests, mobile-tests, api-tests, db-tests]
+    if: always()
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download all test results
+        uses: actions/download-artifact@v4
+        with:
+          path: test-results/all
+
+      - name: Merge test results
+        run: |
+          echo "## Test Results Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          # Count results
+          total_passed=0
+          total_failed=0
+          total_skipped=0
+          
+          for dir in test-results/all/*/; do
+            if [ -f "$dir/test-results.json" ]; then
+              passed=$(grep -o '"passed":[0-9]*' "$dir/test-results.json" | grep -o '[0-9]*' || echo "0")
+              failed=$(grep -o '"failed":[0-9]*' "$dir/test-results.json" | grep -o '[0-9]*' || echo "0")
+              skipped=$(grep -o '"skipped":[0-9]*' "$dir/test-results.json" | grep -o '[0-9]*' || echo "0")
+              
+              total_passed=$((total_passed + passed))
+              total_failed=$((total_failed + failed))
+              total_skipped=$((total_skipped + skipped))
+              
+              echo "### $(basename $dir)" >> $GITHUB_STEP_SUMMARY
+              echo "- Passed: $passed" >> $GITHUB_STEP_SUMMARY
+              echo "- Failed: $failed" >> $GITHUB_STEP_SUMMARY
+              echo "- Skipped: $skipped" >> $GITHUB_STEP_SUMMARY
+              echo "" >> $GITHUB_STEP_SUMMARY
+            fi
+          done
+          
+          echo "## Total Summary" >> $GITHUB_STEP_SUMMARY
+          echo "- **Passed:** $total_passed" >> $GITHUB_STEP_SUMMARY
+          echo "- **Failed:** $total_failed" >> $GITHUB_STEP_SUMMARY
+          echo "- **Skipped:** $total_skipped" >> $GITHUB_STEP_SUMMARY
+
+      - name: Upload combined report
+        uses: actions/upload-artifact@v4
+        with:
+          name: combined-test-report
+          path: test-results/all/
+
+      - name: Show HTML report location
+        run: |
+          echo "HTML report available at: test-results/all/html-report/index.html"
+          echo "## Test Report" >> $GITHUB_STEP_SUMMARY
+          echo "Full HTML report: [View Report](test-results/all/html-report/index.html)"
+
+  # ==========================================================================
+  # JOB 9: Notify on Failure
+  # ==========================================================================
+  notify-failure:
+    name: Notify on Failure
+    runs-on: ubuntu-latest
+    needs: [test-report]
+    if: failure()
+    steps:
+      - name: Send failure notification
+        run: |
+          echo "::warning::Tests failed! Check the test report for details."
+          echo "## ❌ Test Suite Failed" >> $GITHUB_STEP_SUMMARY
+          echo "Please review the test results and fix any failures." >> $GITHUB_STEP_SUMMARY

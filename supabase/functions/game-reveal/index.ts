@@ -48,7 +48,7 @@ serve(async (req: Request) => {
     const envValidation = validateEnvironmentVariables([
       'SUPABASE_URL',
       'SUPABASE_SERVICE_ROLE_KEY'
-    ], ['KIMI_API_KEY'])
+    ], ['MINIMAX_API_KEY'])
 
     if (!envValidation.isValid) {
       console.error('Game Reveal - Environment validation failed:', envValidation.errors)
@@ -230,7 +230,7 @@ serve(async (req: Request) => {
 })
 
 /**
- * Generate roast commentary using Moonshot AI (Kimi)
+ * Generate roast commentary using MiniMax AI
  * Falls back to template roasts if AI fails
  */
 async function generateRoastCommentaryWithAI(
@@ -242,10 +242,10 @@ async function generateRoastCommentaryWithAI(
   dadName: string,
   scenario: any
 ): Promise<{ roast: string; provider: string }> {
-  const kimiApiKey = Deno.env.get('KIMI_API_KEY')
+  const minimaxApiKey = Deno.env.get('MINIMAX_API_KEY')
   
-  if (!kimiApiKey) {
-    console.warn('Game Reveal - KIMI_API_KEY not configured, using fallback')
+  if (!minimaxApiKey) {
+    console.warn('Game Reveal - MINIMAX_API_KEY not configured, using fallback')
     return { 
       roast: generateFallbackRoast(momPct, dadPct, crowdChoice, perceptionGap, momName, dadName),
       provider: 'fallback'
@@ -256,14 +256,14 @@ async function generateRoastCommentaryWithAI(
   const timeoutId = setTimeout(() => controller.abort(), 10000) // 10 second timeout
 
   try {
-    const response = await fetch('https://api.moonshot.cn/v1/chat/completions', {
+    const response = await fetch('https://api.minimax.io/v1/text/chatcompletion_v2', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${kimiApiKey}`,
+        'Authorization': `Bearer ${minimaxApiKey}`,
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        model: 'kimi-k2-thinking',
+        model: 'MiniMax-M2.1',
         messages: [
           {
             role: 'system',
@@ -309,8 +309,8 @@ Keep it SHORT, punchy, and family-friendly!`
 
     if (!response.ok) {
       const errorText = await response.text()
-      console.error('Game Reveal - Moonshot API error:', response.status, errorText)
-      throw new Error(`Moonshot API returned ${response.status}`)
+      console.error('Game Reveal - MiniMax API error:', response.status, errorText)
+      throw new Error(`MiniMax API returned ${response.status}`)
     }
 
     const aiData = await response.json()
@@ -327,15 +327,15 @@ Keep it SHORT, punchy, and family-friendly!`
     }
 
     console.log('Game Reveal - AI roast generated successfully')
-    return { roast: roastText, provider: 'moonshot-kimi-k2' }
+    return { roast: roastText, provider: 'minimax' }
 
   } catch (error) {
     clearTimeout(timeoutId)
     
     if (error.name === 'AbortError') {
-      console.warn('Game Reveal - Moonshot API timeout after 10 seconds')
+      console.warn('Game Reveal - MiniMax API timeout after 10 seconds')
     } else {
-      console.error('Game Reveal - Moonshot API error:', error.message)
+      console.error('Game Reveal - MiniMax API error:', error.message)
     }
     
     throw error

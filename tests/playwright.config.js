@@ -1,6 +1,6 @@
 /**
- * Baby Shower App - Playwright Configuration
- * Comprehensive E2E testing setup for all 5 activity types
+ * Baby Shower App - Comprehensive Playwright Configuration
+ * Testing infrastructure for all components: Guestbook, Pool, Quiz, Advice, Voting, Games
  */
 
 import { defineConfig, devices } from '@playwright/test';
@@ -12,17 +12,30 @@ export default defineConfig({
   // Fully parallelize tests for faster execution
   fullyParallel: true,
   
-  // Retry failed tests
+  // Retry failed tests (more retries in CI)
   retries: process.env.CI ? 2 : 0,
   
   // Workers for parallel execution
   workers: process.env.CI ? 4 : undefined,
   
-  // Reporter configuration
+  // Reporter configuration - Multiple reporters for different needs
   reporter: [
-    ['html', { outputFolder: 'test-results/html-report' }],
-    ['json', { outputFile: 'test-results/test-results.json' }],
-    ['list']
+    // HTML report for local development
+    ['html', { 
+      outputFolder: 'test-results/html-report',
+      open: 'never'
+    }],
+    // JSON report for CI/CD integration
+    ['json', { 
+      outputFile: 'test-results/test-results.json',
+      outputMode: 'append'
+    }],
+    // List reporter for terminal output
+    ['list'],
+    // JUnit reporter for CI systems
+    ['junit', { 
+      outputFile: 'test-results/test-results.xml' 
+    }]
   ],
   
   // Global timeout for all tests
@@ -40,10 +53,11 @@ export default defineConfig({
   
   // Screenshot configuration
   screenshot: 'only-on-failure',
+  video: 'retain-on-failure',
   
-  // Projects for different browsers
+  // Projects for different browsers and device configurations
   projects: [
-    // Desktop Chrome
+    // === Desktop Browsers ===
     {
       name: 'chromium',
       use: {
@@ -55,7 +69,6 @@ export default defineConfig({
       }
     },
     
-    // Desktop Firefox
     {
       name: 'firefox',
       use: {
@@ -66,7 +79,6 @@ export default defineConfig({
       }
     },
     
-    // Desktop Safari (WebKit)
     {
       name: 'webkit',
       use: {
@@ -77,7 +89,7 @@ export default defineConfig({
       }
     },
     
-    // Mobile Chrome
+    // === Mobile Browsers ===
     {
       name: 'mobile-chrome',
       use: {
@@ -87,12 +99,21 @@ export default defineConfig({
       }
     },
     
-    // Mobile Safari
     {
       name: 'mobile-safari',
       use: {
         ...devices['iPhone 12'],
         browserName: 'webkit',
+        actionTimeout: 10000
+      }
+    },
+    
+    // === Tablet ===
+    {
+      name: 'tablet',
+      use: {
+        ...devices['iPad Mini'],
+        browserName: 'chromium',
         actionTimeout: 10000
       }
     }
@@ -109,38 +130,27 @@ export default defineConfig({
   // Environment variables available to tests
   use: {
     // Supabase configuration
-    SUPABASE_URL: 'https://bkszmvfsfgvdwzacgmfz.supabase.co',
+    SUPABASE_URL: process.env.SUPABASE_URL || 'https://bkszmvfsfgvdwzacgmfz.supabase.co',
     SUPABASE_ANON_KEY: process.env.SUPABASE_ANON_KEY || '',
+    SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY || '',
     
     // API base URL for Edge Functions
-    API_BASE_URL: 'https://bkszmvfsfgvdwzacgmfz.supabase.co/functions/v1',
+    API_BASE_URL: process.env.API_BASE_URL || 'https://bkszmvfsfgvdwzacgmfz.supabase.co/functions/v1',
     
-    // Test data (will be overridden by environment variables in CI)
-    TEST_DATA: {
-      guestbook: {
-        name: 'Test Guest',
-        message: 'Hello World!',
-        relationship: 'friend'
-      },
-      vote: {
-        names: ['Alice', 'Bob'],
-        voteCount: 2
-      },
-      pool: {
-        name: 'Test Predictor',
-        prediction: '2026-02-15',
-        dueDate: '2026-02-15'
-      },
-      quiz: {
-        answers: [0, 1, 2],
-        score: 3,
-        totalQuestions: 3
-      },
-      advice: {
-        name: 'Test Advisor',
-        advice: 'Stay calm and carry on.',
-        category: 'general'
-      }
+    // AI API Keys (for testing with mocks)
+    MINIMAX_API_KEY: process.env.MINIMAX_API_KEY || '',
+    Z_AI_API_KEY: process.env.Z_AI_API_KEY || '',
+    KIMI_API_KEY: process.env.KIMI_API_KEY || '',
+    
+    // Test data prefix for data isolation
+    TEST_DATA_PREFIX: process.env.TEST_DATA_PREFIX || 'test_e2e_',
+    
+    // Test configuration
+    TEST_CONFIG: {
+      timeout: 10000,
+      retryAttempts: 3,
+      dataIsolation: true,
+      useMocks: process.env.USE_MOCKS === 'true'
     },
     
     // Timezone for consistent testing
@@ -158,10 +168,15 @@ export default defineConfig({
     // Timeout for assertions
     timeout: 5000,
     
-    // Custom expectations
+    // Screenshot comparison settings
     toHaveScreenshot: {
       maxDiffPixels: 100,
       threshold: 0.2
+    },
+    
+    // Number assertions
+    toBeGreaterThan: {
+      interval: 100
     }
   },
   
@@ -172,11 +187,8 @@ export default defineConfig({
   testMatch: '**/*.test.js',
   
   // Ignore files that are not tests
-  testIgnore: ['**/*.spec.js', '**/*.ignore.js'],
+  testIgnore: ['**/*.spec.js', '**/*.ignore.js', '**/archive/**'],
   
-  // TypeScript configuration for tests
-  typescript: {
-    // Use the project's tsconfig
-    tsconfigPath: './tsconfig.json'
-  }
+  // Maximum test failures before stopping
+  maxFailures: process.env.CI ? 50 : 10
 });

@@ -1,0 +1,34 @@
+{
+  "pool": [
+    "That prediction is... ambitious! Hope you have a crystal ball handy.",
+    "Interesting choice! The baby might arrive fashionably late.",
+    "Bold prediction! You're either psychic or very optimistic.",
+    "That due date is exactly what the doctor ordered!",
+    "A surprise gender? Keeping everyone guessing, I see!"
+  ],
+  "advice": [
+    "AI-generated wisdom: Parenting is 10% inspiration and 90% coffee.",
+    "Roast mode: Your advice is almost as good as a good night's sleep.",
+    "Wisdom from the digital oracle: Trust your gut, it's usually right.",
+    "AI says: The days are long but the years are short. Enjoy every moment!"
+  ],
+  "game": {
+    "scenarios": [
+      {
+        "scenario": "3 AM diaper change",
+        "mom_option": "Grumbling compliance",
+        "dad_option": "Deep sleep"
+      },
+      {
+        "scenario": "Baby's first smile",
+        "mom_option": "Instant tears of joy",
+        "dad_option": "Missing it entirely"
+      }
+    ],
+    "roasts": [
+      "The crowd was way off! Someone hasn't changed a diaper before.",
+      "Perception gap detected! You clearly don't know who you married.",
+      "The majority ruled... and was completely wrong!"
+    ]
+  }
+}
