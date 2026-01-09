@@ -44,7 +44,10 @@ serve(async (req: Request) => {
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-    const supabase = createClient(supabaseUrl, supabaseServiceKey, { auth: { autoRefreshToken: false, persistSession: false } })
+    const supabase = createClient(supabaseUrl, supabaseServiceKey, { 
+      auth: { autoRefreshToken: false, persistSession: false },
+      db: { schema: 'baby_shower' }
+    })
 
     let body: VoteRequest
     try { body = await req.json() } catch { return createErrorResponse('Invalid JSON in request body', 400) }
@@ -58,14 +61,14 @@ serve(async (req: Request) => {
     console.log(`[vote] POST: Writing vote with name: ${name}`)
 
     const { data, error } = await supabase
-      .from('baby_shower.votes')
+      .from('votes')
       .insert({ voter_name: name, selected_names, submitted_by: name })
       .select()
       .single()
 
     if (error) return createErrorResponse(`Database operation failed: ${error.message}`, 500)
 
-    const { data: allVotes } = await supabase.from('baby_shower.votes').select('selected_names')
+    const { data: allVotes } = await supabase.from('votes').select('selected_names')
     const nameCounts: Record<string, number> = {}
     let totalVotes = 0
 

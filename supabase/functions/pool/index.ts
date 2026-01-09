@@ -7,7 +7,7 @@ import {
   validateInput,
   CORS_HEADERS,
   SECURITY_HEADERS
-} from '../_shared/security.ts'
+} from './security.ts'
 
 interface PoolRequest {
   name: string
@@ -21,13 +21,9 @@ interface PoolRequest {
   favourite_colour?: string
 }
 
-// Baby average statistics for roasts
 const AVERAGE_WEIGHT_KG = 3.5
 const AVERAGE_LENGTH_CM = 50
 
-/**
- * Call LLM API to generate witty roast
- */
 async function generateRoast(
   weight: number,
   length: number,
@@ -50,7 +46,7 @@ Be clever, funny, and family-friendly. Keep it under 100 characters. Return only
 
   try {
     const controller = new AbortController()
-    const timeoutId = setTimeout(() => controller.abort(), 3000) // 3 second timeout
+    const timeoutId = setTimeout(() => controller.abort(), 3000)
 
     const response = await fetch('https://api.minimax.io/v1/text/chatcompletion_v2', {
       method: 'POST',
@@ -60,12 +56,7 @@ Be clever, funny, and family-friendly. Keep it under 100 characters. Return only
       },
       body: JSON.stringify({
         model: 'MiniMax-M2.1',
-        messages: [
-          {
-            role: 'user',
-            content: prompt,
-          },
-        ],
+        messages: [{ role: 'user', content: prompt }],
         max_tokens: 100,
         temperature: 0.8,
       }),
@@ -81,8 +72,6 @@ Be clever, funny, and family-friendly. Keep it under 100 characters. Return only
 
     const data = await response.json()
     const roast = data.choices?.[0]?.message?.content?.trim()
-    
-    // Clean up the roast - remove quotes if present
     return roast?.replace(/^["']|["']$/g, '') || null
   } catch (error) {
     console.error('AI roast generation failed:', error instanceof Error ? error.message : 'Unknown error')
@@ -90,9 +79,6 @@ Be clever, funny, and family-friendly. Keep it under 100 characters. Return only
   }
 }
 
-/**
- * Calculate average weight and length from baby_shower.pool_predictions
- */
 async function calculateAverages(supabase: ReturnType<typeof createClient>): Promise<{ avgWeight: number; avgLength: number }> {
   const { data: predictions, error } = await supabase
     .from('pool_predictions')
@@ -139,11 +125,10 @@ serve(async (req: Request) => {
   }
 
   try {
-    // Validate environment variables
     const envValidation = validateEnvironmentVariables([
       'SUPABASE_URL',
       'SUPABASE_SERVICE_ROLE_KEY'
-    ], ['MINIMAX_API_KEY']) // Optional for AI roasts
+    ], ['MINIMAX_API_KEY'])
 
     if (!envValidation.isValid) {
       console.error('Environment validation failed:', envValidation.errors)
@@ -162,7 +147,6 @@ serve(async (req: Request) => {
       db: { schema: 'baby_shower' }
     })
 
-    // Parse and validate request body
     let body: PoolRequest
     try {
       body = await req.json()
@@ -170,7 +154,6 @@ serve(async (req: Request) => {
       return createErrorResponse('Invalid JSON in request body', 400)
     }
 
-    // Input validation using standardized function
     const validation = validateInput(body, {
       name: { type: 'string', required: true, minLength: 1, maxLength: 100 },
       prediction: { type: 'string', required: true, minLength: 1, maxLength: 500 },
@@ -187,8 +170,6 @@ serve(async (req: Request) => {
       return createErrorResponse('Validation failed', 400, validation.errors)
     }
 
-    // Additional date validation for 2026 baby shower
-    // Valid dates are January 1 - December 31, 2026
     const selectedDate = new Date(body.dueDate)
     const minDate = new Date('2026-01-01')
     const maxDate = new Date('2026-12-31')
@@ -197,13 +178,10 @@ serve(async (req: Request) => {
       return createErrorResponse(`Birth date must be in 2026`, 400)
     }
 
-    // Use sanitized data from validation
     const { name: sanitizedName, prediction: sanitizedPrediction } = validation.sanitized
 
-    // Calculate averages for AI roast
     const { avgWeight, avgLength } = await calculateAverages(supabase)
 
-    // Count total submissions in baby_shower.pool_predictions BEFORE insert to check milestone
     const { count: totalCount } = await supabase
       .from('pool_predictions')
       .select('*', { count: 'exact', head: true })
@@ -212,7 +190,6 @@ serve(async (req: Request) => {
 
     console.log(`[pool] Writing prediction to baby_shower.pool_predictions, current count: ${currentCount}`)
 
-    // Direct insert (bypasses RLS using service role)
     const { data, error } = await supabase
       .from('pool_predictions')
       .insert({
@@ -230,34 +207,26 @@ serve(async (req: Request) => {
       .single()
 
     if (error) {
-      console.error('Supabase RPC error:', JSON.stringify(error, null, 2))
+      console.error('Supabase insert error:', JSON.stringify(error, null, 2))
       return createErrorResponse('Database operation failed', 500, { 
         message: error.message,
         details: error,
-        hint: error.hint || 'Check RPC function'
+        hint: error.hint || 'Make sure table exists in baby_shower schema'
       })
     }
 
     console.log(`[pool] Successfully inserted prediction with id: ${data?.id}`)
 
-    // Generate AI roast (wrapped in try/catch - never block submission)
     let roast: string | null = null
     try {
       roast = await generateRoast(body.weight, body.length, sanitizedPrediction, avgWeight, avgLength)
       if (roast) {
         console.log(`[pool] Generated AI roast: ${roast}`)
-        // Optionally store roast in baby_shower.ai_roasts table with foreign key
-        // await supabase.from('baby_shower.ai_roasts').insert({
-        //   pool_prediction_id: data.id,
-        //   roast_text: roast,
-        // })
       }
     } catch (roastError) {
       console.error('Roast generation error:', roastError)
-      // Silently continue without roast
     }
 
-    // Return success response
     return createSuccessResponse({
       data: { 
         id: data?.id, 

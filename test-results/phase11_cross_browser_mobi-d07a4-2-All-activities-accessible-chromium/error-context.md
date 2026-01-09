@@ -1,0 +1,73 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e2]:
+  - generic [ref=e3]:
+    - generic [ref=e4]:
+      - generic [ref=e5]:
+        - img "Michelle" [ref=e8]
+        - generic [ref=e9]:
+          - heading "Welcome to Our Baby Shower! 🌸" [level=2] [ref=e10]
+          - paragraph [ref=e11]: We're so excited to celebrate with you!
+      - generic [ref=e13]: 👨‍👩‍👧 🍊 🖼️
+      - generic [ref=e14]:
+        - generic [ref=e15]:
+          - generic [ref=e16]:
+            - img "Michelle" [ref=e17]
+            - generic [ref=e18]: Michelle
+          - img "Love" [ref=e20]
+          - generic [ref=e21]:
+            - img "Jazeel" [ref=e22]
+            - generic [ref=e23]: Jazeel
+        - heading "Welcome to Our Baby Shower" [level=1] [ref=e24]
+        - paragraph [ref=e25]: Celebrating our little girl arriving March 2026
+        - generic [ref=e26]:
+          - paragraph [ref=e27]: 📅 Sunday January 4th @ 11AM - 2PM
+          - paragraph [ref=e28]: 📍 Myuna Farm, Doveton
+        - generic [ref=e29]:
+          - img "Baby Michelle" [ref=e30]
+          - img "Baby Jazeel" [ref=e31]
+    - generic [ref=e32]:
+      - generic [ref=e33]:
+        - generic [ref=e34]:
+          - generic [ref=e35]: Your Name
+          - textbox "Your Name" [ref=e36]:
+            - /placeholder: Enter your name...
+        - button "Continue ✨" [ref=e37] [cursor=pointer]
+      - generic [ref=e38]:
+        - heading "Choose an Activity" [level=2] [ref=e39]
+        - generic [ref=e40]:
+          - img "Michelle" [ref=e43]
+          - generic [ref=e44]:
+            - generic [ref=e46]: Michelle
+            - generic [ref=e47]: hostess
+            - paragraph [ref=e48]: "\"Oh my, what lovely energy! ✨\""
+        - generic [ref=e49]:
+          - img "Jazeel" [ref=e52]
+          - generic [ref=e53]:
+            - generic [ref=e55]: Jazeel
+            - generic [ref=e56]: undefined
+            - paragraph [ref=e57]: "\"Hey there, awesome guest! 🌟\""
+        - generic [ref=e58]:
+          - button "Guestbook - Leave your wishes for baby" [ref=e59] [cursor=pointer]:
+            - img "Loading image... (attempt 1/2)" [ref=e62]
+            - generic [ref=e63]: Guestbook
+            - generic [ref=e64]: Leave your wishes for baby
+          - button "Baby Pool - Predict big arrival" [ref=e65] [cursor=pointer]:
+            - img "Loading image... (attempt 1/2)" [ref=e68]
+            - generic [ref=e69]: Baby Pool
+            - generic [ref=e70]: Predict big arrival
+          - button "Baby Quiz - Decode baby emoji puzzles" [ref=e71] [cursor=pointer]:
+            - img "Loading image... (attempt 1/2)" [ref=e74]
+            - generic [ref=e75]: Baby Quiz
+            - generic [ref=e76]: Decode baby emoji puzzles
+          - button "Advice - Share your wisdom" [ref=e77] [cursor=pointer]:
+            - img "Loading image... (attempt 1/2)" [ref=e80]
+            - generic [ref=e81]: Advice
+            - generic [ref=e82]: Share your wisdom
+          - button "The Shoe Game - Predict who would do what" [ref=e83] [cursor=pointer]:
+            - img "Loading image... (attempt 1/2)" [ref=e86]
+            - generic [ref=e87]: The Shoe Game
+            - generic [ref=e88]: Who would do this?
+  - text: 💬 ✨
+```
