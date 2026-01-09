@@ -217,6 +217,25 @@ serve(async (req: Request) => {
 
     console.log(`[pool] Successfully inserted prediction with id: ${data?.id}`)
 
+    const { error: submissionsError } = await supabase
+      .from('submissions')
+      .insert({
+        name: sanitizedName,
+        activity_type: 'pool',
+        date_guess: body.dueDate,
+        weight_guess: body.weight,
+        length_guess: body.length,
+        favourite_colour: body.favourite_colour,
+        submitted_by: sanitizedName,
+      })
+      })
+
+    if (submissionsError) {
+      console.error('Submissions insert error:', JSON.stringify(submissionsError, null, 2))
+    } else {
+      console.log(`[pool] Successfully recorded submission for stats`)
+    }
+
     let roast: string | null = null
     try {
       roast = await generateRoast(body.weight, body.length, sanitizedPrediction, avgWeight, avgLength)

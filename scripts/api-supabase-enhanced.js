@@ -204,12 +204,68 @@
         return supabaseClient;
     }
 
-    /**
-     * Build Supabase Edge Function URL
-     */
-    function getSupabaseFunctionUrl(functionName) {
-        return `${SUPABASE_URL}/functions/v1/${functionName}`;
-    }
+     /**
+      * Get submissions for activity stats
+      * Special handling for 'pool' to query pool_predictions table instead of submissions
+      */
+     async function getSubmissions(activityType) {
+         if (!SUPABASE_URL) {
+             throw new Error('Supabase URL not configured');
+         }
+
+         // Special handling for pool - query pool_predictions table directly
+         if (activityType === 'pool') {
+             const url = `${SUPABASE_URL}/rest/v1/pool_predictions?select=*&order=created_at.desc`;
+
+             const headers = {
+                 'Content-Type': 'application/json',
+                 'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+                 'apikey': SUPABASE_ANON_KEY,
+                 'Accept-Profile': 'baby_shower' // Query from baby_shower schema
+             };
+
+             const response = await fetch(url, { headers });
+
+             if (!response.ok) {
+                 throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+             }
+
+             const rows = await response.json();
+
+             // Transform pool_predictions to match expected format
+             return rows.map(row => ({
+                 id: row.id,
+                 activity_type: 'pool',
+                 name: row.predictor_name || row.submitted_by || 'Anonymous',
+                 activity_data: {
+                     prediction: row.prediction,
+                     dueDate: row.birth_date,
+                     weight_kg: row.weight_kg,
+                     length_cm: row.length_cm,
+                     favourite_colour: row.favourite_colour
+                 },
+                 created_at: row.created_at
+             }));
+         }
+
+         // Default: query submissions table for other activity types
+         const url = `${SUPABASE_URL}/rest/v1/submissions?activity_type=eq.${activityType}&order=created_at.desc`;
+
+         const headers = {
+             'Content-Type': 'application/json',
+             'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+             'apikey': SUPABASE_ANON_KEY,
+             'Accept-Profile': 'baby_shower' // Query from baby_shower schema
+         };
+
+         const response = await fetch(url, { headers });
+
+         if (!response.ok) {
+             throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+         }
+
+         return await response.json();
+     }
 
     /**
      * Submit guestbook entry
