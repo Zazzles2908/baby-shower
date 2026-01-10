@@ -28,6 +28,15 @@
     const RETRY_ATTEMPTS = 3;
     const RETRY_DELAY = 1000; // 1 second base delay
 
+    /**
+     * Build Supabase Edge Function URL
+     * @param {string} functionName - Name of the edge function
+     * @returns {string} Full URL to the edge function
+     */
+    function getSupabaseFunctionUrl(functionName) {
+        return `${SUPABASE_URL}/functions/v1/${functionName}`;
+    }
+
     // Lazy-loaded Supabase client for realtime
     let supabaseClient = null;
     let initializationAttempts = 0;
